@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 220" width="900" height="220">
+  <defs>
+    <!-- Background gradient -->
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a0a0f"/>
+      <stop offset="100%" stop-color="#0d0d1a"/>
+    </linearGradient>
+
+    <!-- Neon teal glow filter -->
+    <filter id="glow-teal" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+
+    <!-- Neon magenta glow filter -->
+    <filter id="glow-mag" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+
+    <!-- Soft text glow -->
+    <filter id="glow-text" x="-10%" y="-50%" width="120%" height="200%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+
+    <!-- Scanline pattern -->
+    <pattern id="scanlines" x="0" y="0" width="2" height="4" patternUnits="userSpaceOnUse">
+      <rect width="2" height="1" fill="rgba(0,255,204,0.03)"/>
+    </pattern>
+
+    <!-- Grid pattern -->
+    <pattern id="grid" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(0,255,204,0.06)" stroke-width="0.5"/>
+    </pattern>
+
+    <!-- Left accent gradient -->
+    <linearGradient id="rail-left" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#00ffcc" stop-opacity="0"/>
+      <stop offset="30%" stop-color="#00ffcc" stop-opacity="1"/>
+      <stop offset="70%" stop-color="#00ffcc" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#00ffcc" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Right accent gradient (magenta) -->
+    <linearGradient id="rail-right" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ff00aa" stop-opacity="0"/>
+      <stop offset="30%" stop-color="#ff00aa" stop-opacity="1"/>
+      <stop offset="70%" stop-color="#ff00aa" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#ff00aa" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Corner hex clip -->
+    <clipPath id="clip-main">
+      <polygon points="32,0 868,0 900,32 900,220 0,220 0,32"/>
+    </clipPath>
+  </defs>
+
+  <!-- ── Background ────────────────────────────────────────── -->
+  <rect width="900" height="220" fill="url(#bg)"/>
+  <rect width="900" height="220" fill="url(#grid)"/>
+  <rect width="900" height="220" fill="url(#scanlines)"/>
+
+  <!-- ── Corner cut decoration ──────────────────────────────── -->
+  <!-- top-left cut line -->
+  <line x1="0" y1="32" x2="32" y2="0" stroke="#00ffcc" stroke-width="1" opacity="0.6" filter="url(#glow-teal)"/>
+  <!-- top-right cut line -->
+  <line x1="900" y1="32" x2="868" y2="0" stroke="#ff00aa" stroke-width="1" opacity="0.6" filter="url(#glow-mag)"/>
+
+  <!-- ── Rail lines (left teal / right magenta) ─────────────── -->
+  <line x1="4" y1="0" x2="4" y2="220" stroke="url(#rail-left)" stroke-width="2" filter="url(#glow-teal)"/>
+  <line x1="896" y1="0" x2="896" y2="220" stroke="url(#rail-right)" stroke-width="2" filter="url(#glow-mag)"/>
+
+  <!-- ── Top border line -->
+  <line x1="32" y1="1" x2="868" y2="1" stroke="#00ffcc" stroke-width="1" opacity="0.4"/>
+  <!-- ── Bottom border line -->
+  <line x1="0" y1="219" x2="900" y2="219" stroke="#ff00aa" stroke-width="1" opacity="0.3"/>
+
+  <!-- ── Horizontal circuit traces ─────────────────────────── -->
+  <!-- upper trace -->
+  <polyline points="60,38 120,38 132,50 300,50" fill="none" stroke="#00ffcc" stroke-width="0.8" opacity="0.35"/>
+  <circle cx="60" cy="38" r="2" fill="#00ffcc" opacity="0.5"/>
+  <circle cx="300" cy="50" r="2" fill="#00ffcc" opacity="0.5"/>
+  <!-- lower trace -->
+  <polyline points="600,170 768,170 780,182 840,182" fill="none" stroke="#ff00aa" stroke-width="0.8" opacity="0.35"/>
+  <circle cx="840" cy="182" r="2" fill="#ff00aa" opacity="0.5"/>
+  <circle cx="600" cy="170" r="2" fill="#ff00aa" opacity="0.5"/>
+
+  <!-- ── Bracket decorations ────────────────────────────────── -->
+  <!-- left bracket -->
+  <polyline points="42,66 30,66 30,154 42,154" fill="none" stroke="#00ffcc" stroke-width="1.5" stroke-linecap="round" opacity="0.7" filter="url(#glow-teal)"/>
+  <!-- right bracket -->
+  <polyline points="858,66 870,66 870,154 858,154" fill="none" stroke="#ff00aa" stroke-width="1.5" stroke-linecap="round" opacity="0.7" filter="url(#glow-mag)"/>
+
+  <!-- ── Main title ─────────────────────────────────────────── -->
+  <!-- shadow layer -->
+  <text x="450" y="118" text-anchor="middle" font-family="'Courier New', monospace" font-size="72" font-weight="700" letter-spacing="-1" fill="#00ffcc" opacity="0.15" filter="url(#glow-text)">super-result</text>
+  <!-- primary layer -->
+  <text x="450" y="118" text-anchor="middle" font-family="'Courier New', monospace" font-size="72" font-weight="700" letter-spacing="-1" fill="#e0fff9" filter="url(#glow-teal)">super-result</text>
+  <!-- teal underline accent -->
+  <line x1="180" y1="126" x2="720" y2="126" stroke="#00ffcc" stroke-width="1" opacity="0.4"/>
+
+  <!-- ── Subtitle ───────────────────────────────────────────── -->
+  <text x="450" y="158" text-anchor="middle" font-family="'Courier New', monospace" font-size="13" letter-spacing="3" fill="#00ffcc" opacity="0.75">RAILWAY · TYPESCRIPT · ZERO UNSAFE CASTS</text>
+
+  <!-- ── Corner labels ─────────────────────────────────────── -->
+  <text x="18" y="14" font-family="monospace" font-size="9" fill="#00ffcc" opacity="0.45" letter-spacing="1">v1.0</text>
+  <text x="882" y="14" font-family="monospace" font-size="9" fill="#ff00aa" opacity="0.45" text-anchor="end" letter-spacing="1">MIT</text>
+
+  <!-- ── Bottom chip decoration ────────────────────────────── -->
+  <rect x="410" y="196" width="80" height="14" rx="2" fill="none" stroke="#00ffcc" stroke-width="0.8" opacity="0.3"/>
+  <text x="450" y="207" text-anchor="middle" font-family="monospace" font-size="8" fill="#00ffcc" opacity="0.45" letter-spacing="2">ERR·OK·ASYNC</text>
+</svg>

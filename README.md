@@ -1,4 +1,4 @@
-![super-result](./assets/banner.png)
+![super-result](./assets/banner.svg)
 
 # super-result
 
