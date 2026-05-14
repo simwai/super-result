@@ -1,0 +1,56 @@
+{
+  "name": "super-result",
+  "version": "1.0.0",
+  "description": "Lightweight railway-oriented error handling for TypeScript — discriminated Result<T,E>, typed async, zero unsafe casts, composable logging & tracing.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean",
+    "dev": "tsup src/index.ts --format esm,cjs --dts --watch",
+    "lint": "biome check src",
+    "lint:fix": "biome check --write src",
+    "type-check": "tsc --noEmit",
+    "check": "pnpm lint && pnpm type-check"
+  },
+  "keywords": [
+    "result",
+    "railway",
+    "error-handling",
+    "typescript",
+    "neverthrow",
+    "functional",
+    "async"
+  ],
+  "author": "simwai",
+  "license": "MIT",
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "tsup": "^8.4.0",
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
