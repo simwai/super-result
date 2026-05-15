@@ -363,16 +363,28 @@ export const createResult = <E>(mapError: (error: unknown) => E): ResultInterfac
 
 // #region Utility types
 
-/** Extracts the `Ok` value type from a {@link Result}. */
-export type ResultOk<T> = T extends Result<infer TData, unknown> ? TData : never;
+/**
+ * Extracts the `Ok` value type from a {@link Result}.
+ * @template R A {@link Result} type.
+ */
+export type ResultOk<R extends Result<unknown, unknown>> = R extends Result<infer TData, unknown> ? TData : never;
 
-/** Extracts the `Err` error type from a {@link Result}. */
-export type ResultErr<T> = T extends Result<unknown, infer TError> ? TError : never;
+/**
+ * Extracts the `Err` error type from a {@link Result}.
+ * @template R A {@link Result} type.
+ */
+export type ResultErr<R extends Result<unknown, unknown>> = R extends Result<unknown, infer TError> ? TError : never;
 
-/** Extracts the `Ok` value type from a {@link ResultAsync}. */
-export type ResultAsyncOk<T> = T extends ResultAsync<infer TData, unknown> ? TData : never;
+/**
+ * Extracts the `Ok` value type from a {@link ResultAsync}.
+ * @template R A {@link ResultAsync} type.
+ */
+export type ResultAsyncOk<R extends ResultAsync<unknown, unknown>> = R extends ResultAsync<infer TData, unknown> ? TData : never;
 
-/** Extracts the `Err` error type from a {@link ResultAsync}. */
-export type ResultAsyncErr<T> = T extends ResultAsync<unknown, infer TError> ? TError : never;
+/**
+ * Extracts the `Err` error type from a {@link ResultAsync}.
+ * @template R A {@link ResultAsync} type.
+ */
+export type ResultAsyncErr<R extends ResultAsync<unknown, unknown>> = R extends ResultAsync<unknown, infer TError> ? TError : never;
 
 // #endregion
