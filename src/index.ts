@@ -1,24 +1,31 @@
-// ─── super-result ────────────────────────────────────────────────────────────
-// Discriminated Result<T,E> + ResultAsync + typed factory
-// ─────────────────────────────────────────────────────────────────────────────
+// #region Core types
 
-// ---------- Core types -------------------------------------------------------
-
+/** Successful result carrying a value of type `T`. */
 export type Ok<T> = {
 	readonly type: 'ok';
 	readonly value: T;
 };
 
+/** Failed result carrying an error of type `E`. */
 export type Err<E> = {
 	readonly type: 'err';
 	readonly error: E;
 };
 
+/** Discriminated union of {@link Ok} and {@link Err}. */
 export type Result<T, E> = Ok<T> | Err<E>;
+
+/** Async variant — a `Promise` that always resolves to a {@link Result}. */
 export type ResultAsync<T, E> = Promise<Result<T, E>>;
 
-// ---------- Error for non-Error throws ---------------------------------------
+// #endregion
 
+// #region Errors
+
+/**
+ * Thrown by {@link unwrap} when the error value is not an `Error` instance.
+ * Wraps the raw thrown value in `.value` for inspection.
+ */
 export class NonErrorThrown extends TypeError {
 	public readonly value: unknown;
 
@@ -29,7 +36,9 @@ export class NonErrorThrown extends TypeError {
 	}
 }
 
-// ---------- Constructors -----------------------------------------------------
+// #endregion
+
+// #region Constructors
 
 export const ok = <T>(value: T): Ok<T> => ({ type: 'ok', value });
 
@@ -41,7 +50,9 @@ export const okAsync = <T>(value: T): ResultAsync<T, never> =>
 export const errAsync = <E>(error: E): ResultAsync<never, E> =>
 	Promise.resolve(err(error));
 
-// ---------- Guards -----------------------------------------------------------
+// #endregion
+
+// #region Guards
 
 export const isOk = <T, E>(result: Result<T, E>): result is Ok<T> =>
 	result.type === 'ok';
@@ -49,8 +60,14 @@ export const isOk = <T, E>(result: Result<T, E>): result is Ok<T> =>
 export const isErr = <T, E>(result: Result<T, E>): result is Err<E> =>
 	result.type === 'err';
 
-// ---------- Primitive capture helpers ----------------------------------------
+// #endregion
 
+// #region Capture helpers
+
+/**
+ * Runs `fn` and wraps the return value in `Ok`, or wraps any thrown value in `Err`.
+ * The error type is `unknown` — narrow it yourself or use {@link createResult} for automatic mapping.
+ */
 export const fromThrowable = <T>(fn: () => T): Result<T, unknown> => {
 	try {
 		return ok(fn());
@@ -59,6 +76,10 @@ export const fromThrowable = <T>(fn: () => T): Result<T, unknown> => {
 	}
 };
 
+/**
+ * Wraps an existing `PromiseLike` in a `ResultAsync`.
+ * Rejections are mapped through `mapError`.
+ */
 export const fromPromise = <T, E>(
 	promise: PromiseLike<T>,
 	mapError: (error: unknown) => E,
@@ -67,6 +88,10 @@ export const fromPromise = <T, E>(
 		.then<Result<T, E>>(value => ok(value))
 		.catch<Result<T, E>>(error => err(mapError(error)));
 
+/**
+ * Calls an async factory `fn` and wraps the resolved value in `Ok`.
+ * Rejections and thrown values are mapped through `mapError`.
+ */
 export const fromAsyncThrowable = <T, E>(
 	fn: () => PromiseLike<T>,
 	mapError: (error: unknown) => E,
@@ -76,17 +101,25 @@ export const fromAsyncThrowable = <T, E>(
 		.then<Result<T, E>>(value => ok(value))
 		.catch<Result<T, E>>(error => err(mapError(error)));
 
+/** Lifts an already-resolved `Result` into a `ResultAsync`. */
 export const fromAsyncResult = <T, E>(result: Result<T, E>): ResultAsync<T, E> =>
 	Promise.resolve(result);
 
-// ---------- Pattern matching --------------------------------------------------
+// #endregion
 
+// #region Pattern matching
+
+/**
+ * Exhaustive match over a `Result`.
+ * Exactly one branch runs; the return types may differ.
+ */
 export const match = <T, E, U, V>(
 	result: Result<T, E>,
 	onOk: (value: T) => U,
 	onErr: (error: E) => V,
 ): U | V => (isOk(result) ? onOk(result.value) : onErr(result.error));
 
+/** Async variant of {@link match}. Awaits `resultPromise` before branching. */
 export const matchAsync = async <T, E, U, V>(
 	resultPromise: ResultAsync<T, E>,
 	onOk: (value: T) => U | PromiseLike<U>,
@@ -96,8 +129,14 @@ export const matchAsync = async <T, E, U, V>(
 	return match(result, onOk, onErr);
 };
 
-// ---------- Unwrap helpers ---------------------------------------------------
+// #endregion
 
+// #region Unwrap helpers
+
+/**
+ * Returns the value if `Ok`.
+ * Throws the original `Error` if the error is an `Error` instance, otherwise throws {@link NonErrorThrown}.
+ */
 export const unwrap = <T, E>(result: Result<T, E>): T => {
 	if (isOk(result)) {
 		return result.value;
@@ -113,6 +152,7 @@ export const unwrap = <T, E>(result: Result<T, E>): T => {
 export const unwrapAsync = async <T, E>(resultPromise: ResultAsync<T, E>): Promise<T> =>
 	unwrap(await resultPromise);
 
+/** Returns the value if `Ok`, otherwise returns `defaultValue`. */
 export const unwrapOr = <T, E, D>(result: Result<T, E>, defaultValue: D): T | D =>
 	isOk(result) ? result.value : defaultValue;
 
@@ -121,6 +161,7 @@ export const unwrapOrAsync = async <T, E, D>(
 	defaultValue: D,
 ): Promise<T | D> => unwrapOr(await resultPromise, defaultValue);
 
+/** Returns the value if `Ok`, otherwise calls `onErr` with the error and returns its result. */
 export const unwrapOrElse = <T, E, U>(
 	result: Result<T, E>,
 	onErr: (error: E) => U,
@@ -134,7 +175,9 @@ export const unwrapOrElseAsync = async <T, E, U>(
 	return isOk(result) ? result.value : onErr(result.error);
 };
 
-// ---------- Internal helpers -------------------------------------------------
+// #endregion
+
+// #region Internal helpers
 
 const hasThen = (value: object): value is { then: unknown } => 'then' in value;
 
@@ -155,8 +198,14 @@ const fromThrowableMapped = <T, E>(
 	}
 };
 
-// ---------- Factory interface ------------------------------------------------
+// #endregion
 
+// #region Factory interface
+
+/**
+ * Interface returned by {@link createResult}.
+ * All capture helpers have `mapError` pre-bound so error types are consistent across a call-site.
+ */
 export interface ResultInterface<E> {
 	ok: typeof ok;
 	err(error: E): Err<E>;
@@ -166,6 +215,10 @@ export interface ResultInterface<E> {
 	isOk: typeof isOk;
 	isErr: typeof isErr;
 
+	/**
+	 * Unified entry point. Accepts a sync/async factory or a `PromiseLike`.
+	 * Errors are mapped through the bound `mapError`.
+	 */
 	from<T>(fn: () => T): Result<T, E>;
 	from<T>(fn: () => PromiseLike<T>): ResultAsync<T, E>;
 	from<T>(promise: PromiseLike<T>): ResultAsync<T, E>;
@@ -186,8 +239,18 @@ export interface ResultInterface<E> {
 	unwrapOrElseAsync: typeof unwrapOrElseAsync;
 }
 
-// ---------- Factory ----------------------------------------------------------
+// #endregion
 
+// #region Factory
+
+/**
+ * Creates a `Result` helper object with a pre-bound `mapError` function.
+ * Use this to enforce a consistent error type across an entire module or service.
+ *
+ * @example
+ * const Result = createResult((e) => e instanceof AppError ? e : new AppError(String(e)))
+ * const r = Result.from(() => JSON.parse(raw)) // Result<unknown, AppError>
+ */
 export const createResult = <E>(mapError: (error: unknown) => E): ResultInterface<E> => {
 	function from<T>(fn: () => T): Result<T, E>;
 	function from<T>(fn: () => PromiseLike<T>): ResultAsync<T, E>;
@@ -230,9 +293,20 @@ export const createResult = <E>(mapError: (error: unknown) => E): ResultInterfac
 	};
 };
 
-// ---------- Utility types ----------------------------------------------------
+// #endregion
 
+// #region Utility types
+
+/** Extracts the `Ok` value type from a `Result` or `ResultAsync`. */
 export type ResultOk<T> = T extends Result<infer TData, unknown> ? TData : never;
+
+/** Extracts the `Err` error type from a `Result` or `ResultAsync`. */
 export type ResultErr<T> = T extends Result<unknown, infer TError> ? TError : never;
+
+/** Extracts the `Ok` value type from a `ResultAsync`. */
 export type ResultAsyncOk<T> = T extends ResultAsync<infer TData, unknown> ? TData : never;
+
+/** Extracts the `Err` error type from a `ResultAsync`. */
 export type ResultAsyncErr<T> = T extends ResultAsync<unknown, infer TError> ? TError : never;
+
+// #endregion
