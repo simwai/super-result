@@ -1,5 +1,5 @@
 // ─── super-result ────────────────────────────────────────────────────────────
-// Discriminated Result<T,E> + ResultAsync + typed factory + logger interface
+// Discriminated Result<T,E> + ResultAsync + typed factory
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ---------- Core types -------------------------------------------------------
@@ -136,18 +136,13 @@ export const unwrapOrElseAsync = async <T, E, U>(
 
 // ---------- Internal helpers -------------------------------------------------
 
-const isPromiseLike = <T>(value: unknown): value is PromiseLike<T> => {
-	if (value === null) {
-		return false;
-	}
+const hasThen = (value: object): value is { then: unknown } => 'then' in value;
 
-	const valueType = typeof value;
-	if (valueType !== 'object' && valueType !== 'function') {
-		return false;
-	}
-
-	return typeof (value as Record<string, unknown>)['then'] === 'function';
-};
+const isPromiseLike = <T>(value: unknown): value is PromiseLike<T> =>
+	value !== null &&
+	typeof value === 'object' &&
+	hasThen(value) &&
+	typeof value.then === 'function';
 
 const fromThrowableMapped = <T, E>(
 	fn: () => T,
