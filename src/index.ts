@@ -101,13 +101,16 @@ export const fromThrowable = <T>(fn: () => T): Result<T, unknown> => {
  * @param mapError Maps a rejection value to `E`.
  * @returns `Ok<T>` on resolve, `Err<E>` on reject.
  */
-export const fromPromise = <T, E>(
+export const fromPromise = async <T, E>(
 	promise: PromiseLike<T>,
 	mapError: (error: unknown) => E,
-): ResultAsync<T, E> =>
-	Promise.resolve(promise)
-		.then<Result<T, E>>(value => ok(value))
-		.catch<Result<T, E>>(error => err(mapError(error)));
+): ResultAsync<T, E> => {
+	try {
+		return ok(await promise);
+	} catch (error) {
+		return err(mapError(error));
+	}
+};
 
 /**
  * Calls an async factory `fn` and wraps the resolved value in {@link Ok}.
@@ -115,14 +118,16 @@ export const fromPromise = <T, E>(
  * @param mapError Maps a rejection or thrown value to `E`.
  * @returns `Ok<T>` on resolve, `Err<E>` on reject or throw.
  */
-export const fromAsyncThrowable = <T, E>(
+export const fromAsyncThrowable = async <T, E>(
 	fn: () => PromiseLike<T>,
 	mapError: (error: unknown) => E,
-): ResultAsync<T, E> =>
-	Promise.resolve()
-		.then(fn)
-		.then<Result<T, E>>(value => ok(value))
-		.catch<Result<T, E>>(error => err(mapError(error)));
+): ResultAsync<T, E> => {
+	try {
+		return ok(await fn());
+	} catch (error) {
+		return err(mapError(error));
+	}
+};
 
 /**
  * Lifts an already-resolved {@link Result} into a {@link ResultAsync}.
