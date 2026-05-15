@@ -2,7 +2,7 @@
 
 # super-result
 
-> Lightweight railway-oriented error handling for TypeScript — discriminated `Result<T,E>`, typed async, zero unsafe casts, composable logging & tracing.
+> Lightweight railway-oriented error handling for TypeScript — discriminated `Result<T,E>`, typed async, zero unsafe casts.
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178c6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![Node](https://img.shields.io/badge/Node-20+-339933?style=flat-square&logo=node.js)](https://nodejs.org/)
@@ -15,7 +15,6 @@
 - **One execution model per return type.** Sync functions return `Result<T,E>`. Async functions return `ResultAsync<T,E>` (`Promise<Result<T,E>>`). No auto-lifting that lies about the return type.
 - **Discriminated union, not optional fields.** `Ok<T>` and `Err<E>` are structurally separate — TypeScript narrows them for free, no `!` operators, no `as unknown as` casts.
 - **Typed errors by default.** `createResult(mapError)` binds your error mapper once so every capture in that context produces `Result<T, YourError>` — not `Result<T, unknown>`.
-- **Composable decorators.** Wrap any `ResultInterface<E>` with `withLogging` or `withTracing` without changing call sites.
 
 ---
 
@@ -159,79 +158,6 @@ const label = await Result.matchAsync(resultPromise, v => v.name, e => 'fallback
 
 ---
 
-## Logging & Tracing
-
-### `withLogging(base, logger, options?)`
-
-Wraps a `ResultInterface<E>` and calls `logger.debug` on `Ok` and `logger.error` on `Err`.
-
-```ts
-import { createResult, withLogging } from 'super-result';
-
-const base = createResult(toAppError);
-
-const Result = withLogging(base, console, { name: 'UserService' });
-
-// Every Result.from / fromPromise / fromAsyncThrowable call now emits log entries:
-// { scope: 'result', name: 'UserService', kind: 'async', phase: 'ok', durationMs: 12 }
-```
-
-### `withTracing(base, logger, options?)`
-
-Same as `withLogging` but also emits a `trace` entry at the `start` phase (useful for distributed tracing).
-
-```ts
-const Result = withTracing(base, logger, { name: 'PaymentService' });
-```
-
-### `ResultLogger` interface
-
-```ts
-interface ResultLogger {
-  debug(entry: ResultLogEntry): void;
-  error(entry: ResultLogEntry): void;
-  trace(entry: ResultLogEntry): void;
-}
-```
-
-Compatible with `console`, `pino`, `winston`, or any custom logger that has `.debug` / `.error` / `.trace`.
-
-### `ResultLogEntry<E>`
-
-```ts
-type ResultLogEntry<E = unknown> = {
-  scope: 'result';
-  name?: string;
-  kind: 'sync' | 'async';
-  phase: 'start' | 'ok' | 'err';
-  durationMs?: number;
-  error?: E | unknown;
-} & ResultLoggerContext; // augmentable — see below
-```
-
----
-
-## Module Augmentation
-
-Add custom fields to every log entry project-wide by augmenting `ResultLoggerContext`:
-
-```ts
-// result-augmentation.d.ts
-import 'super-result';
-
-declare module 'super-result' {
-  interface ResultLoggerContext {
-    readonly requestId?: string;
-    readonly traceId?: string;
-    readonly service?: string;
-  }
-}
-```
-
-Now every `ResultLogEntry` includes those fields automatically — fully typed, no casting.
-
----
-
 ## Utility Types
 
 ```ts
@@ -264,7 +190,6 @@ class NonErrorThrown extends TypeError {
 | `Result<T,E> = Ok<T> \| Err<E>` over class hierarchy | Discriminated unions narrow without type predicates; composable with `satisfies` |
 | `ResultAsync<T,E> = Promise<Result<T,E>>` | No wrapper class — works with any `await` site and `Promise.all` out of the box |
 | `mapError` in factory | Caller controls the error shape; library never swallows unknown errors silently |
-| `withLogging`/`withTracing` as wrappers | Decorators compose without modifying the original; swap in tests trivially |
 | No `andThen`/`orElse` on `Result` | Sync chain returning `ResultAsync` breaks the return type contract — use `matchAsync` or `fromAsyncResult` instead |
 
 ---
