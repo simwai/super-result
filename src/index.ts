@@ -40,7 +40,7 @@ export type ResultAsync<T, E> = Promise<Result<T, E>>;
  * Thrown by {@link unwrap} when the error value is not an `Error` instance.
  * Wraps the raw thrown value in `.value` for inspection.
  */
-export class NonErrorThrown extends TypeError {
+export class NonErrorThrown extends Error {
 	public readonly value: unknown;
 
 	/**
@@ -129,12 +129,78 @@ export const fromAsyncThrowable = async <T, E>(
 	}
 };
 
+// #endregion
+
+// #region Transformers
+
 /**
- * Lifts an already-resolved {@link Result} into a {@link ResultAsync}.
- * @param result The result to lift.
+ * Applies `fn` to the value if `Ok`, passes `Err` through unchanged.
+ * @param result The result to transform.
+ * @param fn Maps the success value to a new value.
+ * @returns `Ok<U>` if `Ok`, the original `Err<E>` otherwise.
  */
-export const fromAsyncResult = <T, E>(result: Result<T, E>): ResultAsync<T, E> =>
-	Promise.resolve(result);
+export const map = <T, E, U>(result: Result<T, E>, fn: (value: T) => U): Result<U, E> =>
+	isOk(result) ? ok(fn(result.value)) : result;
+
+/**
+ * Async variant of {@link map}.
+ * @param resultPromise The async result to transform.
+ * @param fn Maps the success value to a new value.
+ */
+export const mapAsync = async <T, E, U>(
+	resultPromise: ResultAsync<T, E>,
+	fn: (value: T) => U | PromiseLike<U>,
+): Promise<Result<U, E>> => {
+	const result = await resultPromise;
+	return isOk(result) ? ok(await fn(result.value)) : result;
+};
+
+/**
+ * Applies `fn` to the error if `Err`, passes `Ok` through unchanged.
+ * @param result The result to transform.
+ * @param fn Maps the error to a new error.
+ * @returns The original `Ok<T>` if `Ok`, `Err<F>` otherwise.
+ */
+export const mapErr = <T, E, F>(result: Result<T, E>, fn: (error: E) => F): Result<T, F> =>
+	isErr(result) ? err(fn(result.error)) : result;
+
+/**
+ * Async variant of {@link mapErr}.
+ * @param resultPromise The async result to transform.
+ * @param fn Maps the error to a new error.
+ */
+export const mapErrAsync = async <T, E, F>(
+	resultPromise: ResultAsync<T, E>,
+	fn: (error: E) => F | PromiseLike<F>,
+): Promise<Result<T, F>> => {
+	const result = await resultPromise;
+	return isErr(result) ? err(await fn(result.error)) : result;
+};
+
+/**
+ * Applies `fn` to the value if `Ok` and returns the inner `Result`, flattening one level.
+ * Passes `Err` through unchanged. Use this to chain fallible operations without nesting.
+ * @param result The result to chain.
+ * @param fn Maps the success value to a new `Result<U, E>`.
+ * @returns The `Result<U, E>` returned by `fn` if `Ok`, the original `Err<E>` otherwise.
+ */
+export const flatMap = <T, E, U>(
+	result: Result<T, E>,
+	fn: (value: T) => Result<U, E>,
+): Result<U, E> => (isOk(result) ? fn(result.value) : result);
+
+/**
+ * Async variant of {@link flatMap}.
+ * @param resultPromise The async result to chain.
+ * @param fn Maps the success value to a new `Result<U, E>` or `ResultAsync<U, E>`.
+ */
+export const flatMapAsync = async <T, E, U>(
+	resultPromise: ResultAsync<T, E>,
+	fn: (value: T) => Result<U, E> | ResultAsync<U, E>,
+): Promise<Result<U, E>> => {
+	const result = await resultPromise;
+	return isOk(result) ? fn(result.value) : result;
+};
 
 // #endregion
 
@@ -181,14 +247,8 @@ export const matchAsync = async <T, E, U, V>(
  * @throws {NonErrorThrown} If the error is not an `Error` instance.
  */
 export const unwrap = <T, E>(result: Result<T, E>): T => {
-	if (isOk(result)) {
-		return result.value;
-	}
-
-	if (result.error instanceof Error) {
-		throw result.error;
-	}
-
+	if (isOk(result)) return result.value;
+	if (result.error instanceof Error) throw result.error;
 	throw new NonErrorThrown(result.error);
 };
 
@@ -283,7 +343,13 @@ export interface ResultInterface<E> {
 	fromThrowable<T>(fn: () => T): Result<T, E>;
 	fromPromise<T>(promise: PromiseLike<T>): ResultAsync<T, E>;
 	fromAsyncThrowable<T>(fn: () => PromiseLike<T>): ResultAsync<T, E>;
-	fromAsyncResult<T>(result: Result<T, E>): ResultAsync<T, E>;
+
+	map<T, U>(result: Result<T, E>, fn: (value: T) => U): Result<U, E>;
+	mapAsync<T, U>(result: ResultAsync<T, E>, fn: (value: T) => U | PromiseLike<U>): Promise<Result<U, E>>;
+	mapErr<T, F>(result: Result<T, E>, fn: (error: E) => F): Result<T, F>;
+	mapErrAsync<T, F>(result: ResultAsync<T, E>, fn: (error: E) => F | PromiseLike<F>): Promise<Result<T, F>>;
+	flatMap<T, U>(result: Result<T, E>, fn: (value: T) => Result<U, E>): Result<U, E>;
+	flatMapAsync<T, U>(result: ResultAsync<T, E>, fn: (value: T) => Result<U, E> | ResultAsync<U, E>): Promise<Result<U, E>>;
 
 	match: typeof match;
 	matchAsync: typeof matchAsync;
@@ -343,7 +409,12 @@ export const createResult = <E>(mapError: (error: unknown) => E): ResultInterfac
 		},
 		fromPromise: promise => fromPromise(promise, mapError),
 		fromAsyncThrowable: fn => fromAsyncThrowable(fn, mapError),
-		fromAsyncResult,
+		map,
+		mapAsync,
+		mapErr,
+		mapErrAsync,
+		flatMap,
+		flatMapAsync,
 		match,
 		matchAsync,
 		unwrap,

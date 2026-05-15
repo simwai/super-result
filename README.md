@@ -2,6 +2,8 @@
 
 # super-result
 
+> ⚠️ **Experimental** — API is unstable and may change without notice. Not recommended for production use yet.
+
 > Lightweight railway-oriented error handling for TypeScript — discriminated `Result<T,E>`, typed async, zero unsafe casts.
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178c6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
@@ -68,6 +70,11 @@ const name = Result.match(
   u => u.name,
   e => `error: ${e.message}`,
 );
+
+// Transform without unwrapping
+const username = Result.map(parsed, data => data.name);
+const safe = Result.flatMap(parsed, data => validate(data));
+const remapped = Result.mapErr(parsed, e => `[${e.code}] ${e.message}`);
 ```
 
 ---
@@ -122,7 +129,6 @@ const Result = createResult(e => toAppError(e));
 | `Result.from(promise)` | Wraps a `PromiseLike<T>` directly |
 | `Result.fromPromise(promise)` | Explicit promise wrapping |
 | `Result.fromAsyncThrowable(fn)` | Async fn, errors mapped to `E` |
-| `Result.fromAsyncResult(result)` | Lifts a sync `Result` into async |
 
 #### Constructors (bound)
 
@@ -131,6 +137,32 @@ Result.ok(value)        // Ok<T>
 Result.err(error)       // Err<E>
 Result.okAsync(value)   // ResultAsync<T, never>
 Result.errAsync(error)  // ResultAsync<never, E>
+```
+
+#### Transformers
+
+| Method | Description |
+|---|---|
+| `Result.map(result, fn)` | Transform the value if `Ok`; pass `Err` through |
+| `Result.mapAsync(result, fn)` | Async variant of `map` |
+| `Result.mapErr(result, fn)` | Transform the error if `Err`; pass `Ok` through |
+| `Result.mapErrAsync(result, fn)` | Async variant of `mapErr` |
+| `Result.flatMap(result, fn)` | Chain a fallible operation; flattens `Ok<Result<U,E>>` to `Result<U,E>` |
+| `Result.flatMapAsync(result, fn)` | Async variant of `flatMap` |
+
+```ts
+// map: transform the value
+const upper = Result.map(Result.from(() => 'hello'), s => s.toUpperCase())
+// Ok<'HELLO'>
+
+// flatMap: chain fallible operations without nesting
+const validated = Result.flatMap(
+  Result.from(() => JSON.parse(raw)),
+  data => data.id ? Result.ok(data) : Result.err(new AppError('Missing id', 'INVALID'))
+)
+
+// mapErr: normalise error shape
+const normalised = Result.mapErr(result, e => ({ code: e.code, message: e.message }))
 ```
 
 #### Pattern matching
@@ -176,7 +208,7 @@ type D = ResultAsyncErr<ResultAsync<string, AppError>>; // AppError
 When `unwrap` is called on an `Err<E>` where `E` is not an `Error` instance, it wraps the value in `NonErrorThrown` instead of throwing a raw non-error:
 
 ```ts
-class NonErrorThrown extends TypeError {
+class NonErrorThrown extends Error {
   readonly value: unknown; // the original thrown value
 }
 ```
@@ -190,7 +222,7 @@ class NonErrorThrown extends TypeError {
 | `Result<T,E> = Ok<T> \| Err<E>` over class hierarchy | Discriminated unions narrow without type predicates; composable with `satisfies` |
 | `ResultAsync<T,E> = Promise<Result<T,E>>` | No wrapper class — works with any `await` site and `Promise.all` out of the box |
 | `mapError` in factory | Caller controls the error shape; library never swallows unknown errors silently |
-| No `andThen`/`orElse` on `Result` | Sync chain returning `ResultAsync` breaks the return type contract — use `matchAsync` or `fromAsyncResult` instead |
+| `map`/`mapErr`/`flatMap` on `Result` | Standard functor/monad operations for chainable, non-throwing transforms |
 
 ---
 
