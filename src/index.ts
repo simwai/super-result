@@ -246,24 +246,11 @@ export const unwrapOrElseAsync = async <T, E, U>(
 
 // #region Internal helpers
 
-const hasThen = (value: object): value is { then: unknown } => 'then' in value;
-
 const isPromiseLike = <T>(value: unknown): value is PromiseLike<T> =>
 	value !== null &&
 	typeof value === 'object' &&
-	hasThen(value) &&
-	typeof value.then === 'function';
-
-const fromThrowableMapped = <T, E>(
-	fn: () => T,
-	mapError: (error: unknown) => E,
-): Result<T, E> => {
-	try {
-		return ok(fn());
-	} catch (error) {
-		return err(mapError(error));
-	}
-};
+	'then' in value &&
+	typeof (value as { then: unknown }).then === 'function';
 
 // #endregion
 
@@ -285,6 +272,7 @@ export interface ResultInterface<E> {
 
 	/**
 	 * Unified capture entry point. Accepts a sync/async factory or a `PromiseLike`.
+	 * The return type is inferred from the input: sync factory returns {@link Result}, everything else returns {@link ResultAsync}.
 	 * Errors are mapped through the bound `mapError`.
 	 * @param fn Sync or async factory, or a `PromiseLike`.
 	 */
@@ -323,11 +311,8 @@ export interface ResultInterface<E> {
  * const r = Result.from(() => JSON.parse(raw)) // Result<unknown, AppError>
  */
 export const createResult = <E>(mapError: (error: unknown) => E): ResultInterface<E> => {
-	function from<T>(fn: () => T): Result<T, E>;
-	function from<T>(fn: () => PromiseLike<T>): ResultAsync<T, E>;
-	function from<T>(promise: PromiseLike<T>): ResultAsync<T, E>;
 	function from<T>(
-		input: PromiseLike<T> | (() => T) | (() => PromiseLike<T>),
+		input: PromiseLike<T> | (() => T | PromiseLike<T>),
 	): Result<T, E> | ResultAsync<T, E> {
 		if (typeof input === 'function') {
 			try {
@@ -349,7 +334,13 @@ export const createResult = <E>(mapError: (error: unknown) => E): ResultInterfac
 		isOk,
 		isErr,
 		from,
-		fromThrowable: fn => fromThrowableMapped(fn, mapError),
+		fromThrowable: fn => {
+			try {
+				return ok(fn());
+			} catch (error) {
+				return err(mapError(error));
+			}
+		},
 		fromPromise: promise => fromPromise(promise, mapError),
 		fromAsyncThrowable: fn => fromAsyncThrowable(fn, mapError),
 		fromAsyncResult,
