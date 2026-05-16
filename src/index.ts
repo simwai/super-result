@@ -61,21 +61,17 @@ export const ok = <T>(value: T): Ok<T> => ({ type: 'ok', value });
 
 export const err = <E>(error: E): Err<E> => ({ type: 'err', error });
 
-export const okAsync = <T>(value: T): ResultAsync<T, never> =>
-	Promise.resolve(ok(value));
+export const okAsync = <T>(value: T): ResultAsync<T, never> => Promise.resolve(ok(value));
 
-export const errAsync = <E>(error: E): ResultAsync<never, E> =>
-	Promise.resolve(err(error));
+export const errAsync = <E>(error: E): ResultAsync<never, E> => Promise.resolve(err(error));
 
 // #endregion
 
 // #region Guards
 
-export const isOk = <T, E>(result: Result<T, E>): result is Ok<T> =>
-	result.type === 'ok';
+export const isOk = <T, E>(result: Result<T, E>): result is Ok<T> => result.type === 'ok';
 
-export const isErr = <T, E>(result: Result<T, E>): result is Err<E> =>
-	result.type === 'err';
+export const isErr = <T, E>(result: Result<T, E>): result is Err<E> => result.type === 'err';
 
 // #endregion
 
@@ -284,10 +280,8 @@ export const unwrapOrAsync = async <T, E, D>(
  * @param result The result to unwrap.
  * @param onErr Called with the error when `Err`.
  */
-export const unwrapOrElse = <T, E, U>(
-	result: Result<T, E>,
-	onErr: (error: E) => U,
-): T | U => (isOk(result) ? result.value : onErr(result.error));
+export const unwrapOrElse = <T, E, U>(result: Result<T, E>, onErr: (error: E) => U): T | U =>
+	isOk(result) ? result.value : onErr(result.error);
 
 /**
  * Async variant of {@link unwrapOrElse}.
@@ -345,11 +339,20 @@ export interface ResultInterface<E> {
 	fromAsyncThrowable<T>(fn: () => PromiseLike<T>): ResultAsync<T, E>;
 
 	map<T, U>(result: Result<T, E>, fn: (value: T) => U): Result<U, E>;
-	mapAsync<T, U>(result: ResultAsync<T, E>, fn: (value: T) => U | PromiseLike<U>): Promise<Result<U, E>>;
+	mapAsync<T, U>(
+		result: ResultAsync<T, E>,
+		fn: (value: T) => U | PromiseLike<U>,
+	): Promise<Result<U, E>>;
 	mapErr<T, F>(result: Result<T, E>, fn: (error: E) => F): Result<T, F>;
-	mapErrAsync<T, F>(result: ResultAsync<T, E>, fn: (error: E) => F | PromiseLike<F>): Promise<Result<T, F>>;
+	mapErrAsync<T, F>(
+		result: ResultAsync<T, E>,
+		fn: (error: E) => F | PromiseLike<F>,
+	): Promise<Result<T, F>>;
 	flatMap<T, U>(result: Result<T, E>, fn: (value: T) => Result<U, E>): Result<U, E>;
-	flatMapAsync<T, U>(result: ResultAsync<T, E>, fn: (value: T) => Result<U, E> | ResultAsync<U, E>): Promise<Result<U, E>>;
+	flatMapAsync<T, U>(
+		result: ResultAsync<T, E>,
+		fn: (value: T) => Result<U, E> | ResultAsync<U, E>,
+	): Promise<Result<U, E>>;
 
 	match: typeof match;
 	matchAsync: typeof matchAsync;
@@ -377,6 +380,9 @@ export interface ResultInterface<E> {
  * const r = Result.from(() => JSON.parse(raw)) // Result<unknown, AppError>
  */
 export const createResult = <E>(mapError: (error: unknown) => E): ResultInterface<E> => {
+	function from<T>(fn: () => T): Result<T, E>;
+	function from<T>(fn: () => PromiseLike<T>): ResultAsync<T, E>;
+	function from<T>(promise: PromiseLike<T>): ResultAsync<T, E>;
 	function from<T>(
 		input: PromiseLike<T> | (() => T | PromiseLike<T>),
 	): Result<T, E> | ResultAsync<T, E> {
@@ -394,21 +400,21 @@ export const createResult = <E>(mapError: (error: unknown) => E): ResultInterfac
 
 	return {
 		ok,
-		err: error => err(error),
+		err: (error) => err(error),
 		okAsync,
-		errAsync: error => Promise.resolve(err(error)),
+		errAsync: (error) => Promise.resolve(err(error)),
 		isOk,
 		isErr,
 		from,
-		fromThrowable: fn => {
+		fromThrowable: (fn) => {
 			try {
 				return ok(fn());
 			} catch (error) {
 				return err(mapError(error));
 			}
 		},
-		fromPromise: promise => fromPromise(promise, mapError),
-		fromAsyncThrowable: fn => fromAsyncThrowable(fn, mapError),
+		fromPromise: (promise) => fromPromise(promise, mapError),
+		fromAsyncThrowable: (fn) => fromAsyncThrowable(fn, mapError),
 		map,
 		mapAsync,
 		mapErr,
@@ -434,24 +440,38 @@ export const createResult = <E>(mapError: (error: unknown) => E): ResultInterfac
  * Extracts the `Ok` value type from a {@link Result}.
  * @template R A {@link Result} type.
  */
-export type ResultOk<R extends Result<unknown, unknown>> = R extends Result<infer TData, unknown> ? TData : never;
+export type ResultOk<R extends Result<unknown, unknown>> = R extends Result<infer TData, unknown>
+	? TData
+	: never;
 
 /**
  * Extracts the `Err` error type from a {@link Result}.
  * @template R A {@link Result} type.
  */
-export type ResultErr<R extends Result<unknown, unknown>> = R extends Result<unknown, infer TError> ? TError : never;
+export type ResultErr<R extends Result<unknown, unknown>> = R extends Result<unknown, infer TError>
+	? TError
+	: never;
 
 /**
  * Extracts the `Ok` value type from a {@link ResultAsync}.
  * @template R A {@link ResultAsync} type.
  */
-export type ResultAsyncOk<R extends ResultAsync<unknown, unknown>> = R extends ResultAsync<infer TData, unknown> ? TData : never;
+export type ResultAsyncOk<R extends ResultAsync<unknown, unknown>> = R extends ResultAsync<
+	infer TData,
+	unknown
+>
+	? TData
+	: never;
 
 /**
  * Extracts the `Err` error type from a {@link ResultAsync}.
  * @template R A {@link ResultAsync} type.
  */
-export type ResultAsyncErr<R extends ResultAsync<unknown, unknown>> = R extends ResultAsync<unknown, infer TError> ? TError : never;
+export type ResultAsyncErr<R extends ResultAsync<unknown, unknown>> = R extends ResultAsync<
+	unknown,
+	infer TError
+>
+	? TError
+	: never;
 
 // #endregion
