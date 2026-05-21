@@ -1,7 +1,7 @@
 {
   "name": "super-result",
   "version": "1.0.0",
-  "description": "Lightweight railway-oriented error handling for TypeScript \u2014 discriminated Result<T,E>, typed async, zero unsafe casts, composable logging & tracing.",
+  "description": "Lightweight railway-oriented error handling for TypeScript — discriminated Result<T,E>, typed async, zero unsafe casts, composable logging & tracing.",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -29,10 +29,11 @@
     "lint": "biome check src",
     "lint:fix": "biome check --write src",
     "type-check": "tsc --noEmit",
-    "check": "pnpm lint && pnpm type-check",
+    "check": "pnpm docs:generate && pnpm lint && pnpm type-check",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "docs:generate": "typedoc"
   },
   "keywords": [
     "result",
@@ -49,6 +50,8 @@
     "@biomejs/biome": "^1.9.4",
     "@vitest/coverage-v8": "^4.1.6",
     "tsup": "^8.4.0",
+    "typedoc": "^0.28.19",
+    "typedoc-plugin-markdown": "^4.11.0",
     "typescript": "^5.8.3",
     "vitest": "^4.1.6"
   },
