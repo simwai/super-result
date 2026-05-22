@@ -8,9 +8,9 @@
 
 > **unwrap**\<`T`, `E`\>(`result`): `T`
 
-Defined in: [src/index.ts:329](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L329)
+Defined in: [src/index.ts:411](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L411)
 
-Returns the value if `Ok`.
+Return the value if `Ok`, otherwise throw.
 
 ## Type Parameters
 
@@ -28,13 +28,9 @@ Returns the value if `Ok`.
 
 [`Result`](../type-aliases/Result.md)\<`T`, `E`\>
 
-The result to unwrap.
-
 ## Returns
 
 `T`
-
-The success value.
 
 ## Throws
 

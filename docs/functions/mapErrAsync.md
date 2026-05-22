@@ -8,9 +8,9 @@
 
 > **mapErrAsync**\<`T`, `E`, `F`\>(`resultPromise`, `fn`): `Promise`\<[`Result`](../type-aliases/Result.md)\<`T`, `F`\>\>
 
-Defined in: [src/index.ts:252](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L252)
+Defined in: [src/index.ts:334](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L334)
 
-Async variant of [mapErr](mapErr.md).
+Async variant of [mapErr](mapErr.md). Awaits `resultPromise` before mapping.
 
 ## Type Parameters
 
@@ -32,13 +32,9 @@ Async variant of [mapErr](mapErr.md).
 
 [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
 
-The async result to transform.
-
 ### fn
 
 (`error`) => `F` \| `PromiseLike`\<`F`\>
-
-Maps the error to a new error.
 
 ## Returns
 

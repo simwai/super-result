@@ -6,11 +6,11 @@
 
 # Type Alias: Result\<T, E\>
 
-> **Result**\<`T`, `E`\> = [`Ok`](Ok.md)\<`T`\> \| [`Err`](Err.md)\<`E`\>
+> **Result**\<`T`, `E`\> = [`Ok`](../interfaces/Ok.md)\<`T`\> \| [`Err`](../interfaces/Err.md)\<`E`\>
 
-Defined in: [src/index.ts:26](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L26)
+Defined in: [src/index.ts:32](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L32)
 
-Discriminated union of [Ok](Ok.md) and [Err](Err.md).
+Discriminated union of [Ok](../interfaces/Ok.md) and [Err](../interfaces/Err.md).
 
 ## Type Parameters
 

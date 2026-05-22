@@ -8,9 +8,9 @@
 
 > **fromThrowable**\<`T`\>(`fn`): [`Result`](../type-aliases/Result.md)\<`T`, `unknown`\>
 
-Defined in: [src/index.ts:119](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L119)
+Defined in: [src/index.ts:181](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L181)
 
-Runs `fn` and wraps the return value in [Ok](../type-aliases/Ok.md), or wraps any thrown value in [Err](../type-aliases/Err.md).
+Run `fn` and wrap the return value in [Ok](../interfaces/Ok.md), or wrap any thrown value in [Err](../interfaces/Err.md).
 
 ## Type Parameters
 

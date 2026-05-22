@@ -6,7 +6,7 @@
 
 # Interface: ResultInterface\<E, FE\>
 
-Defined in: [src/index.ts:417](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L417)
+Defined in: [src/index.ts:515](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L515)
 
 Interface returned by [createResult](../functions/createResult.md).
 
@@ -22,21 +22,23 @@ The bound error type.
 
 `FE` = `unknown`
 
-The bound finally error type.
+The bound finally-error type.
 
-## Properties
+## Capture
 
-### finally
+### onFinally
 
-> **finally**: \{\<`T`, `E`, `FE`\>(`result`, `callback`, `mapFinallyError?`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `E`, `FE`\>\>; \<`T`, `E`, `FE`\>(`result`, `callback`, `mapFinallyError?`): [`Result`](../type-aliases/Result.md)\<`T`, `E` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `E`, `FE`\>\>; \}
+> **onFinally**: \{\<`T`, `E`, `FE`\>(`result`, `callback`, `mapFinallyError?`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `E`, `FE`\>\>; \<`T`, `E`, `FE`\>(`result`, `callback`, `mapFinallyError?`): [`Result`](../type-aliases/Result.md)\<`T`, `E` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `E`, `FE`\>\>; \}
 
-Defined in: [src/index.ts:503](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L503)
+Defined in: [src/index.ts:600](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L600)
 
 #### Call Signature
 
 > \<`T`, `E`, `FE`\>(`result`, `callback`, `mapFinallyError?`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `E`, `FE`\>\>
 
-Executes a callback after a result is determined.
+Attach a cleanup callback to a result. The callback runs regardless of `Ok`/`Err`.
+If the callback itself throws or rejects, the original result is replaced with
+`Err<FinallyError>` carrying both the original result and the cleanup error.
 
 ##### Type Parameters
 
@@ -74,7 +76,9 @@ Executes a callback after a result is determined.
 
 > \<`T`, `E`, `FE`\>(`result`, `callback`, `mapFinallyError?`): [`Result`](../type-aliases/Result.md)\<`T`, `E` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `E`, `FE`\>\>
 
-Executes a callback after a result is determined.
+Attach a cleanup callback to a result. The callback runs regardless of `Ok`/`Err`.
+If the callback itself throws or rejects, the original result is replaced with
+`Err<FinallyError>` carrying both the original result and the cleanup error.
 
 ##### Type Parameters
 
@@ -110,11 +114,11 @@ Executes a callback after a result is determined.
 
 ***
 
-### finallyAsync
+### onFinallyAsync
 
-> **finallyAsync**: \<`T`, `E`, `FE`\>(`resultPromise`, `callback`, `mapFinallyError`) => [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `E`, `FE`\>\>
+> **onFinallyAsync**: \<`T`, `E`, `FE`\>(`resultPromise`, `callback`, `mapFinallyError`) => [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `E`, `FE`\>\>
 
-Defined in: [src/index.ts:504](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L504)
+Defined in: [src/index.ts:601](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L601)
 
 Async variant of [onFinally](../functions/onFinally.md).
 
@@ -150,13 +154,67 @@ Async variant of [onFinally](../functions/onFinally.md).
 
 [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `E`, `FE`\>\>
 
+## Constructors
+
+### ok
+
+> **ok**: \<`T`\>(`value`) => [`Ok`](Ok.md)\<`T`\>
+
+Defined in: [src/index.ts:516](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L516)
+
+Create a successful [Ok](Ok.md) result.
+
+#### Type Parameters
+
+##### T
+
+`T`
+
+#### Parameters
+
+##### value
+
+`T`
+
+#### Returns
+
+[`Ok`](Ok.md)\<`T`\>
+
 ***
+
+### okAsync
+
+> **okAsync**: \<`T`\>(`value`) => [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `never`\>
+
+Defined in: [src/index.ts:518](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L518)
+
+Create a resolved `Promise` of [Ok](Ok.md).
+
+#### Type Parameters
+
+##### T
+
+`T`
+
+#### Parameters
+
+##### value
+
+`T`
+
+#### Returns
+
+[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `never`\>
+
+## Guards
 
 ### isErr
 
 > **isErr**: \<`T`, `E`\>(`result`) => `result is Err<E>`
 
-Defined in: [src/index.ts:424](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L424)
+Defined in: [src/index.ts:522](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L522)
+
+Returns `true` if `result` is [Err](Err.md).
 
 #### Type Parameters
 
@@ -184,7 +242,9 @@ Defined in: [src/index.ts:424](https://github.com/simwai/super-result/blob/509b2
 
 > **isOk**: \<`T`, `E`\>(`result`) => `result is Ok<T>`
 
-Defined in: [src/index.ts:423](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L423)
+Defined in: [src/index.ts:521](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L521)
+
+Returns `true` if `result` is [Ok](Ok.md).
 
 #### Type Parameters
 
@@ -206,419 +266,13 @@ Defined in: [src/index.ts:423](https://github.com/simwai/super-result/blob/509b2
 
 `result is Ok<T>`
 
-***
-
-### match
-
-> **match**: \<`T`, `E`, `U`, `V`\>(`result`, `onOk`, `onErr`) => `U` \| `V`
-
-Defined in: [src/index.ts:493](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L493)
-
-Exhaustive match over a [Result](../type-aliases/Result.md). Exactly one branch runs.
-
-#### Type Parameters
-
-##### T
-
-`T`
-
-##### E
-
-`E`
-
-##### U
-
-`U`
-
-##### V
-
-`V`
-
-#### Parameters
-
-##### result
-
-[`Result`](../type-aliases/Result.md)\<`T`, `E`\>
-
-The result to match.
-
-##### onOk
-
-(`value`) => `U`
-
-Called with the value when `Ok`.
-
-##### onErr
-
-(`error`) => `V`
-
-Called with the error when `Err`.
-
-#### Returns
-
-`U` \| `V`
-
-The return value of whichever branch ran.
-
-***
-
-### matchAsync
-
-> **matchAsync**: \<`T`, `E`, `U`, `V`\>(`resultPromise`, `onOk`, `onErr`) => `Promise`\<`U` \| `V`\>
-
-Defined in: [src/index.ts:494](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L494)
-
-Async variant of [match](../functions/match.md). Awaits `resultPromise` before branching.
-
-#### Type Parameters
-
-##### T
-
-`T`
-
-##### E
-
-`E`
-
-##### U
-
-`U`
-
-##### V
-
-`V`
-
-#### Parameters
-
-##### resultPromise
-
-[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
-
-The async result to match.
-
-##### onOk
-
-(`value`) => `U` \| `PromiseLike`\<`U`\>
-
-Called with the value when `Ok`.
-
-##### onErr
-
-(`error`) => `V` \| `PromiseLike`\<`V`\>
-
-Called with the error when `Err`.
-
-#### Returns
-
-`Promise`\<`U` \| `V`\>
-
-The return value of whichever branch ran.
-
-***
-
-### ok
-
-> **ok**: \<`T`\>(`value`) => [`Ok`](../type-aliases/Ok.md)\<`T`\>
-
-Defined in: [src/index.ts:418](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L418)
-
-#### Type Parameters
-
-##### T
-
-`T`
-
-#### Parameters
-
-##### value
-
-`T`
-
-#### Returns
-
-[`Ok`](../type-aliases/Ok.md)\<`T`\>
-
-***
-
-### okAsync
-
-> **okAsync**: \<`T`\>(`value`) => [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `never`\>
-
-Defined in: [src/index.ts:420](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L420)
-
-#### Type Parameters
-
-##### T
-
-`T`
-
-#### Parameters
-
-##### value
-
-`T`
-
-#### Returns
-
-[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `never`\>
-
-***
-
-### unwrap
-
-> **unwrap**: \<`T`, `E`\>(`result`) => `T`
-
-Defined in: [src/index.ts:496](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L496)
-
-Returns the value if `Ok`.
-
-#### Type Parameters
-
-##### T
-
-`T`
-
-##### E
-
-`E`
-
-#### Parameters
-
-##### result
-
-[`Result`](../type-aliases/Result.md)\<`T`, `E`\>
-
-The result to unwrap.
-
-#### Returns
-
-`T`
-
-The success value.
-
-#### Throws
-
-The original error if it is an `Error` instance.
-
-#### Throws
-
-If the error is not an `Error` instance.
-
-***
-
-### unwrapAsync
-
-> **unwrapAsync**: \<`T`, `E`\>(`resultPromise`) => `Promise`\<`T`\>
-
-Defined in: [src/index.ts:499](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L499)
-
-Async variant of [unwrap](../functions/unwrap.md).
-
-#### Type Parameters
-
-##### T
-
-`T`
-
-##### E
-
-`E`
-
-#### Parameters
-
-##### resultPromise
-
-[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
-
-The async result to unwrap.
-
-#### Returns
-
-`Promise`\<`T`\>
-
-#### Throws
-
-The original error if it is an `Error` instance.
-
-#### Throws
-
-If the error is not an `Error` instance.
-
-***
-
-### unwrapOr
-
-> **unwrapOr**: \<`T`, `E`, `D`\>(`result`, `defaultValue`) => `T` \| `D`
-
-Defined in: [src/index.ts:497](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L497)
-
-Returns the value if `Ok`, otherwise returns `defaultValue`.
-
-#### Type Parameters
-
-##### T
-
-`T`
-
-##### E
-
-`E`
-
-##### D
-
-`D`
-
-#### Parameters
-
-##### result
-
-[`Result`](../type-aliases/Result.md)\<`T`, `E`\>
-
-The result to unwrap.
-
-##### defaultValue
-
-`D`
-
-Fallback value returned when `Err`.
-
-#### Returns
-
-`T` \| `D`
-
-***
-
-### unwrapOrAsync
-
-> **unwrapOrAsync**: \<`T`, `E`, `D`\>(`resultPromise`, `defaultValue`) => `Promise`\<`T` \| `D`\>
-
-Defined in: [src/index.ts:500](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L500)
-
-Async variant of [unwrapOr](../functions/unwrapOr.md).
-
-#### Type Parameters
-
-##### T
-
-`T`
-
-##### E
-
-`E`
-
-##### D
-
-`D`
-
-#### Parameters
-
-##### resultPromise
-
-[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
-
-The async result to unwrap.
-
-##### defaultValue
-
-`D`
-
-Fallback value returned when `Err`.
-
-#### Returns
-
-`Promise`\<`T` \| `D`\>
-
-***
-
-### unwrapOrElse
-
-> **unwrapOrElse**: \<`T`, `E`, `U`\>(`result`, `onErr`) => `T` \| `U`
-
-Defined in: [src/index.ts:498](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L498)
-
-Returns the value if `Ok`, otherwise calls `onErr` with the error and returns its result.
-
-#### Type Parameters
-
-##### T
-
-`T`
-
-##### E
-
-`E`
-
-##### U
-
-`U`
-
-#### Parameters
-
-##### result
-
-[`Result`](../type-aliases/Result.md)\<`T`, `E`\>
-
-The result to unwrap.
-
-##### onErr
-
-(`error`) => `U`
-
-Called with the error when `Err`.
-
-#### Returns
-
-`T` \| `U`
-
-***
-
-### unwrapOrElseAsync
-
-> **unwrapOrElseAsync**: \<`T`, `E`, `U`\>(`resultPromise`, `onErr`) => `Promise`\<`T` \| `U`\>
-
-Defined in: [src/index.ts:501](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L501)
-
-Async variant of [unwrapOrElse](../functions/unwrapOrElse.md).
-
-#### Type Parameters
-
-##### T
-
-`T`
-
-##### E
-
-`E`
-
-##### U
-
-`U`
-
-#### Parameters
-
-##### resultPromise
-
-[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
-
-The async result to unwrap.
-
-##### onErr
-
-(`error`) => `U` \| `PromiseLike`\<`U`\>
-
-Called with the error when `Err`.
-
-#### Returns
-
-`Promise`\<`T` \| `U`\>
-
-## Methods
+## Other
 
 ### err()
 
-> **err**(`error`): [`Err`](../type-aliases/Err.md)\<`E`\>
+> **err**(`error`): [`Err`](Err.md)\<`E`\>
 
-Defined in: [src/index.ts:419](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L419)
+Defined in: [src/index.ts:517](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L517)
 
 #### Parameters
 
@@ -628,7 +282,7 @@ Defined in: [src/index.ts:419](https://github.com/simwai/super-result/blob/509b2
 
 #### Returns
 
-[`Err`](../type-aliases/Err.md)\<`E`\>
+[`Err`](Err.md)\<`E`\>
 
 ***
 
@@ -636,7 +290,7 @@ Defined in: [src/index.ts:419](https://github.com/simwai/super-result/blob/509b2
 
 > **errAsync**(`error`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`never`, `E`\>
 
-Defined in: [src/index.ts:421](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L421)
+Defined in: [src/index.ts:519](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L519)
 
 #### Parameters
 
@@ -654,7 +308,7 @@ Defined in: [src/index.ts:421](https://github.com/simwai/super-result/blob/509b2
 
 > **flatMap**\<`T`, `U`\>(`result`, `fn`): [`Result`](../type-aliases/Result.md)\<`U`, `E`\>
 
-Defined in: [src/index.ts:484](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L484)
+Defined in: [src/index.ts:581](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L581)
 
 #### Type Parameters
 
@@ -686,7 +340,7 @@ Defined in: [src/index.ts:484](https://github.com/simwai/super-result/blob/509b2
 
 > **flatMapAsync**\<`T`, `U`\>(`result`, `fn`): `Promise`\<[`Result`](../type-aliases/Result.md)\<`U`, `E`\>\>
 
-Defined in: [src/index.ts:488](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L488)
+Defined in: [src/index.ts:585](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L585)
 
 #### Type Parameters
 
@@ -720,7 +374,7 @@ Defined in: [src/index.ts:488](https://github.com/simwai/super-result/blob/509b2
 
 > **from**\<`T`, `F`, `G`\>(`fn`, `options`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `F` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `F`, `G`\>\>
 
-Defined in: [src/index.ts:431](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L431)
+Defined in: [src/index.ts:527](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L527)
 
 Unified capture entry point. Accepts a sync/async factory or a `PromiseLike`.
 
@@ -744,13 +398,9 @@ Unified capture entry point. Accepts a sync/async factory or a `PromiseLike`.
 
 () => `T`
 
-Sync or async factory, or a `PromiseLike`.
-
 ###### options
 
 [`CaptureOptions`](CaptureOptions.md)\<`T`, `F`, `G`\> & `object`
-
-Optional catch and finally configuration.
 
 ##### Returns
 
@@ -760,7 +410,7 @@ Optional catch and finally configuration.
 
 > **from**\<`T`, `F`, `G`\>(`fn`, `options?`): [`Result`](../type-aliases/Result.md)\<`T`, `F` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `F`, `G`\>\> \| [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `F` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `F`, `G`\>\>
 
-Defined in: [src/index.ts:437](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L437)
+Defined in: [src/index.ts:533](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L533)
 
 ##### Type Parameters
 
@@ -794,7 +444,7 @@ Defined in: [src/index.ts:437](https://github.com/simwai/super-result/blob/509b2
 
 > **from**\<`T`, `F`, `G`\>(`fn`, `options?`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `F` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `F`, `G`\>\>
 
-Defined in: [src/index.ts:443](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L443)
+Defined in: [src/index.ts:539](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L539)
 
 ##### Type Parameters
 
@@ -828,7 +478,7 @@ Defined in: [src/index.ts:443](https://github.com/simwai/super-result/blob/509b2
 
 > **from**\<`T`, `F`, `G`\>(`promise`, `options?`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `F` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `F`, `G`\>\>
 
-Defined in: [src/index.ts:447](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L447)
+Defined in: [src/index.ts:543](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L543)
 
 ##### Type Parameters
 
@@ -864,7 +514,7 @@ Defined in: [src/index.ts:447](https://github.com/simwai/super-result/blob/509b2
 
 > **fromAsyncThrowable**\<`T`, `F`, `G`\>(`fn`, `options?`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `F` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `F`, `G`\>\>
 
-Defined in: [src/index.ts:469](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L469)
+Defined in: [src/index.ts:566](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L566)
 
 #### Type Parameters
 
@@ -900,7 +550,7 @@ Defined in: [src/index.ts:469](https://github.com/simwai/super-result/blob/509b2
 
 > **fromPromise**\<`T`, `F`, `G`\>(`promise`, `options?`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `F` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `F`, `G`\>\>
 
-Defined in: [src/index.ts:465](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L465)
+Defined in: [src/index.ts:561](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L561)
 
 #### Type Parameters
 
@@ -938,7 +588,7 @@ Defined in: [src/index.ts:465](https://github.com/simwai/super-result/blob/509b2
 
 > **fromThrowable**\<`T`, `F`, `G`\>(`fn`, `options`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `F` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `F`, `G`\>\>
 
-Defined in: [src/index.ts:452](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L452)
+Defined in: [src/index.ts:548](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L548)
 
 ##### Type Parameters
 
@@ -972,7 +622,7 @@ Defined in: [src/index.ts:452](https://github.com/simwai/super-result/blob/509b2
 
 > **fromThrowable**\<`T`, `F`, `G`\>(`fn`, `options?`): [`Result`](../type-aliases/Result.md)\<`T`, `F` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `F`, `G`\>\> \| [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `F` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `F`, `G`\>\>
 
-Defined in: [src/index.ts:458](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L458)
+Defined in: [src/index.ts:554](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L554)
 
 ##### Type Parameters
 
@@ -1008,7 +658,7 @@ Defined in: [src/index.ts:458](https://github.com/simwai/super-result/blob/509b2
 
 > **map**\<`T`, `U`\>(`result`, `fn`): [`Result`](../type-aliases/Result.md)\<`U`, `E`\>
 
-Defined in: [src/index.ts:474](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L474)
+Defined in: [src/index.ts:571](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L571)
 
 #### Type Parameters
 
@@ -1040,7 +690,7 @@ Defined in: [src/index.ts:474](https://github.com/simwai/super-result/blob/509b2
 
 > **mapAsync**\<`T`, `U`\>(`result`, `fn`): `Promise`\<[`Result`](../type-aliases/Result.md)\<`U`, `E`\>\>
 
-Defined in: [src/index.ts:475](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L475)
+Defined in: [src/index.ts:572](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L572)
 
 #### Type Parameters
 
@@ -1072,7 +722,7 @@ Defined in: [src/index.ts:475](https://github.com/simwai/super-result/blob/509b2
 
 > **mapErr**\<`T`, `F`\>(`result`, `fn`): [`Result`](../type-aliases/Result.md)\<`T`, `F`\>
 
-Defined in: [src/index.ts:479](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L479)
+Defined in: [src/index.ts:576](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L576)
 
 #### Type Parameters
 
@@ -1104,7 +754,7 @@ Defined in: [src/index.ts:479](https://github.com/simwai/super-result/blob/509b2
 
 > **mapErrAsync**\<`T`, `F`\>(`result`, `fn`): `Promise`\<[`Result`](../type-aliases/Result.md)\<`T`, `F`\>\>
 
-Defined in: [src/index.ts:480](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L480)
+Defined in: [src/index.ts:577](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L577)
 
 #### Type Parameters
 
@@ -1129,3 +779,323 @@ Defined in: [src/index.ts:480](https://github.com/simwai/super-result/blob/509b2
 #### Returns
 
 `Promise`\<[`Result`](../type-aliases/Result.md)\<`T`, `F`\>\>
+
+## Pattern Matching
+
+### match
+
+> **match**: \<`T`, `E`, `U`, `V`\>(`result`, `onOk`, `onErr`) => `U` \| `V`
+
+Defined in: [src/index.ts:590](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L590)
+
+Exhaustive match over a [Result](../type-aliases/Result.md). Exactly one branch runs.
+
+#### Type Parameters
+
+##### T
+
+`T`
+
+##### E
+
+`E`
+
+##### U
+
+`U`
+
+##### V
+
+`V`
+
+#### Parameters
+
+##### result
+
+[`Result`](../type-aliases/Result.md)\<`T`, `E`\>
+
+##### onOk
+
+(`value`) => `U`
+
+##### onErr
+
+(`error`) => `V`
+
+#### Returns
+
+`U` \| `V`
+
+***
+
+### matchAsync
+
+> **matchAsync**: \<`T`, `E`, `U`, `V`\>(`resultPromise`, `onOk`, `onErr`) => `Promise`\<`U` \| `V`\>
+
+Defined in: [src/index.ts:591](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L591)
+
+Async variant of [match](../functions/match.md). Awaits `resultPromise` before branching.
+
+#### Type Parameters
+
+##### T
+
+`T`
+
+##### E
+
+`E`
+
+##### U
+
+`U`
+
+##### V
+
+`V`
+
+#### Parameters
+
+##### resultPromise
+
+[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
+
+##### onOk
+
+(`value`) => `U` \| `PromiseLike`\<`U`\>
+
+##### onErr
+
+(`error`) => `V` \| `PromiseLike`\<`V`\>
+
+#### Returns
+
+`Promise`\<`U` \| `V`\>
+
+## Unwrap
+
+### unwrap
+
+> **unwrap**: \<`T`, `E`\>(`result`) => `T`
+
+Defined in: [src/index.ts:593](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L593)
+
+Return the value if `Ok`, otherwise throw.
+
+#### Type Parameters
+
+##### T
+
+`T`
+
+##### E
+
+`E`
+
+#### Parameters
+
+##### result
+
+[`Result`](../type-aliases/Result.md)\<`T`, `E`\>
+
+#### Returns
+
+`T`
+
+#### Throws
+
+The original error if it is an `Error` instance.
+
+#### Throws
+
+If the error is not an `Error` instance.
+
+***
+
+### unwrapAsync
+
+> **unwrapAsync**: \<`T`, `E`\>(`resultPromise`) => `Promise`\<`T`\>
+
+Defined in: [src/index.ts:596](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L596)
+
+Async variant of [unwrap](../functions/unwrap.md).
+
+#### Type Parameters
+
+##### T
+
+`T`
+
+##### E
+
+`E`
+
+#### Parameters
+
+##### resultPromise
+
+[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
+
+#### Returns
+
+`Promise`\<`T`\>
+
+#### Throws
+
+The original error if it is an `Error` instance.
+
+#### Throws
+
+If the error is not an `Error` instance.
+
+***
+
+### unwrapOr
+
+> **unwrapOr**: \<`T`, `E`, `D`\>(`result`, `defaultValue`) => `T` \| `D`
+
+Defined in: [src/index.ts:594](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L594)
+
+Return the value if `Ok`, otherwise return `defaultValue`.
+
+#### Type Parameters
+
+##### T
+
+`T`
+
+##### E
+
+`E`
+
+##### D
+
+`D`
+
+#### Parameters
+
+##### result
+
+[`Result`](../type-aliases/Result.md)\<`T`, `E`\>
+
+##### defaultValue
+
+`D`
+
+#### Returns
+
+`T` \| `D`
+
+***
+
+### unwrapOrAsync
+
+> **unwrapOrAsync**: \<`T`, `E`, `D`\>(`resultPromise`, `defaultValue`) => `Promise`\<`T` \| `D`\>
+
+Defined in: [src/index.ts:597](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L597)
+
+Async variant of [unwrapOr](../functions/unwrapOr.md).
+
+#### Type Parameters
+
+##### T
+
+`T`
+
+##### E
+
+`E`
+
+##### D
+
+`D`
+
+#### Parameters
+
+##### resultPromise
+
+[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
+
+##### defaultValue
+
+`D`
+
+#### Returns
+
+`Promise`\<`T` \| `D`\>
+
+***
+
+### unwrapOrElse
+
+> **unwrapOrElse**: \<`T`, `E`, `U`\>(`result`, `onErr`) => `T` \| `U`
+
+Defined in: [src/index.ts:595](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L595)
+
+Return the value if `Ok`, otherwise call `onErr` and return its result.
+
+#### Type Parameters
+
+##### T
+
+`T`
+
+##### E
+
+`E`
+
+##### U
+
+`U`
+
+#### Parameters
+
+##### result
+
+[`Result`](../type-aliases/Result.md)\<`T`, `E`\>
+
+##### onErr
+
+(`error`) => `U`
+
+#### Returns
+
+`T` \| `U`
+
+***
+
+### unwrapOrElseAsync
+
+> **unwrapOrElseAsync**: \<`T`, `E`, `U`\>(`resultPromise`, `onErr`) => `Promise`\<`T` \| `U`\>
+
+Defined in: [src/index.ts:598](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L598)
+
+Async variant of [unwrapOrElse](../functions/unwrapOrElse.md).
+
+#### Type Parameters
+
+##### T
+
+`T`
+
+##### E
+
+`E`
+
+##### U
+
+`U`
+
+#### Parameters
+
+##### resultPromise
+
+[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
+
+##### onErr
+
+(`error`) => `U` \| `PromiseLike`\<`U`\>
+
+#### Returns
+
+`Promise`\<`T` \| `U`\>

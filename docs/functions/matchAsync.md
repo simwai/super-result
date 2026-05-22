@@ -8,7 +8,7 @@
 
 > **matchAsync**\<`T`, `E`, `U`, `V`\>(`resultPromise`, `onOk`, `onErr`): `Promise`\<`U` \| `V`\>
 
-Defined in: [src/index.ts:309](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L309)
+Defined in: [src/index.ts:391](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L391)
 
 Async variant of [match](match.md). Awaits `resultPromise` before branching.
 
@@ -36,22 +36,14 @@ Async variant of [match](match.md). Awaits `resultPromise` before branching.
 
 [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
 
-The async result to match.
-
 ### onOk
 
 (`value`) => `U` \| `PromiseLike`\<`U`\>
-
-Called with the value when `Ok`.
 
 ### onErr
 
 (`error`) => `V` \| `PromiseLike`\<`V`\>
 
-Called with the error when `Err`.
-
 ## Returns
 
 `Promise`\<`U` \| `V`\>
-
-The return value of whichever branch ran.

@@ -8,9 +8,9 @@
 
 > **mapAsync**\<`T`, `E`, `U`\>(`resultPromise`, `fn`): `Promise`\<[`Result`](../type-aliases/Result.md)\<`U`, `E`\>\>
 
-Defined in: [src/index.ts:228](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L228)
+Defined in: [src/index.ts:308](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L308)
 
-Async variant of [map](map.md).
+Async variant of [map](map.md). Awaits `resultPromise` before mapping.
 
 ## Type Parameters
 
@@ -32,13 +32,9 @@ Async variant of [map](map.md).
 
 [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
 
-The async result to transform.
-
 ### fn
 
 (`value`) => `U` \| `PromiseLike`\<`U`\>
-
-Maps the success value to a new value.
 
 ## Returns
 

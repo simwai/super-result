@@ -8,9 +8,9 @@
 
 > **fromAsyncThrowable**\<`T`, `E`\>(`fn`, `mapError`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
 
-Defined in: [src/index.ts:150](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L150)
+Defined in: [src/index.ts:216](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L216)
 
-Calls an async factory `fn` and wraps the resolved value in [Ok](../type-aliases/Ok.md).
+Call an async factory `fn` and wrap the resolved value in [Ok](../interfaces/Ok.md).
 
 ## Type Parameters
 

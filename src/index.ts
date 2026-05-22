@@ -7,7 +7,7 @@
  * @category Result
  */
 export interface Ok<T> {
-	readonly ok: true;
+	readonly type: "ok";
 	readonly value: T;
 }
 
@@ -18,7 +18,7 @@ export interface Ok<T> {
  * @category Result
  */
 export interface Err<E> {
-	readonly ok: false;
+	readonly type: "err";
 	readonly error: E;
 }
 
@@ -93,7 +93,7 @@ export class FinallyError<T, E, FE> extends Error {
  * @category Constructors
  */
 export /* @__NO_SIDE_EFFECTS__ */ function ok<T>(value: T): Ok<T> {
-	return { ok: true, value };
+	return { type: "ok", value };
 }
 
 /**
@@ -102,7 +102,7 @@ export /* @__NO_SIDE_EFFECTS__ */ function ok<T>(value: T): Ok<T> {
  * @category Constructors
  */
 export /* @__NO_SIDE_EFFECTS__ */ function err<E>(error: E): Err<E> {
-	return { ok: false, error };
+	return { type: "err", error };
 }
 
 /**
@@ -139,7 +139,7 @@ export /* @__NO_SIDE_EFFECTS__ */ function errAsync<E>(
 export /* @__NO_SIDE_EFFECTS__ */ function isOk<T, E>(
 	result: Result<T, E>,
 ): result is Ok<T> {
-	return result.ok === true;
+	return result.type === "ok";
 }
 
 /**
@@ -150,7 +150,7 @@ export /* @__NO_SIDE_EFFECTS__ */ function isOk<T, E>(
 export /* @__NO_SIDE_EFFECTS__ */ function isErr<T, E>(
 	result: Result<T, E>,
 ): result is Err<E> {
-	return result.ok === false;
+	return result.type === "err";
 }
 
 // #endregion
@@ -178,7 +178,7 @@ export interface CaptureOptions<T, E, FE = unknown> {
  * @returns `Ok<T>` on success, `Err<unknown>` on throw.
  * @category Capture
  */
-export function tryResult<T>(fn: () => T): Result<T, unknown> {
+export function fromThrowable<T>(fn: () => T): Result<T, unknown> {
 	try {
 		return ok(fn());
 	} catch (error) {
@@ -194,7 +194,7 @@ export function tryResult<T>(fn: () => T): Result<T, unknown> {
  * @returns `Ok<T>` on resolve, `Err<E>` on reject.
  * @category Capture
  */
-export async function toResult<T, E>(
+export async function fromPromise<T, E>(
 	promise: PromiseLike<T>,
 	mapError: (error: unknown) => E,
 ): ResultAsync<T, E> {
@@ -213,7 +213,7 @@ export async function toResult<T, E>(
  * @returns `Ok<T>` on resolve, `Err<E>` on reject or throw.
  * @category Capture
  */
-export async function tryResultAsync<T, E>(
+export async function fromAsyncThrowable<T, E>(
 	fn: () => PromiseLike<T>,
 	mapError: (error: unknown) => E,
 ): ResultAsync<T, E> {
@@ -231,17 +231,17 @@ export async function tryResultAsync<T, E>(
  *
  * @category Capture
  */
-export function withFinally<T, E, FE = unknown>(
+export function onFinally<T, E, FE = unknown>(
 	result: Result<T, E>,
 	callback: (result: Result<T, E>) => Promise<void>,
 	mapFinallyError?: (error: unknown) => FE,
 ): ResultAsync<T, E | FinallyError<T, E, FE>>;
-export function withFinally<T, E, FE = unknown>(
+export function onFinally<T, E, FE = unknown>(
 	result: Result<T, E>,
 	callback: (result: Result<T, E>) => void,
 	mapFinallyError?: (error: unknown) => FE,
 ): Result<T, E | FinallyError<T, E, FE>>;
-export function withFinally<T, E, FE = unknown>(
+export function onFinally<T, E, FE = unknown>(
 	result: Result<T, E>,
 	callback: (result: Result<T, E>) => void | Promise<void>,
 	mapFinallyError: (error: unknown) => FE = (e) => e as FE,
@@ -263,18 +263,17 @@ export function withFinally<T, E, FE = unknown>(
 }
 
 /**
- * Async variant of {@link withFinally}.
+ * Async variant of {@link onFinally}.
  *
  * @category Capture
  */
-export async function withFinallyAsync<T, E, FE = unknown>(
+export async function onFinallyAsync<T, E, FE = unknown>(
 	resultPromise: ResultAsync<T, E>,
 	callback: (result: Result<T, E>) => void | Promise<void>,
 	mapFinallyError: (error: unknown) => FE = (e) => e as FE,
 ): ResultAsync<T, E | FinallyError<T, E, FE>> {
 	const result = await resultPromise;
-	// withFinally is overloaded; the union callback type needs a single-boundary cast here
-	const res = withFinally(
+	const res = onFinally(
 		result,
 		callback as (result: Result<T, E>) => void,
 		mapFinallyError,
@@ -302,7 +301,7 @@ export /* @__NO_SIDE_EFFECTS__ */ function map<T, E, U>(
 }
 
 /**
- * Async variant of {@link map}.
+ * Async variant of {@link map}. Awaits `resultPromise` before mapping.
  *
  * @category Transformers
  */
@@ -311,7 +310,8 @@ export async function mapAsync<T, E, U>(
 	fn: (value: T) => U | PromiseLike<U>,
 ): Promise<Result<U, E>> {
 	const result = await resultPromise;
-	return isOk(result) ? ok(await fn(result.value)) : result;
+	if (isErr(result)) return result;
+	return ok(await fn(result.value));
 }
 
 /**
@@ -327,7 +327,7 @@ export /* @__NO_SIDE_EFFECTS__ */ function mapErr<T, E, F>(
 }
 
 /**
- * Async variant of {@link mapErr}.
+ * Async variant of {@link mapErr}. Awaits `resultPromise` before mapping.
  *
  * @category Transformers
  */
@@ -336,12 +336,12 @@ export async function mapErrAsync<T, E, F>(
 	fn: (error: E) => F | PromiseLike<F>,
 ): Promise<Result<T, F>> {
 	const result = await resultPromise;
-	return isErr(result) ? err(await fn(result.error)) : result;
+	if (isOk(result)) return result;
+	return err(await fn(result.error));
 }
 
 /**
- * Apply `fn` to the value if `Ok` and flatten one level of nesting.
- * Use this to chain fallible operations without accumulating `Result<Result<...>>`.
+ * Chain another operation that returns a {@link Result}.
  *
  * @category Transformers
  */
@@ -353,7 +353,7 @@ export /* @__NO_SIDE_EFFECTS__ */ function flatMap<T, E, U>(
 }
 
 /**
- * Async variant of {@link flatMap}.
+ * Async variant of {@link flatMap}. Accepts both `Result` and `ResultAsync`.
  *
  * @category Transformers
  */
@@ -362,12 +362,13 @@ export async function flatMapAsync<T, E, U>(
 	fn: (value: T) => Result<U, E> | ResultAsync<U, E>,
 ): Promise<Result<U, E>> {
 	const result = await resultPromise;
-	return isOk(result) ? await fn(result.value) : result;
+	if (isErr(result)) return result;
+	return fn(result.value);
 }
 
 // #endregion
 
-// #region Pattern matching
+// #region Pattern Matching
 
 /**
  * Exhaustive match over a {@link Result}. Exactly one branch runs.
@@ -544,25 +545,25 @@ export interface ResultInterface<E = unknown, FE = unknown> {
 		options?: CaptureOptions<T, F, G>,
 	): ResultAsync<T, F | FinallyError<T, F, G>>;
 
-	tryResult<T, F = E, G = FE>(
+	fromThrowable<T, F = E, G = FE>(
 		fn: () => T,
 		options: CaptureOptions<T, F, G> & {
 			finally: (result: Result<T, F>) => Promise<void>;
 		},
 	): ResultAsync<T, F | FinallyError<T, F, G>>;
-	tryResult<T, F = E, G = FE>(
+	fromThrowable<T, F = E, G = FE>(
 		fn: () => T,
 		options?: CaptureOptions<T, F, G>,
 	):
 		| Result<T, F | FinallyError<T, F, G>>
 		| ResultAsync<T, F | FinallyError<T, F, G>>;
 
-	toResult<T, F = E, G = FE>(
+	fromPromise<T, F = E, G = FE>(
 		promise: PromiseLike<T>,
 		options?: CaptureOptions<T, F, G>,
 	): ResultAsync<T, F | FinallyError<T, F, G>>;
 
-	tryResultAsync<T, F = E, G = FE>(
+	fromAsyncThrowable<T, F = E, G = FE>(
 		fn: () => PromiseLike<T>,
 		options?: CaptureOptions<T, F, G>,
 	): ResultAsync<T, F | FinallyError<T, F, G>>;
@@ -596,8 +597,8 @@ export interface ResultInterface<E = unknown, FE = unknown> {
 	unwrapOrAsync: typeof unwrapOrAsync;
 	unwrapOrElseAsync: typeof unwrapOrElseAsync;
 
-	withFinally: typeof withFinally;
-	withFinallyAsync: typeof withFinallyAsync;
+	onFinally: typeof onFinally;
+	onFinallyAsync: typeof onFinallyAsync;
 }
 
 /**
@@ -634,7 +635,7 @@ export function createResult<E = unknown, FE = unknown>(
 		opts?: CaptureOptions<T, F, G>,
 	): any {
 		if (opts?.finally) {
-			return withFinally(
+			return onFinally(
 				result,
 				opts.finally as (result: Result<T, F>) => void,
 				opts.mapFinallyError ??
@@ -656,7 +657,7 @@ export function createResult<E = unknown, FE = unknown>(
 			try {
 				const value = input();
 				if (isPromiseLike<T>(value))
-					return toResult(value, catchFn).then((res) =>
+					return fromPromise(value, catchFn).then((res) =>
 						handleResult(res, opts),
 					);
 				return handleResult(ok(value) as Result<T, F>, opts);
@@ -665,7 +666,7 @@ export function createResult<E = unknown, FE = unknown>(
 			}
 		}
 
-		return toResult(input, catchFn).then((res) => handleResult(res, opts));
+		return fromPromise(input, catchFn).then((res) => handleResult(res, opts));
 	}
 
 	return {
@@ -678,7 +679,10 @@ export function createResult<E = unknown, FE = unknown>(
 
 		from: from as ResultInterface<E, FE>["from"],
 
-		tryResult<T, F = E, G = FE>(fn: () => T, opts?: CaptureOptions<T, F, G>) {
+		fromThrowable<T, F = E, G = FE>(
+			fn: () => T,
+			opts?: CaptureOptions<T, F, G>,
+		) {
 			const catchFn = (opts?.catch ?? mapError) as (e: unknown) => F;
 			try {
 				return handleResult(ok(fn()) as Result<T, F>, opts);
@@ -687,20 +691,24 @@ export function createResult<E = unknown, FE = unknown>(
 			}
 		},
 
-		toResult<T, F = E, G = FE>(
+		fromPromise<T, F = E, G = FE>(
 			promise: PromiseLike<T>,
 			opts?: CaptureOptions<T, F, G>,
 		) {
 			const catchFn = (opts?.catch ?? mapError) as (e: unknown) => F;
-			return toResult(promise, catchFn).then((res) => handleResult(res, opts));
+			return fromPromise(promise, catchFn).then((res) =>
+				handleResult(res, opts),
+			);
 		},
 
-		tryResultAsync<T, F = E, G = FE>(
+		fromAsyncThrowable<T, F = E, G = FE>(
 			fn: () => PromiseLike<T>,
 			opts?: CaptureOptions<T, F, G>,
 		) {
 			const catchFn = (opts?.catch ?? mapError) as (e: unknown) => F;
-			return tryResultAsync(fn, catchFn).then((res) => handleResult(res, opts));
+			return fromAsyncThrowable(fn, catchFn).then((res) =>
+				handleResult(res, opts),
+			);
 		},
 
 		map,
@@ -717,8 +725,8 @@ export function createResult<E = unknown, FE = unknown>(
 		unwrapOrAsync,
 		unwrapOrElse,
 		unwrapOrElseAsync,
-		withFinally,
-		withFinallyAsync,
+		onFinally,
+		onFinallyAsync,
 	};
 }
 

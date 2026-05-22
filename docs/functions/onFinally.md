@@ -10,9 +10,11 @@
 
 > **onFinally**\<`T`, `E`, `FE`\>(`result`, `callback`, `mapFinallyError?`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `E`, `FE`\>\>
 
-Defined in: [src/index.ts:164](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L164)
+Defined in: [src/index.ts:234](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L234)
 
-Executes a callback after a result is determined.
+Attach a cleanup callback to a result. The callback runs regardless of `Ok`/`Err`.
+If the callback itself throws or rejects, the original result is replaced with
+`Err<FinallyError>` carrying both the original result and the cleanup error.
 
 ### Type Parameters
 
@@ -50,9 +52,11 @@ Executes a callback after a result is determined.
 
 > **onFinally**\<`T`, `E`, `FE`\>(`result`, `callback`, `mapFinallyError?`): [`Result`](../type-aliases/Result.md)\<`T`, `E` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `E`, `FE`\>\>
 
-Defined in: [src/index.ts:169](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L169)
+Defined in: [src/index.ts:239](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L239)
 
-Executes a callback after a result is determined.
+Attach a cleanup callback to a result. The callback runs regardless of `Ok`/`Err`.
+If the callback itself throws or rejects, the original result is replaced with
+`Err<FinallyError>` carrying both the original result and the cleanup error.
 
 ### Type Parameters
 

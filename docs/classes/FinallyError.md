@@ -6,7 +6,7 @@
 
 # Class: FinallyError\<T, E, FE\>
 
-Defined in: [src/index.ts:62](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L62)
+Defined in: [src/index.ts:74](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L74)
 
 Wraps both the original result and a cleanup error when a finally block fails.
 
@@ -40,7 +40,7 @@ The type of the finally block error.
 
 > **new FinallyError**\<`T`, `E`, `FE`\>(`originalResult`, `finallyError`): `FinallyError`\<`T`, `E`, `FE`\>
 
-Defined in: [src/index.ts:66](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L66)
+Defined in: [src/index.ts:78](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L78)
 
 #### Parameters
 
@@ -78,7 +78,7 @@ Defined in: node\_modules/.pnpm/typescript@5.9.3/node\_modules/typescript/lib/li
 
 > `readonly` **finallyError**: `FE`
 
-Defined in: [src/index.ts:64](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L64)
+Defined in: [src/index.ts:76](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L76)
 
 ***
 
@@ -110,7 +110,7 @@ Defined in: node\_modules/.pnpm/typescript@5.9.3/node\_modules/typescript/lib/li
 
 > `readonly` **originalResult**: [`Result`](../type-aliases/Result.md)\<`T`, `E`\>
 
-Defined in: [src/index.ts:63](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L63)
+Defined in: [src/index.ts:75](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L75)
 
 ***
 

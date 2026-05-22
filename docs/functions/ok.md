@@ -6,9 +6,11 @@
 
 # Function: ok()
 
-> **ok**\<`T`\>(`value`): [`Ok`](../type-aliases/Ok.md)\<`T`\>
+> **ok**\<`T`\>(`value`): [`Ok`](../interfaces/Ok.md)\<`T`\>
 
-Defined in: [src/index.ts:78](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L78)
+Defined in: [src/index.ts:95](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L95)
+
+Create a successful [Ok](../interfaces/Ok.md) result.
 
 ## Type Parameters
 
@@ -24,4 +26,4 @@ Defined in: [src/index.ts:78](https://github.com/simwai/super-result/blob/509b23
 
 ## Returns
 
-[`Ok`](../type-aliases/Ok.md)\<`T`\>
+[`Ok`](../interfaces/Ok.md)\<`T`\>

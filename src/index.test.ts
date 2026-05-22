@@ -7,6 +7,9 @@ import {
 	errAsync,
 	flatMap,
 	flatMapAsync,
+	fromAsyncThrowable,
+	fromPromise,
+	fromThrowable,
 	isErr,
 	isOk,
 	map,
@@ -17,85 +20,82 @@ import {
 	matchAsync,
 	ok,
 	okAsync,
-	toResult,
-	tryResult,
-	tryResultAsync,
+	onFinally,
+	onFinallyAsync,
 	unwrap,
 	unwrapAsync,
 	unwrapOr,
 	unwrapOrAsync,
 	unwrapOrElse,
 	unwrapOrElseAsync,
-	withFinally,
-	withFinallyAsync,
 } from "./index.js";
 
 describe("Constructors", () => {
 	it("ok() should create an Ok result", () => {
 		const result = ok(42);
-		expect(result).toEqual({ ok: true, value: 42 });
+		expect(result).toEqual({ type: "ok", value: 42 });
 	});
 
 	it("err() should create an Err result", () => {
 		const result = err("error");
-		expect(result).toEqual({ ok: false, error: "error" });
+		expect(result).toEqual({ type: "err", error: "error" });
 	});
 
 	it("okAsync() should create a Promise resolving to Ok", async () => {
 		const result = await okAsync(42);
-		expect(result).toEqual({ ok: true, value: 42 });
+		expect(result).toEqual({ type: "ok", value: 42 });
 	});
 
 	it("errAsync() should create a Promise resolving to Err", async () => {
 		const result = await errAsync("error");
-		expect(result).toEqual({ ok: false, error: "error" });
+		expect(result).toEqual({ type: "err", error: "error" });
 	});
 });
 
 describe("Guards", () => {
 	it("isOk() should return true for Ok, false for Err", () => {
-		expect(isOk(ok(42))).toBe(true);
-		expect(isOk(err("error"))).toBe(false);
+		expect(isOk(ok(1))).toBe(true);
+		expect(isOk(err(1))).toBe(false);
 	});
 
 	it("isErr() should return true for Err, false for Ok", () => {
-		expect(isErr(err("error"))).toBe(true);
-		expect(isErr(ok(42))).toBe(false);
+		expect(isErr(err(1))).toBe(true);
+		expect(isErr(ok(1))).toBe(false);
 	});
 });
 
-describe("Capture helpers", () => {
-	describe("tryResult", () => {
+describe("Capture helpers (Standalone)", () => {
+	describe("fromThrowable", () => {
 		it("should return Ok when function returns value", () => {
-			const result = tryResult(() => 42);
+			const result = fromThrowable(() => 42);
 			expect(result).toEqual(ok(42));
 		});
 
 		it("should return Err when function throws", () => {
 			const error = new Error("boom");
-			const result = tryResult(() => {
+			const result = fromThrowable(() => {
 				throw error;
 			});
 			expect(result).toEqual(err(error));
 		});
 	});
 
-	describe("toResult", () => {
+	describe("fromPromise", () => {
 		it("should resolve to Ok when promise resolves", async () => {
-			const result = await toResult(Promise.resolve(42), (e) => e);
+			const result = await fromPromise(Promise.resolve(42), (e) => e);
 			expect(result).toEqual(ok(42));
 		});
 
 		it("should resolve to Err when promise rejects", async () => {
 			const error = new Error("boom");
-			const result = await toResult(Promise.reject(error), (e) => e);
+			const result = await fromPromise(Promise.reject(error), (e) => e);
 			expect(result).toEqual(err(error));
 		});
 	});
 
-	describe("tryResultAsync", () => {
+	describe("fromAsyncThrowable", () => {
 		it("should resolve to Ok when async function returns", async () => {
-			const result = await tryResultAsync(
+			const result = await fromAsyncThrowable(
 				async () => 42,
 				(e) => e,
 			);
@@ -104,7 +104,7 @@ describe("Capture helpers", () => {
 
 		it("should resolve to Err when async function throws", async () => {
 			const error = new Error("boom");
-			const result = await tryResultAsync(
+			const result = await fromAsyncThrowable(
 				async () => {
 					throw error;
 				},
@@ -115,7 +115,7 @@ describe("Capture helpers", () => {
 	});
 });
 
-describe("Mapping", () => {
+describe("Transformers", () => {
 	describe("map", () => {
 		it("should transform Ok value", () => {
 			const result = map(ok(21), (n) => n * 2);
@@ -123,7 +123,7 @@ describe("Mapping", () => {
 		});
 
 		it("should pass through Err", () => {
-			const result = map(err<string>("error"), (n: number) => n * 2);
+			const result = map(err("error") as any, (n: any) => n * 2);
 			expect(result).toEqual(err("error"));
 		});
 	});
@@ -136,8 +136,8 @@ describe("Mapping", () => {
 
 		it("should pass through Err asynchronously", async () => {
 			const result = await mapAsync(
-				errAsync<string>("error"),
-				async (n: number) => n * 2,
+				errAsync("error") as any,
+				async (n: any) => n * 2,
 			);
 			expect(result).toEqual(err("error"));
 		});
@@ -150,7 +150,7 @@ describe("Mapping", () => {
 		});
 
 		it("should pass through Ok", () => {
-			const result = mapErr(ok(42), (s: string) => s.toUpperCase());
+			const result = mapErr(ok(42) as any, (s: any) => s.toUpperCase());
 			expect(result).toEqual(ok(42));
 		});
 	});
@@ -164,7 +164,7 @@ describe("Mapping", () => {
 		});
 
 		it("should pass through Ok asynchronously", async () => {
-			const result = await mapErrAsync(okAsync(42), async (s: string) =>
+			const result = await mapErrAsync(okAsync(42) as any, async (s: any) =>
 				s.toUpperCase(),
 			);
 			expect(result).toEqual(ok(42));
@@ -178,13 +178,13 @@ describe("Mapping", () => {
 		});
 
 		it("should chain Ok to Err", () => {
-			const result = flatMap(ok(21), () => err("error"));
-			expect(result).toEqual(err("error"));
+			const result = flatMap(ok(21), () => err("fail"));
+			expect(result).toEqual(err("fail"));
 		});
 
 		it("should pass through original Err", () => {
-			const result = flatMap(err<string>("original"), () => ok(42));
-			expect(result).toEqual(err("original"));
+			const result = flatMap(err("error") as any, (n: any) => ok(n * 2));
+			expect(result).toEqual(err("error"));
 		});
 	});
 
@@ -201,15 +201,15 @@ describe("Mapping", () => {
 
 		it("should pass through original Err asynchronously", async () => {
 			const result = await flatMapAsync(
-				errAsync<string>("original"),
-				async () => ok(42),
+				errAsync("error") as any,
+				async (n: any) => ok(n * 2),
 			);
-			expect(result).toEqual(err("original"));
+			expect(result).toEqual(err("error"));
 		});
 	});
 });
 
-describe("Pattern matching", () => {
+describe("Pattern Matching", () => {
 	describe("match", () => {
 		it("should call onOk for Ok", () => {
 			const onOk = vi.fn((n) => n * 2);
@@ -376,21 +376,29 @@ describe("Factory (createResult)", () => {
 describe("Factory coverage", () => {
 	const Result = createResult((e) => String(e));
 
-	it("should cover tryResult", () => {
-		expect(Result.tryResult(() => 42)).toEqual(ok(42));
+	it("should cover fromThrowable", () => {
+		expect(Result.fromThrowable(() => 42)).toEqual(ok(42));
 		expect(
-			Result.tryResult(() => {
+			Result.fromThrowable(() => {
 				throw "boom";
 			}),
 		).toEqual(err("boom"));
 	});
 
-	it("should cover toResult", async () => {
-		expect(await Result.toResult(Promise.resolve(42))).toEqual(ok(42));
+	it("should cover fromPromise", async () => {
+		expect(
+			await Result.fromPromise(Promise.resolve(42), {
+				catch: (e: any) => String(e),
+			}),
+		).toEqual(ok(42));
 	});
 
-	it("should cover tryResultAsync", async () => {
-		expect(await Result.tryResultAsync(async () => 42)).toEqual(ok(42));
+	it("should cover fromAsyncThrowable", async () => {
+		expect(
+			await Result.fromAsyncThrowable(async () => 42, {
+				catch: (e: any) => String(e),
+			}),
+		).toEqual(ok(42));
 	});
 });
 
@@ -406,11 +414,11 @@ describe("Optional factory", () => {
 	});
 });
 
-describe("withFinally", () => {
+describe("onFinally", () => {
 	it("should run callback and return original Ok result", () => {
 		const callback = vi.fn();
 		const result = ok(42);
-		const finalResult = withFinally(result, callback);
+		const finalResult = onFinally(result, callback);
 		expect(callback).toHaveBeenCalledWith(result);
 		expect(finalResult).toEqual(result);
 	});
@@ -418,7 +426,7 @@ describe("withFinally", () => {
 	it("should run callback and return original Err result", () => {
 		const callback = vi.fn();
 		const result = err("error");
-		const finalResult = withFinally(result, callback);
+		const finalResult = onFinally(result, callback);
 		expect(callback).toHaveBeenCalledWith(result);
 		expect(finalResult).toEqual(result);
 	});
@@ -426,7 +434,7 @@ describe("withFinally", () => {
 	it("should return FinallyError if sync callback throws", () => {
 		const error = "cleanup failed";
 		const result = ok(42);
-		const finalResult = withFinally(result, () => {
+		const finalResult = onFinally(result, () => {
 			throw error;
 		});
 		expect(finalResult).toEqual(err(new FinallyError(result, error)));
@@ -435,7 +443,7 @@ describe("withFinally", () => {
 	it("should return ResultAsync resolving to FinallyError if async callback rejects", async () => {
 		const error = "async cleanup failed";
 		const result = ok(42);
-		const finalResult = await withFinally(result, async () => {
+		const finalResult = await onFinally(result, async () => {
 			throw error;
 		});
 		expect(finalResult).toEqual(err(new FinallyError(result, error)));
@@ -503,11 +511,11 @@ describe("Factory with finally", () => {
 	});
 });
 
-describe("Standalone withFinallyAsync", () => {
+describe("Standalone onFinallyAsync", () => {
 	it("should work with ResultAsync", async () => {
 		const callback = vi.fn();
 		const resPromise = Promise.resolve(ok(42));
-		const finalRes = await withFinallyAsync(resPromise, callback);
+		const finalRes = await onFinallyAsync(resPromise, callback);
 		expect(callback).toHaveBeenCalledWith(ok(42));
 		expect(finalRes).toEqual(ok(42));
 	});
@@ -525,8 +533,8 @@ describe("createResult factory variant", () => {
 });
 
 describe("Edge cases and defaults", () => {
-	it("withFinallyAsync default mapFinallyError", async () => {
-		const res = await withFinallyAsync(Promise.resolve(ok(1)), () => {
+	it("onFinallyAsync default mapFinallyError", async () => {
+		const res = await onFinallyAsync(Promise.resolve(ok(1)), () => {
 			throw "err";
 		});
 		expect(res).toEqual(err(new FinallyError(ok(1), "err")));
@@ -577,15 +585,12 @@ describe("createResult single function config with finally", () => {
 	});
 });
 
-describe("withFinallyAsync with async callback", () => {
+describe("onFinallyAsync with async callback", () => {
 	it("should await callback and return result", async () => {
 		const result = ok(1);
-		const finalRes = await withFinallyAsync(
-			Promise.resolve(result),
-			async () => {
-				await new Promise((resolve) => setTimeout(resolve, 1));
-			},
-		);
+		const finalRes = await onFinallyAsync(Promise.resolve(result), async () => {
+			await new Promise((resolve) => setTimeout(resolve, 1));
+		});
 		expect(finalRes).toEqual(result);
 	});
 });
