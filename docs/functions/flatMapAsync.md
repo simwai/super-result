@@ -8,9 +8,9 @@
 
 > **flatMapAsync**\<`T`, `E`, `U`\>(`resultPromise`, `fn`): `Promise`\<[`Result`](../type-aliases/Result.md)\<`U`, `E`\>\>
 
-Defined in: [src/index.ts:277](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L277)
+Defined in: [src/index.ts:360](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L360)
 
-Async variant of [flatMap](flatMap.md).
+Async variant of [flatMap](flatMap.md). Accepts both `Result` and `ResultAsync`.
 
 ## Type Parameters
 
@@ -32,13 +32,9 @@ Async variant of [flatMap](flatMap.md).
 
 [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
 
-The async result to chain.
-
 ### fn
 
 (`value`) => [`Result`](../type-aliases/Result.md)\<`U`, `E`\> \| [`ResultAsync`](../type-aliases/ResultAsync.md)\<`U`, `E`\>
-
-Maps the success value to a new `Result<U, E>` or `ResultAsync<U, E>`.
 
 ## Returns
 

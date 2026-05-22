@@ -8,9 +8,9 @@
 
 > **unwrapOrElse**\<`T`, `E`, `U`\>(`result`, `onErr`): `T` \| `U`
 
-Defined in: [src/index.ts:370](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L370)
+Defined in: [src/index.ts:459](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L459)
 
-Returns the value if `Ok`, otherwise calls `onErr` with the error and returns its result.
+Return the value if `Ok`, otherwise call `onErr` and return its result.
 
 ## Type Parameters
 
@@ -32,13 +32,9 @@ Returns the value if `Ok`, otherwise calls `onErr` with the error and returns it
 
 [`Result`](../type-aliases/Result.md)\<`T`, `E`\>
 
-The result to unwrap.
-
 ### onErr
 
 (`error`) => `U`
-
-Called with the error when `Err`.
 
 ## Returns
 

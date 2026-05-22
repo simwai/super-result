@@ -8,7 +8,7 @@
 
 > **ResultAsync**\<`T`, `E`\> = `Promise`\<[`Result`](Result.md)\<`T`, `E`\>\>
 
-Defined in: [src/index.ts:33](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L33)
+Defined in: [src/index.ts:41](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L41)
 
 Async variant — a `Promise` that always resolves to a [Result](Result.md).
 

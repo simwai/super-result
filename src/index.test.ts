@@ -54,17 +54,17 @@ describe("Constructors", () => {
 
 describe("Guards", () => {
 	it("isOk() should return true for Ok, false for Err", () => {
-		expect(isOk(ok(42))).toBe(true);
-		expect(isOk(err("error"))).toBe(false);
+		expect(isOk(ok(1))).toBe(true);
+		expect(isOk(err(1))).toBe(false);
 	});
 
 	it("isErr() should return true for Err, false for Ok", () => {
-		expect(isErr(err("error"))).toBe(true);
-		expect(isErr(ok(42))).toBe(false);
+		expect(isErr(err(1))).toBe(true);
+		expect(isErr(ok(1))).toBe(false);
 	});
 });
 
-describe("Capture helpers", () => {
+describe("Capture helpers (Standalone)", () => {
 	describe("fromThrowable", () => {
 		it("should return Ok when function returns value", () => {
 			const result = fromThrowable(() => 42);
@@ -115,7 +115,7 @@ describe("Capture helpers", () => {
 	});
 });
 
-describe("Mapping", () => {
+describe("Transformers", () => {
 	describe("map", () => {
 		it("should transform Ok value", () => {
 			const result = map(ok(21), (n) => n * 2);
@@ -123,7 +123,7 @@ describe("Mapping", () => {
 		});
 
 		it("should pass through Err", () => {
-			const result = map(err<string>("error"), (n: number) => n * 2);
+			const result = map(err("error") as any, (n: any) => n * 2);
 			expect(result).toEqual(err("error"));
 		});
 	});
@@ -136,8 +136,8 @@ describe("Mapping", () => {
 
 		it("should pass through Err asynchronously", async () => {
 			const result = await mapAsync(
-				errAsync<string>("error"),
-				async (n: number) => n * 2,
+				errAsync("error") as any,
+				async (n: any) => n * 2,
 			);
 			expect(result).toEqual(err("error"));
 		});
@@ -150,7 +150,7 @@ describe("Mapping", () => {
 		});
 
 		it("should pass through Ok", () => {
-			const result = mapErr(ok(42), (s: string) => s.toUpperCase());
+			const result = mapErr(ok(42) as any, (s: any) => s.toUpperCase());
 			expect(result).toEqual(ok(42));
 		});
 	});
@@ -164,7 +164,7 @@ describe("Mapping", () => {
 		});
 
 		it("should pass through Ok asynchronously", async () => {
-			const result = await mapErrAsync(okAsync(42), async (s: string) =>
+			const result = await mapErrAsync(okAsync(42) as any, async (s: any) =>
 				s.toUpperCase(),
 			);
 			expect(result).toEqual(ok(42));
@@ -178,13 +178,13 @@ describe("Mapping", () => {
 		});
 
 		it("should chain Ok to Err", () => {
-			const result = flatMap(ok(21), () => err("error"));
-			expect(result).toEqual(err("error"));
+			const result = flatMap(ok(21), () => err("fail"));
+			expect(result).toEqual(err("fail"));
 		});
 
 		it("should pass through original Err", () => {
-			const result = flatMap(err<string>("original"), () => ok(42));
-			expect(result).toEqual(err("original"));
+			const result = flatMap(err("error") as any, (n: any) => ok(n * 2));
+			expect(result).toEqual(err("error"));
 		});
 	});
 
@@ -201,15 +201,15 @@ describe("Mapping", () => {
 
 		it("should pass through original Err asynchronously", async () => {
 			const result = await flatMapAsync(
-				errAsync<string>("original"),
-				async () => ok(42),
+				errAsync("error") as any,
+				async (n: any) => ok(n * 2),
 			);
-			expect(result).toEqual(err("original"));
+			expect(result).toEqual(err("error"));
 		});
 	});
 });
 
-describe("Pattern matching", () => {
+describe("Pattern Matching", () => {
 	describe("match", () => {
 		it("should call onOk for Ok", () => {
 			const onOk = vi.fn((n) => n * 2);
@@ -386,11 +386,19 @@ describe("Factory coverage", () => {
 	});
 
 	it("should cover fromPromise", async () => {
-		expect(await Result.fromPromise(Promise.resolve(42))).toEqual(ok(42));
+		expect(
+			await Result.fromPromise(Promise.resolve(42), {
+				catch: (e: any) => String(e),
+			}),
+		).toEqual(ok(42));
 	});
 
 	it("should cover fromAsyncThrowable", async () => {
-		expect(await Result.fromAsyncThrowable(async () => 42)).toEqual(ok(42));
+		expect(
+			await Result.fromAsyncThrowable(async () => 42, {
+				catch: (e: any) => String(e),
+			}),
+		).toEqual(ok(42));
 	});
 });
 

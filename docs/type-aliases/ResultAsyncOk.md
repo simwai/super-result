@@ -8,9 +8,9 @@
 
 > **ResultAsyncOk**\<`R`\> = `R` *extends* [`ResultAsync`](ResultAsync.md)\<infer TData, `unknown`\> ? `TData` : `never`
 
-Defined in: [src/index.ts:649](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L649)
+Defined in: [src/index.ts:769](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L769)
 
-Extracts the `Ok` value type from a [ResultAsync](ResultAsync.md).
+Extract the `Ok` value type from a [ResultAsync](ResultAsync.md).
 
 ## Type Parameters
 

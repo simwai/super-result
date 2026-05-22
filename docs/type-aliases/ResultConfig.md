@@ -8,7 +8,7 @@
 
 > **ResultConfig**\<`E`, `FE`\> = \{ `mapError?`: (`error`) => `E`; `mapFinallyError?`: (`error`) => `FE`; \} \| ((`error`) => `E`)
 
-Defined in: [src/index.ts:405](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L405)
+Defined in: [src/index.ts:501](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L501)
 
 Configuration for [createResult](../functions/createResult.md).
 

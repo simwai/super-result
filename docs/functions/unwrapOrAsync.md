@@ -8,7 +8,7 @@
 
 > **unwrapOrAsync**\<`T`, `E`, `D`\>(`resultPromise`, `defaultValue`): `Promise`\<`T` \| `D`\>
 
-Defined in: [src/index.ts:360](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L360)
+Defined in: [src/index.ts:447](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L447)
 
 Async variant of [unwrapOr](unwrapOr.md).
 
@@ -32,13 +32,9 @@ Async variant of [unwrapOr](unwrapOr.md).
 
 [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
 
-The async result to unwrap.
-
 ### defaultValue
 
 `D`
-
-Fallback value returned when `Err`.
 
 ## Returns
 

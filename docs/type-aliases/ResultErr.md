@@ -8,9 +8,9 @@
 
 > **ResultErr**\<`R`\> = `R` *extends* [`Result`](Result.md)\<`unknown`, infer TError\> ? `TError` : `never`
 
-Defined in: [src/index.ts:638](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L638)
+Defined in: [src/index.ts:756](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L756)
 
-Extracts the `Err` error type from a [Result](Result.md).
+Extract the `Err` error type from a [Result](Result.md).
 
 ## Type Parameters
 

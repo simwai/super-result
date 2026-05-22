@@ -8,9 +8,9 @@
 
 > **map**\<`T`, `E`, `U`\>(`result`, `fn`): [`Result`](../type-aliases/Result.md)\<`U`, `E`\>
 
-Defined in: [src/index.ts:218](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L218)
+Defined in: [src/index.ts:296](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L296)
 
-Applies `fn` to the value if `Ok`, passes `Err` through unchanged.
+Apply `fn` to the value if `Ok`, pass `Err` through unchanged.
 
 ## Type Parameters
 
@@ -32,16 +32,10 @@ Applies `fn` to the value if `Ok`, passes `Err` through unchanged.
 
 [`Result`](../type-aliases/Result.md)\<`T`, `E`\>
 
-The result to transform.
-
 ### fn
 
 (`value`) => `U`
 
-Maps the success value to a new value.
-
 ## Returns
 
 [`Result`](../type-aliases/Result.md)\<`U`, `E`\>
-
-`Ok<U>` if `Ok`, the original `Err<E>` otherwise.

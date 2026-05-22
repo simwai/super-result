@@ -8,7 +8,7 @@
 
 > **unwrapAsync**\<`T`, `E`\>(`resultPromise`): `Promise`\<`T`\>
 
-Defined in: [src/index.ts:341](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L341)
+Defined in: [src/index.ts:424](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L424)
 
 Async variant of [unwrap](unwrap.md).
 
@@ -27,8 +27,6 @@ Async variant of [unwrap](unwrap.md).
 ### resultPromise
 
 [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
-
-The async result to unwrap.
 
 ## Returns
 

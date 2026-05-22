@@ -6,7 +6,7 @@
 
 # Interface: CaptureOptions\<T, E, FE\>
 
-Defined in: [src/index.ts:105](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L105)
+Defined in: [src/index.ts:165](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L165)
 
 Options for result capture helpers.
 
@@ -30,9 +30,9 @@ Options for result capture helpers.
 
 > `optional` **catch?**: (`error`) => `E`
 
-Defined in: [src/index.ts:107](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L107)
+Defined in: [src/index.ts:167](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L167)
 
-Optional error mapper for the catch block. Overrides factory default.
+Maps a thrown/rejected value to `E`. Overrides factory default.
 
 #### Parameters
 
@@ -50,9 +50,9 @@ Optional error mapper for the catch block. Overrides factory default.
 
 > `optional` **finally?**: (`result`) => `void` \| `Promise`\<`void`\>
 
-Defined in: [src/index.ts:109](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L109)
+Defined in: [src/index.ts:169](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L169)
 
-Optional callback to run after the result is determined.
+Callback to run after the result is determined.
 
 #### Parameters
 
@@ -70,9 +70,9 @@ Optional callback to run after the result is determined.
 
 > `optional` **mapFinallyError?**: (`error`) => `FE`
 
-Defined in: [src/index.ts:111](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L111)
+Defined in: [src/index.ts:171](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L171)
 
-Optional error mapper for finally block failures. Overrides factory default.
+Maps a finally-block failure to `FE`. Overrides factory default.
 
 #### Parameters
 

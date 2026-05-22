@@ -6,11 +6,11 @@
 
 # Function: createResult()
 
-> **createResult**\<`E`, `FE`\>(`config?`): [`ResultInterface`](../interfaces/ResultInterface.md)\<`E`, `FE`\>
+> **createResult**\<`E`, `FE`\>(`options?`): [`ResultInterface`](../interfaces/ResultInterface.md)\<`E`, `FE`\>
 
-Defined in: [src/index.ts:516](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L516)
+Defined in: [src/index.ts:618](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L618)
 
-Creates a [ResultInterface](../interfaces/ResultInterface.md) with pre-bound error mapping.
+Create a [ResultInterface](../interfaces/ResultInterface.md) with pre-bound error mapping.
 
 ## Type Parameters
 
@@ -24,14 +24,22 @@ Creates a [ResultInterface](../interfaces/ResultInterface.md) with pre-bound err
 
 ## Parameters
 
-### config?
+### options?
 
 [`ResultConfig`](../type-aliases/ResultConfig.md)\<`E`, `FE`\>
 
-Optional mapping configuration or a single mapError function.
+Optional mapping configuration or a single `mapError` function.
 
 ## Returns
 
 [`ResultInterface`](../interfaces/ResultInterface.md)\<`E`, `FE`\>
 
-A [ResultInterface](../interfaces/ResultInterface.md) with pre-bound mappers.
+A bound [ResultInterface](../interfaces/ResultInterface.md).
+
+## Example
+
+```ts
+const R = createResult((e) => e instanceof Error ? e : new Error(String(e)))
+
+const result = R.from(() => JSON.parse(rawInput))
+```

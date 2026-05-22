@@ -8,9 +8,9 @@
 
 > **mapErr**\<`T`, `E`, `F`\>(`result`, `fn`): [`Result`](../type-aliases/Result.md)\<`T`, `F`\>
 
-Defined in: [src/index.ts:242](https://github.com/simwai/super-result/blob/509b23f0e70cff470eb13653fe080f8125a78a9b/src/index.ts#L242)
+Defined in: [src/index.ts:322](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L322)
 
-Applies `fn` to the error if `Err`, passes `Ok` through unchanged.
+Apply `fn` to the error if `Err`, pass `Ok` through unchanged.
 
 ## Type Parameters
 
@@ -32,16 +32,10 @@ Applies `fn` to the error if `Err`, passes `Ok` through unchanged.
 
 [`Result`](../type-aliases/Result.md)\<`T`, `E`\>
 
-The result to transform.
-
 ### fn
 
 (`error`) => `F`
 
-Maps the error to a new error.
-
 ## Returns
 
 [`Result`](../type-aliases/Result.md)\<`T`, `F`\>
-
-The original `Ok<T>` if `Ok`, `Err<F>` otherwise.
