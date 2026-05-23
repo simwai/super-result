@@ -40,7 +40,7 @@
     "version:major": "pnpm version major",
     "preversion": "pnpm run build && pnpm run test",
     "prepublishOnly": "pnpm run build && pnpm run test",
-    "postversion": "pnpm publish --access public --ignore-scripts",
+    "postversion": "pnpm publish --access public --ignore-scripts"
   },
   "keywords": [
     "result",
