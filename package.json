@@ -1,6 +1,6 @@
 {
   "name": "super-result",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Lightweight railway-oriented error handling for TypeScript — discriminated Result<T,E>, typed async, zero unsafe casts, composable logging & tracing.",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -24,16 +24,23 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --format esm,cjs --dts --clean",
-    "dev": "tsup src/index.ts --format esm,cjs --dts --watch",
     "lint": "biome check src",
-    "lint:fix": "biome check --write src",
+    "format": "biome check --write src",
     "type-check": "tsc --noEmit",
-    "check": "pnpm docs:generate && pnpm lint && pnpm type-check",
+    "check": "pnpm docs:generate && pnpm exec concurrently \"pnpm check-quality\" \"pnpm lint\" \"pnpm type-check\"",
+    "dev": "tsup src/index.ts --format esm,cjs --dts --watch",
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean && bash -c \"cp ./LICENSE ./dist && cp ./README.md ./dist\"",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "docs:generate": "typedoc"
+    "check-quality": "knip && madge --orphans --leaves --circular --tsconfig ./tsconfig.json",
+    "docs:generate": "typedoc",
+    "version:patch": "pnpm version patch",
+    "version:minor": "pnpm version minor",
+    "version:major": "pnpm version major",
+    "preversion": "pnpm run build && pnpm run test",
+    "prepublishOnly": "pnpm run build && pnpm run test",
+    "postversion": "pnpm publish --access public --ignore-scripts",
   },
   "keywords": [
     "result",
@@ -49,6 +56,7 @@
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "@vitest/coverage-v8": "^4.1.6",
+    "concurrently": "^9.2.1",
     "tsup": "^8.4.0",
     "typedoc": "^0.28.19",
     "typedoc-plugin-markdown": "^4.11.0",

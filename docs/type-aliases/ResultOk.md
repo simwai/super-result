@@ -8,7 +8,7 @@
 
 > **ResultOk**\<`R`\> = `R` *extends* [`Result`](Result.md)\<infer TData, `unknown`\> ? `TData` : `never`
 
-Defined in: [src/index.ts:743](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L743)
+Defined in: [src/index.ts:743](https://github.com/simwai/super-result/blob/7c6decd2e66977e74be2a0f16a75bb0178c61947/src/index.ts#L743)
 
 Extract the `Ok` value type from a [Result](Result.md).
 

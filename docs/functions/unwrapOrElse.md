@@ -8,7 +8,7 @@
 
 > **unwrapOrElse**\<`T`, `E`, `U`\>(`result`, `onErr`): `T` \| `U`
 
-Defined in: [src/index.ts:459](https://github.com/simwai/super-result/blob/fde25a70daba3710c7a20f2a27ab3b5c68c769e2/src/index.ts#L459)
+Defined in: [src/index.ts:459](https://github.com/simwai/super-result/blob/7c6decd2e66977e74be2a0f16a75bb0178c61947/src/index.ts#L459)
 
 Return the value if `Ok`, otherwise call `onErr` and return its result.
 
