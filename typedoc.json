@@ -1,9 +1,15 @@
 {
-  "entryPoints": ["src/index.ts"],
+  "entryPoints": [
+    "src/index.ts",
+    "src/functions.ts",
+    "src/like-neverthrow.ts"
+  ],
   "out": "docs",
   "plugin": ["typedoc-plugin-markdown"],
   "hideGenerator": true,
   "readme": "none",
   "name": "super-result API",
-  "includeVersion": true
+  "includeVersion": true,
+  "excludeGroups": false,
+  "categorizeByGroup": true
 }
