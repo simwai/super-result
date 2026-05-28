@@ -4,18 +4,33 @@
   "description": "Lightweight railway-oriented error handling for TypeScript — discriminated Result<T,E>, typed async, zero unsafe casts, composable logging & tracing.",
   "type": "module",
   "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
+  "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.js"
-      },
-      "require": {
-        "types": "./dist/index.d.cts",
-        "default": "./dist/index.cjs"
-      }
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    },
+    "./class": {
+      "import": "./dist/class.mjs",
+      "require": "./dist/class.cjs",
+      "types": "./dist/class.d.ts"
+    },
+    "./functions": {
+      "import": "./dist/functions.mjs",
+      "require": "./dist/functions.cjs",
+      "types": "./dist/functions.d.ts"
+    },
+    "./fn": {
+      "import": "./dist/fn.mjs",
+      "require": "./dist/fn.cjs",
+      "types": "./dist/fn.d.ts"
+    },
+    "./like-neverthrow": {
+      "import": "./dist/like-neverthrow.mjs",
+      "require": "./dist/like-neverthrow.cjs",
+      "types": "./dist/like-neverthrow.d.ts"
     }
   },
   "files": [
@@ -28,8 +43,8 @@
     "format": "biome check --write src",
     "type-check": "tsc --noEmit",
     "check": "pnpm docs:generate && pnpm exec concurrently \"pnpm check-quality\" \"pnpm lint\" \"pnpm type-check\"",
-    "dev": "tsup src/index.ts --format esm,cjs --dts --watch",
-    "build": "tsup src/index.ts --format esm,cjs --dts --clean && bash -c \"cp ./LICENSE ./dist && cp ./README.md ./dist\"",
+    "dev": "unbuild --stub",
+    "build": "unbuild && bash -c \"cp ./LICENSE ./dist && cp ./README.md ./dist\"",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -40,7 +55,8 @@
     "version:major": "pnpm version major",
     "preversion": "pnpm run build && pnpm run test",
     "prepublishOnly": "pnpm run build && pnpm run test",
-    "postversion": "pnpm publish --access public --ignore-scripts"
+    "postversion": "pnpm publish --access public --ignore-scripts",
+    "prepare": "husky"
   },
   "keywords": [
     "result",
@@ -57,11 +73,19 @@
     "@biomejs/biome": "^1.9.4",
     "@vitest/coverage-v8": "^4.1.6",
     "concurrently": "^9.2.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.5",
     "tsup": "^8.4.0",
     "typedoc": "^0.28.19",
     "typedoc-plugin-markdown": "^4.11.0",
     "typescript": "^5.8.3",
+    "unbuild": "^3.6.1",
     "vitest": "^4.1.6"
+  },
+  "lint-staged": {
+    "*.{js,ts,cjs,mjs,d.cts,d.mts,json}": [
+      "biome check --write --no-errors-on-unmatched"
+    ]
   },
   "engines": {
     "node": ">=20"
