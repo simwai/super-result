@@ -21,7 +21,7 @@ super-result provides a robust, tree-shakeable toolkit for functional error hand
 
 ---
 
-## Installation
+## 📦 Installation
 
 ```bash
 pnpm add super-result
