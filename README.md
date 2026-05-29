@@ -93,7 +93,7 @@ const name = await Result.ok({ id: 1 })
 
 ## API Reference
 
-Full API documentation is available in the [docs](./docs/README.md) folder.
+Full API documentation is available in the [docs](https://github.com/simwai/super-result/tree/master/docs) folder.
 
 ---
 
