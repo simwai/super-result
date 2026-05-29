@@ -1,4 +1,4 @@
-![super-result](./assets/banner.svg)
+![super-result](https://raw.githubusercontent.com/simwai/super-result/refs/heads/master/assets/banner.svg)
 
 # super-result
 
