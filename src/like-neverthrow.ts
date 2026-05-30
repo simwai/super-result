@@ -106,6 +106,7 @@ function handleFinally<T, E>(
   options?: CaptureOptions<T, E>,
 ): Result<T, E | FinallyError<T, E>> | ResultAsync<T, E | FinallyError<T, E>> {
   if (!options?.finally) return result
+
   const mapper = options.mapFinallyError ?? ((e: unknown) => e)
   try {
     const res = options.finally(result)

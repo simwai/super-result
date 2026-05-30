@@ -209,6 +209,22 @@ export function match(input: any, onOk: any, onErr: any): any {
  * @category Functional API
  */
 export function from<T, E = unknown>(
+  fn: () => PromiseLike<T>,
+  mapError?: (e: unknown) => E,
+): Promise<RawResult<T, E>>
+export function from<T, E = unknown>(
+  fn: () => T,
+  mapError?: (e: unknown) => E,
+): RawResult<T, E>
+export function from<T, E = unknown>(
+  promise: PromiseLike<T>,
+  mapError?: (e: unknown) => E,
+): Promise<RawResult<T, E>>
+export function from<T, E = unknown>(
+  value: T,
+  mapError?: (e: unknown) => E,
+): RawResult<T, E>
+export function from<T, E = unknown>(
   input: T | PromiseLike<T> | (() => T | PromiseLike<T>),
   mapError: (e: unknown) => E = (e) => e as E,
 ): RawResult<T, E> | Promise<RawResult<T, E>> {
@@ -219,7 +235,7 @@ export function from<T, E = unknown>(
         return Promise.resolve(res).then(
           (v) => ok(v) as RawResult<T, E>,
           (e) => err(mapError(e)) as RawResult<T, E>,
-        ) as Promise<RawResult<T, E>>
+        )
       }
       return ok(res as T) as RawResult<T, E>
     } catch (e) {
@@ -231,7 +247,7 @@ export function from<T, E = unknown>(
       (v) =>
         isRawResult(v) ? (v as RawResult<T, E>) : (ok(v) as RawResult<T, E>),
       (e) => err(mapError(e)) as RawResult<T, E>,
-    ) as Promise<RawResult<T, E>>
+    )
   }
   if (isRawResult(input)) return input as RawResult<T, E>
   return ok(input as T) as RawResult<T, E>
@@ -265,11 +281,12 @@ export function createResult<E = unknown, FE = unknown>(
     typeof options === 'function'
       ? (e: unknown) => e
       : (options?.mapFinallyError ?? ((e: unknown) => e))
+
   return {
     ok,
     err: (e: E) => err(e),
     from: <T>(input: T | PromiseLike<T> | (() => T | PromiseLike<T>)) =>
-      from(input, mapError),
+      from(input as any, mapError),
     map,
     flatMap,
     final: (input: any, callback: any) =>

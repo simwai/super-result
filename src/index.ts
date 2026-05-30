@@ -131,27 +131,27 @@ export class Result<T, E> implements PromiseLike<T> {
         if (isPromiseLike(val)) {
           return new Result(
             Promise.resolve(val).then(
-              (v) => ok(v),
-              (e) => err(mapError(e)),
-            ) as Promise<RawResult<T, E>>,
+              (v) => ok(v) as RawResult<T, E>,
+              (e) => err(mapError(e)) as RawResult<T, E>,
+            ),
           )
         }
-        return new Result(ok(val as any))
+        return new Result(ok(val as T) as RawResult<T, E>)
       } catch (e) {
-        return new Result(err(mapError(e)))
+        return new Result(err(mapError(e)) as RawResult<T, E>)
       }
     }
 
     if (isPromiseLike(input)) {
       return new Result(
         Promise.resolve(input).then(
-          (v) => ok(v),
-          (e) => err(mapError(e)),
-        ) as Promise<RawResult<T, E>>,
+          (v) => ok(v) as RawResult<T, E>,
+          (e) => err(mapError(e)) as RawResult<T, E>,
+        ),
       )
     }
 
-    return new Result(ok(input as T))
+    return new Result(ok(input as T) as RawResult<T, E>)
   }
 
   /**
@@ -179,20 +179,23 @@ export class Result<T, E> implements PromiseLike<T> {
   static all<T, E>(
     results: (Result<T, E> | PromiseLike<Result<T, E>>)[],
   ): Result<T[], E> {
-    const promise = Promise.all(results.map((r) => Promise.resolve(r))).then(
-      async (resList) => {
+    const promise = Promise.all(results)
+      .then(
+        (values) =>
+          ok(values.map((v) => (v instanceof Result ? v.inner : v))) as any,
+      )
+      .then(async (inners: any[]) => {
+        const resList = await Promise.all(inners)
         const values: T[] = []
         for (const r of resList) {
-          const inner = await (r as any).inner
-          if (_isOk(inner)) {
-            values.push(inner.value as T)
+          if (_isOk(r)) {
+            values.push(r.value as T)
           } else {
-            return inner as Err<E>
+            return r as Err<E>
           }
         }
         return ok(values)
-      },
-    )
+      })
     return new Result(promise as Promise<RawResult<T[], E>>)
   }
 
@@ -203,14 +206,18 @@ export class Result<T, E> implements PromiseLike<T> {
   static allSettled<T, E>(
     results: (Result<T, E> | PromiseLike<Result<T, E>>)[],
   ): Result<RawResult<T, E>[], never> {
-    const promise = Promise.all(results.map((r) => Promise.resolve(r))).then(
-      async (resList) => {
-        const inners = await Promise.all(
-          resList.map((r) => Promise.resolve((r as any).inner)),
-        )
-        return ok(inners as RawResult<T, E>[])
-      },
-    )
+    const promise = Promise.allSettled(results).then(async (settled) => {
+      const inners = await Promise.all(
+        settled.map(async (s) => {
+          if (s.status === 'fulfilled') {
+            const val = s.value
+            return val instanceof Result ? val.inner : val
+          }
+          return err(s.reason)
+        }),
+      )
+      return ok(inners)
+    })
     return new Result(promise as Promise<RawResult<RawResult<T, E>[], never>>)
   }
 
@@ -259,13 +266,15 @@ export class Result<T, E> implements PromiseLike<T> {
   map<U>(fn: (value: T) => U): Result<U, E> {
     if (this.inner instanceof Promise) {
       return new Result(
-        this.inner.then((r) => (_isOk(r) ? ok(fn(r.value)) : r)) as Promise<
-          RawResult<U, E>
-        >,
+        this.inner.then(
+          (r) => (_isOk(r) ? ok(fn(r.value)) : r) as RawResult<U, E>,
+        ),
       )
     }
     return new Result(
-      _isOk(this.inner) ? ok(fn(this.inner.value)) : (this.inner as any),
+      _isOk(this.inner)
+        ? ok(fn(this.inner.value))
+        : (this.inner as unknown as RawResult<U, E>),
     )
   }
 
@@ -281,17 +290,17 @@ export class Result<T, E> implements PromiseLike<T> {
   ): Result<U, E> {
     const flatten = (
       r: RawResult<T, E>,
-    ): RawResult<U, E> | PromiseLike<RawResult<U, E>> => {
-      if (_isErr(r)) return r as any
+    ): RawResult<U, E> | Promise<RawResult<U, E>> => {
+      if (_isErr(r)) return r as unknown as RawResult<U, E>
       const next = fn(r.value)
-      if (next instanceof Result) return next.inner
-      return next
+      if (next instanceof Result) return Promise.resolve(next.inner)
+      return Promise.resolve(next)
     }
     if (this.inner instanceof Promise) {
-      return new Result(this.inner.then(flatten) as Promise<RawResult<U, E>>)
+      return new Result(this.inner.then(flatten))
     }
     const next = flatten(this.inner)
-    return new Result(next as RawResult<U, E> | Promise<RawResult<U, E>>)
+    return new Result(next)
   }
 
   /**
@@ -314,16 +323,16 @@ export class Result<T, E> implements PromiseLike<T> {
 
     const handleSync = (
       r: RawResult<T, E>,
-    ): RawResult<T, E | unknown> | PromiseLike<RawResult<T, E | unknown>> => {
+    ): RawResult<T, E | unknown> | Promise<RawResult<T, E | unknown>> => {
       try {
         const res = callback(r)
         if (isPromiseLike(res)) {
-          return res.then(
-            () => r,
+          return Promise.resolve(res).then(
+            () => r as RawResult<T, E | unknown>,
             (e) => toErrResult(r, e),
           )
         }
-        return r
+        return r as RawResult<T, E | unknown>
       } catch (e) {
         return toErrResult(r, e)
       }
@@ -331,16 +340,10 @@ export class Result<T, E> implements PromiseLike<T> {
 
     if (this.inner instanceof Promise) {
       return new Result(
-        this.inner.then(handleSync, (e) =>
-          toErrResult(err(e) as any, e),
-        ) as Promise<RawResult<T, E | unknown>>,
+        this.inner.then(handleSync, (e) => toErrResult(err(e) as any, e)),
       )
     }
-    return new Result(
-      handleSync(this.inner) as
-        | RawResult<T, E | unknown>
-        | Promise<RawResult<T, E | unknown>>,
-    )
+    return new Result(handleSync(this.inner))
   }
 
   /**
@@ -416,14 +419,18 @@ export class Result<T, E> implements PromiseLike<T> {
     onOk: (value: T) => U | PromiseLike<U>,
     onErr: (error: E) => V | PromiseLike<V>,
   ): U | V | Promise<U | V> {
-    const handle = (r: RawResult<T, E>): U | V | PromiseLike<U | V> => {
-      return _isOk(r) ? onOk(r.value) : onErr(r.error)
+    const handle = (r: RawResult<T, E>): U | V | Promise<U | V> => {
+      return _isOk(r)
+        ? Promise.resolve(onOk(r.value))
+        : Promise.resolve(onErr(r.error))
     }
     if (this.inner instanceof Promise) {
-      return this.inner.then(handle) as Promise<U | V>
+      return this.inner.then(handle).then((res) => res) as Promise<U | V>
     }
-    const val = handle(this.inner)
+    const val = _isOk(this.inner)
+      ? onOk(this.inner.value)
+      : onErr(this.inner.error)
     if (isPromiseLike(val)) return Promise.resolve(val)
-    return val as U | V
+    return val
   }
 }
