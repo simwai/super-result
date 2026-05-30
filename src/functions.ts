@@ -23,6 +23,11 @@ function _isOk<T, E>(r: RawResult<T, E>): r is Ok<T> {
   return r.ok === true
 }
 
+/**
+ * Checks if the result is a success.
+ *
+ * @category Functional API
+ */
 export function isOk<T, E>(input: RawResult<T, E>): boolean
 export function isOk<T, E>(
   input: PromiseLike<RawResult<T, E>>,
@@ -33,6 +38,11 @@ export function isOk(input: any): any {
   return input.ok === true
 }
 
+/**
+ * Checks if the result is a failure.
+ *
+ * @category Functional API
+ */
 export function isErr<T, E>(input: RawResult<T, E>): boolean
 export function isErr<T, E>(
   input: PromiseLike<RawResult<T, E>>,
@@ -43,6 +53,11 @@ export function isErr(input: any): any {
   return input.ok === false
 }
 
+/**
+ * Maps the success value using the provided function.
+ *
+ * @category Functional API
+ */
 export function map<T, E, U>(
   input: RawResult<T, E>,
   fn: (v: T) => U,
@@ -56,6 +71,11 @@ export function map(input: any, fn: any): any {
   return _isOk(input) ? ok(fn(input.value)) : input
 }
 
+/**
+ * Maps the success value to a new {@link RawResult} and flattens it.
+ *
+ * @category Functional API
+ */
 export function flatMap<T, E, U>(
   input: RawResult<T, E>,
   fn: (v: T) => RawResult<U, E> | PromiseLike<RawResult<U, E>>,
@@ -69,6 +89,11 @@ export function flatMap(input: any, fn: any): any {
   return _isOk(input) ? fn(input.value) : input
 }
 
+/**
+ * Executes a callback regardless of whether the result is a success or failure.
+ *
+ * @category Functional API
+ */
 export function final<T, E>(
   input: RawResult<T, E>,
   callback: (r: RawResult<T, E>) => void | PromiseLike<void>,
@@ -107,6 +132,11 @@ export function final(input: any, callback: any, mapFinallyError?: any): any {
   }
 }
 
+/**
+ * Returns the value if success, otherwise throws the error.
+ *
+ * @category Functional API
+ */
 export function unwrap<T, E>(input: RawResult<T, E>): T
 export function unwrap<T, E>(input: PromiseLike<RawResult<T, E>>): Promise<T>
 export function unwrap(input: any): any {
@@ -115,6 +145,11 @@ export function unwrap(input: any): any {
   throw wrapError(input.error)
 }
 
+/**
+ * Returns the value if success, otherwise returns the provided default value.
+ *
+ * @category Functional API
+ */
 export function unwrapOr<T, E, D>(
   input: RawResult<T, E>,
   defaultValue: D,
@@ -129,6 +164,11 @@ export function unwrapOr(input: any, defaultValue: any): any {
   return _isOk(input) ? input.value : defaultValue
 }
 
+/**
+ * Returns the value if success, otherwise calls the fallback function with the error.
+ *
+ * @category Functional API
+ */
 export function unwrapOrElse<T, E, D>(
   input: RawResult<T, E>,
   fallback: (e: E) => D,
@@ -143,6 +183,11 @@ export function unwrapOrElse(input: any, fallback: any): any {
   return _isOk(input) ? input.value : fallback(input.error)
 }
 
+/**
+ * Pattern matches on the result.
+ *
+ * @category Functional API
+ */
 export function match<T, E, U, V>(
   input: RawResult<T, E>,
   onOk: (value: T) => U | PromiseLike<U>,
@@ -158,6 +203,11 @@ export function match(input: any, onOk: any, onErr: any): any {
   return _isOk(input) ? onOk(input.value) : onErr(input.error)
 }
 
+/**
+ * Unified capture entry point.
+ *
+ * @category Functional API
+ */
 export function from<T, E = unknown>(
   input: T | PromiseLike<T> | (() => T | PromiseLike<T>),
   mapError: (e: unknown) => E = (e) => e as E,
@@ -187,6 +237,11 @@ export function from<T, E = unknown>(
   return ok(input as T) as RawResult<T, E>
 }
 
+/**
+ * Configuration for {@link createResult}.
+ *
+ * @category Functional API
+ */
 export type ResultConfig<E = unknown, FE = unknown> =
   | {
       mapError?: (error: unknown) => E
@@ -194,6 +249,11 @@ export type ResultConfig<E = unknown, FE = unknown> =
     }
   | ((error: unknown) => E)
 
+/**
+ * Creates a bound functional API with pre-configured error mapping.
+ *
+ * @category Functional API
+ */
 export function createResult<E = unknown, FE = unknown>(
   options?: ResultConfig<E, FE>,
 ) {

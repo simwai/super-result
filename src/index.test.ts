@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import { Result, NonErrorThrown } from './index.js'
 import * as Fn from './functions.js'
+import { NonErrorThrown, Result } from './index.js'
 
 describe('Result Class', () => {
   it('Result.ok()', () => {

@@ -2,32 +2,73 @@ import { FinallyError, NonErrorThrown } from './index.js'
 
 export { NonErrorThrown, FinallyError }
 
+/**
+ * Result variant with explicit type property for better compatibility.
+ *
+ * @template T The type of the value.
+ * @template E The type of the error.
+ * @category like-neverthrow API
+ */
 export type Result<T, E> =
   | { type: 'ok'; value: T; ok: true }
   | { type: 'err'; error: E; ok: false }
 
+/**
+ * Promise of a {@link Result}.
+ *
+ * @template T The type of the value.
+ * @template E The type of the error.
+ * @category like-neverthrow API
+ */
 export type ResultAsync<T, E> = Promise<Result<T, E>>
 
+/**
+ * Creates a successful {@link Result}.
+ *
+ * @param value The success value.
+ * @category like-neverthrow API
+ */
 export function ok<T>(value: T): Result<T, never> {
   return { type: 'ok', value, ok: true }
 }
 
+/**
+ * Creates a failed {@link Result}.
+ *
+ * @param error The error value.
+ * @category like-neverthrow API
+ */
 export function err<E>(error: E): Result<never, E> {
   return { type: 'err', error, ok: false }
 }
 
+/**
+ * Checks if the result is a success.
+ *
+ * @category like-neverthrow API
+ */
 export function isOk<T, E>(
   result: Result<T, E>,
 ): result is { type: 'ok'; value: T; ok: true } {
   return result.ok === true
 }
 
+/**
+ * Checks if the result is a failure.
+ *
+ * @category like-neverthrow API
+ */
 export function isErr<T, E>(
   result: Result<T, E>,
 ): result is { type: 'err'; error: E; ok: false } {
   return result.ok === false
 }
 
+/**
+ * Configuration for {@link fromThrowable}.
+ *
+ * @category like-neverthrow API
+ */
 export interface CaptureOptions<T, E> {
   catch?: (error: unknown) => E
   finally?: (result: Result<T, E>) => void | Promise<void>
@@ -38,6 +79,13 @@ function wrapError(e: unknown): Error {
   return e instanceof Error ? e : new NonErrorThrown(e)
 }
 
+/**
+ * Executes a function and captures any thrown error into a {@link Result}.
+ *
+ * @param fn The function to execute.
+ * @param options Capture options.
+ * @category like-neverthrow API
+ */
 export function fromThrowable<T, E = unknown>(
   fn: () => T,
   options?: CaptureOptions<T, E>,
@@ -82,6 +130,11 @@ function handleFinally<T, E>(
   }
 }
 
+/**
+ * Maps the success value using the provided function.
+ *
+ * @category like-neverthrow API
+ */
 export function map<T, E, U>(
   result: Result<T, E>,
   fn: (value: T) => U,
@@ -89,6 +142,11 @@ export function map<T, E, U>(
   return isOk(result) ? ok(fn(result.value)) : (result as any)
 }
 
+/**
+ * Maps the success value to a new {@link Result} and flattens it.
+ *
+ * @category like-neverthrow API
+ */
 export function flatMap<T, E, U>(
   result: Result<T, E>,
   fn: (value: T) => Result<U, E>,
@@ -96,11 +154,21 @@ export function flatMap<T, E, U>(
   return isOk(result) ? fn(result.value) : (result as any)
 }
 
+/**
+ * Returns the value if success, otherwise throws the error.
+ *
+ * @category like-neverthrow API
+ */
 export function unwrap<T, E>(result: Result<T, E>): T {
   if (isOk(result)) return result.value
   throw wrapError(result.error)
 }
 
+/**
+ * Pattern matches on the result.
+ *
+ * @category like-neverthrow API
+ */
 export function match<T, E, U, V>(
   result: Result<T, E>,
   onOk: (value: T) => U,
@@ -109,6 +177,11 @@ export function match<T, E, U, V>(
   return isOk(result) ? onOk(result.value) : onErr(result.error)
 }
 
+/**
+ * Creates a bound factory with pre-configured error mapping.
+ *
+ * @category like-neverthrow API
+ */
 export function createResult<E = unknown>(options?: {
   mapError?: (error: unknown) => E
   mapFinallyError?: (error: unknown) => unknown

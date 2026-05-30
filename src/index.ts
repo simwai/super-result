@@ -1,5 +1,8 @@
 /**
  * Represents a successful result.
+ *
+ * @template T The type of the value.
+ * @category Core Types
  */
 export interface Ok<T> {
   readonly ok: true
@@ -8,6 +11,9 @@ export interface Ok<T> {
 
 /**
  * Represents a failed result.
+ *
+ * @template E The type of the error.
+ * @category Core Types
  */
 export interface Err<E> {
   readonly ok: false
@@ -15,19 +21,29 @@ export interface Err<E> {
 }
 
 /**
- * A discriminated union representing either a success (Ok) or a failure (Err).
+ * A discriminated union representing either a success ({@link Ok}) or a failure ({@link Err}).
+ *
+ * @template T The type of the value.
+ * @template E The type of the error.
+ * @category Core Types
  */
 export type RawResult<T, E> = Ok<T> | Err<E>
 
 /**
- * Creates a successful RawResult.
+ * Creates a successful {@link RawResult}.
+ *
+ * @param value The success value.
+ * @category Core Functions
  */
 export function ok<T>(value: T): RawResult<T, never> {
   return { ok: true, value }
 }
 
 /**
- * Creates a failed RawResult.
+ * Creates a failed {@link RawResult}.
+ *
+ * @param error The error value.
+ * @category Core Functions
  */
 export function err<E>(error: E): RawResult<never, E> {
   return { ok: false, error }
@@ -50,6 +66,8 @@ function isPromiseLike<T>(v: unknown): v is PromiseLike<T> {
 
 /**
  * Error thrown when a non-error value is unwrapped and treated as an error.
+ *
+ * @category Errors
  */
 export class NonErrorThrown extends Error {
   public readonly value: unknown
@@ -62,6 +80,10 @@ export class NonErrorThrown extends Error {
 
 /**
  * Error thrown when an error occurs within a final block.
+ *
+ * @template T The type of the value.
+ * @template E The type of the error.
+ * @category Errors
  */
 export class FinallyError<T, E> extends Error implements Err<unknown> {
   readonly ok = false
@@ -80,13 +102,25 @@ function wrapError(e: unknown): Error {
 }
 
 /**
- * A class-based wrapper for RawResult providing a fluent API.
+ * A class-based wrapper for {@link RawResult} that provides a fluent API
+ * for both synchronous and asynchronous operations.
+ *
+ * @template T The type of the value.
+ * @template E The type of the error.
+ * @category Main
  */
 export class Result<T, E> implements PromiseLike<T> {
   constructor(
     public readonly inner: RawResult<T, E> | Promise<RawResult<T, E>>,
   ) {}
 
+  /**
+   * Unified entry point to create a {@link Result}.
+   * Handles values, functions (sync/async), and promises.
+   *
+   * @param input The value, promise, or function to wrap.
+   * @param mapError Optional function to map caught errors.
+   */
   static from<T, E = unknown>(
     input: T | PromiseLike<T> | (() => T | PromiseLike<T>),
     mapError: (e: unknown) => E = (e) => e as E,
@@ -120,14 +154,28 @@ export class Result<T, E> implements PromiseLike<T> {
     return new Result(ok(input as T))
   }
 
+  /**
+   * Creates a successful {@link Result}.
+   *
+   * @param value The success value.
+   */
   static ok<T>(value: T): Result<T, never> {
     return new Result(ok(value))
   }
 
+  /**
+   * Creates a failed {@link Result}.
+   *
+   * @param error The error value.
+   */
   static err<E>(error: E): Result<never, E> {
     return new Result(err(error))
   }
 
+  /**
+   * Combines multiple results into a single result containing an array of values.
+   * Fails if any of the input results are an error.
+   */
   static all<T, E>(
     results: (Result<T, E> | PromiseLike<Result<T, E>>)[],
   ): Result<T[], E> {
@@ -148,6 +196,10 @@ export class Result<T, E> implements PromiseLike<T> {
     return new Result(promise as Promise<RawResult<T[], E>>)
   }
 
+  /**
+   * Combines multiple results into a single result containing an array of {@link RawResult}s.
+   * Never fails, instead captures all outcomes.
+   */
   static allSettled<T, E>(
     results: (Result<T, E> | PromiseLike<Result<T, E>>)[],
   ): Result<RawResult<T, E>[], never> {
@@ -159,9 +211,13 @@ export class Result<T, E> implements PromiseLike<T> {
         return ok(inners as RawResult<T, E>[])
       },
     )
-    return new Result(promise)
+    return new Result(promise as Promise<RawResult<RawResult<T, E>[], never>>)
   }
 
+  /**
+   * Implements {@link PromiseLike.then} to allow awaiting the {@link Result} directly.
+   * Wraps errors thrown in handlers using {@link NonErrorThrown}.
+   */
   then<TResult1 = T, TResult2 = never>(
     onfulfilled?: (value: T) => TResult1 | PromiseLike<TResult1>,
     onrejected?: (reason: any) => TResult2 | PromiseLike<TResult2>,
@@ -195,6 +251,11 @@ export class Result<T, E> implements PromiseLike<T> {
     )
   }
 
+  /**
+   * Maps the success value using the provided function.
+   *
+   * @param fn The mapping function.
+   */
   map<U>(fn: (value: T) => U): Result<U, E> {
     if (this.inner instanceof Promise) {
       return new Result(
@@ -208,6 +269,11 @@ export class Result<T, E> implements PromiseLike<T> {
     )
   }
 
+  /**
+   * Maps the success value to a new {@link Result} and flattens it.
+   *
+   * @param fn The flatMapping function.
+   */
   flatMap<U>(
     fn: (
       value: T,
@@ -228,6 +294,12 @@ export class Result<T, E> implements PromiseLike<T> {
     return new Result(next as RawResult<U, E> | Promise<RawResult<U, E>>)
   }
 
+  /**
+   * Executes a callback regardless of whether the result is a success or failure.
+   *
+   * @param callback The callback function.
+   * @param mapFinallyError Optional function to map errors thrown in the callback.
+   */
   final(
     callback: (result: RawResult<T, E>) => void | PromiseLike<void>,
     mapFinallyError?: (error: unknown) => unknown,
@@ -271,6 +343,10 @@ export class Result<T, E> implements PromiseLike<T> {
     )
   }
 
+  /**
+   * Returns the value if success, otherwise throws the error.
+   * Returns a {@link Promise} if the result is asynchronous.
+   */
   unwrap(): T | Promise<T> {
     if (this.inner instanceof Promise) {
       return this.inner.then((r) => {
@@ -282,6 +358,12 @@ export class Result<T, E> implements PromiseLike<T> {
     throw wrapError(this.inner.error)
   }
 
+  /**
+   * Returns the value if success, otherwise returns the provided default value.
+   * Returns a {@link Promise} if the result is asynchronous.
+   *
+   * @param defaultValue The value to return on failure.
+   */
   unwrapOr<D>(defaultValue: D): T | D | Promise<T | D> {
     if (this.inner instanceof Promise) {
       return this.inner.then((r) => (_isOk(r) ? r.value : defaultValue))
@@ -289,6 +371,12 @@ export class Result<T, E> implements PromiseLike<T> {
     return _isOk(this.inner) ? this.inner.value : defaultValue
   }
 
+  /**
+   * Returns the value if success, otherwise calls the fallback function with the error.
+   * Returns a {@link Promise} if the result is asynchronous.
+   *
+   * @param fallback The function to call on failure.
+   */
   unwrapOrElse<D>(fallback: (error: E) => D): T | D | Promise<T | D> {
     if (this.inner instanceof Promise) {
       return this.inner.then((r) => (_isOk(r) ? r.value : fallback(r.error)))
@@ -296,6 +384,10 @@ export class Result<T, E> implements PromiseLike<T> {
     return _isOk(this.inner) ? this.inner.value : fallback(this.inner.error)
   }
 
+  /**
+   * Checks if the result is a success.
+   * Returns a {@link Promise} if the result is asynchronous.
+   */
   isOk(): boolean | Promise<boolean> {
     if (this.inner instanceof Promise) {
       return this.inner.then(_isOk)
@@ -303,6 +395,10 @@ export class Result<T, E> implements PromiseLike<T> {
     return _isOk(this.inner)
   }
 
+  /**
+   * Checks if the result is a failure.
+   * Returns a {@link Promise} if the result is asynchronous.
+   */
   isErr(): boolean | Promise<boolean> {
     if (this.inner instanceof Promise) {
       return this.inner.then(_isErr)
@@ -310,6 +406,12 @@ export class Result<T, E> implements PromiseLike<T> {
     return _isErr(this.inner)
   }
 
+  /**
+   * Pattern matches on the result.
+   *
+   * @param onOk Function to call if success.
+   * @param onErr Function to call if failure.
+   */
   match<U, V>(
     onOk: (value: T) => U | PromiseLike<U>,
     onErr: (error: E) => V | PromiseLike<V>,
