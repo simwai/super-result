@@ -22,8 +22,8 @@ describe('Result Class', () => {
     expect(res).toBe(42)
   })
 
-  it('then() error wrapping', async () => {
-    const r = Result.ok(42).then(() => {
+  it('andThen() error wrapping', async () => {
+    const r = Result.ok(42).andThen(() => {
       throw 'oops'
     })
     await expect(r).rejects.toThrow(NonErrorThrown)

@@ -109,7 +109,7 @@ function wrapError(e: unknown): Error {
  * @template E The type of the error.
  * @category Main
  */
-export class Result<T, E> implements PromiseLike<T> {
+export class Result<T, E> {
   constructor(
     public readonly inner: RawResult<T, E> | Promise<RawResult<T, E>>,
   ) {}
@@ -222,10 +222,10 @@ export class Result<T, E> implements PromiseLike<T> {
   }
 
   /**
-   * Implements {@link PromiseLike.then} to allow awaiting the {@link Result} directly.
+   * Chains a callback to the result.
    * Wraps errors thrown in handlers using {@link NonErrorThrown}.
    */
-  then<TResult1 = T, TResult2 = never>(
+  andThen<TResult1 = T, TResult2 = never>(
     onfulfilled?: (value: T) => TResult1 | PromiseLike<TResult1>,
     onrejected?: (reason: any) => TResult2 | PromiseLike<TResult2>,
   ): Promise<TResult1 | TResult2> {
