@@ -72,14 +72,17 @@ const value = unwrap(doubled) // 84
 ```
 
 ### 3. Neverthrow Style - `super-result/like-neverthrow`
-A familiar API for users coming from the `neverthrow` library.
+A familiar API for users of the `neverthrow` library.
 
 ```ts
-import { ok, err, isOk } from 'super-result/like-neverthrow'
+import { ok } from 'super-result/like-neverthrow'
 
 const res = ok(42)
-if (isOk(res)) {
-  console.log(res.value)
+  .map(n => n * 2)
+  .andThen(n => ok(n + 1))
+
+if (res.isOk()) {
+  console.log(res.value) // 85
 }
 ```
 

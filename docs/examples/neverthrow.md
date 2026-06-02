@@ -1,13 +1,13 @@
 # Neverthrow-style API Examples
 
-This API is inspired by the popular `neverthrow` library, using `type: 'ok' | 'err'` discriminators and familiar function names.
+This API is inspired by the popular `neverthrow` library, using `type: 'ok' | 'err'` discriminators and method-based chaining.
 
 ## Beginner: Safe JSON Parsing
 
-Handling synchronous errors with `fromThrowable`.
+Handling synchronous errors and chaining transformations.
 
 ```ts
-import { fromThrowable, isOk } from 'super-result/like-neverthrow'
+import { fromThrowable } from 'super-result/like-neverthrow'
 
 interface Config {
   apiUrl: string;
@@ -24,12 +24,14 @@ function parseConfig(json: string) {
   );
 }
 
-const res = parseConfig('{ "apiUrl": "https://api.example.com" }');
+const res = parseConfig('{ "apiUrl": "https://api.example.com" }')
+  .map(cfg => cfg.apiUrl)
 
-if (isOk(res)) {
-  console.log('API URL:', res.value.apiUrl);
+if (res.isOk()) {
+  // .value is narrowed in this block
+  console.log('API URL:', res.value);
 } else {
-  // .error is available after isOk check fails
+  // .error is narrowed in this block
   console.error('Error:', res.error.message);
 }
 ```
@@ -39,7 +41,7 @@ if (isOk(res)) {
 Using `createResult` to pre-bind error mapping logic for the whole application.
 
 ```ts
-import { createResult, isOk } from 'super-result/like-neverthrow'
+import { createResult } from 'super-result/like-neverthrow'
 
 class AppError extends Error {
   constructor(public code: string, message: string) {
@@ -57,18 +59,17 @@ async function fetchData() {
 }
 
 const res = await fetchData();
-if (!isOk(res)) {
-  // .error is available after isOk check fails
+if (res.isErr()) {
   console.error(`[${res.error.code}] ${res.error.message}`);
 }
 ```
 
 ## Complex: Multi-step Order Processing with Rollback
 
-Chaining async operations with `flatMapAsync` (or manual checks) and handling failures.
+Chaining async operations and handling failures with standard methods.
 
 ```ts
-import { ok, err, isOk, flatMapAsync } from 'super-result/like-neverthrow'
+import { ok, err } from 'super-result/like-neverthrow'
 
 interface Order { id: string }
 
@@ -77,17 +78,18 @@ async function processOrder(order: Order) {
   const inventoryRes = ok(true);
 
   // 2. Charge (Async)
-  const chargeRes = await flatMapAsync(inventoryRes, async () => {
+  // Note: Since ResultAsync is just a Promise, we await the check
+  const chargeRes = await inventoryRes.andThen(async () => {
     return ok({ txId: 'abc-123' });
   });
 
-  if (!isOk(chargeRes)) return chargeRes;
+  if (chargeRes.isErr()) return chargeRes;
   const payment = chargeRes.value;
 
   // 3. Save to DB
   const saveRes = err(new Error('DB Timeout'));
 
-  if (!isOk(saveRes)) {
+  if (saveRes.isErr()) {
     // 4. Rollback
     console.log(`Refunding ${payment.txId}`);
     return saveRes;

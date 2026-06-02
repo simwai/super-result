@@ -43,7 +43,7 @@ if (isOk(res)) {
 ### Neverthrow Style
 ```ts
 const res = ok(42);
-if (isOk(res)) {
+if (res.isOk()) {
   console.log(res.value); // 42
 }
 ```

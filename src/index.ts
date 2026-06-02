@@ -1,5 +1,3 @@
-import type { Ok as LikeOk } from './like-neverthrow.js'
-
 /**
  * Discriminator-based success variant.
  *
@@ -360,7 +358,7 @@ export class Result<T, E> implements PromiseLike<T> {
    *
    * @throws {Error} If the result is pending (async).
    */
-  isOkSync(): boolean {
+  isOkSync(): this is this & { readonly value: T; readonly error: undefined } {
     if (this.inner instanceof Promise)
       throw new Error('Cannot check sync on pending result')
     return isOk(this.inner)
@@ -371,7 +369,7 @@ export class Result<T, E> implements PromiseLike<T> {
    *
    * @throws {Error} If the result is pending (async).
    */
-  isErrSync(): boolean {
+  isErrSync(): this is this & { readonly value: undefined; readonly error: E } {
     if (this.inner instanceof Promise)
       throw new Error('Cannot check sync on pending result')
     return isErr(this.inner)
