@@ -26,16 +26,24 @@ Each of the links above includes:
 
 ### Class Style
 ```ts
-const val = await Result.ok(42).map(n => n * 2).unwrap();
+const res = Result.ok(42);
+if (res.isOkSync()) {
+  console.log(res.value); // 42
+}
 ```
 
 ### Functional Style
 ```ts
-const val = unwrap(map(ok(42), n => n * 2));
+const res = ok(42);
+if (isOk(res)) {
+  console.log(res.value); // 42
+}
 ```
 
 ### Neverthrow Style
 ```ts
 const res = ok(42);
-if (res.isOk()) { /* ... */ }
+if (isOk(res)) {
+  console.log(res.value); // 42
+}
 ```

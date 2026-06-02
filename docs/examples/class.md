@@ -27,10 +27,11 @@ function parseConfig(json: string): Result<Config, Error> {
 const result = parseConfig('{ "apiUrl": "https://api.example.com", "retries": 3 }');
 
 if (result.isOkSync()) {
-  console.log('Config loaded:', result.unwrapSync().apiUrl);
+  // .value is available after successful check
+  console.log('Config loaded:', result.value.apiUrl);
 } else {
-  // error is typed as Error because of mapErr above
-  console.error('Failed to load config:', (result.inner as any).error.message);
+  // .error is available after failed check
+  console.error('Failed to load config:', result.error.message);
 }
 ```
 
@@ -69,7 +70,7 @@ async function getUser(id: string): Promise<Result<any, AppError>> {
 
 const res = await getUser('123');
 if (await res.isErr()) {
-    const error = (await res.inner as any).error;
+    const error = res.error!;
     console.error(`[${error.code}] ${error.message} (ID: ${error.correlationId})`);
 }
 ```

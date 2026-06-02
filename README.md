@@ -15,7 +15,7 @@ Lightweight, enterprise-grade railway-oriented error handling for TypeScript. Mi
 super-result provides a robust, tree-shakeable toolkit for functional error handling in TypeScript. It is designed to be unobtrusive, explicit, and highly performant, offering multiple API styles to suit your team's preference.
 
 - **Minimal Syntax**: Reach the same results with less code.
-- **Maximum Type Safety**: Discriminated unions (ok: true/false) mean no unsafe casts.
+- **Maximum Type Safety**: Discriminated unions mean no unsafe casts.
 - **Style Flexibility**: Choose between Class-based, Functional, or Neverthrow-inspired APIs.
 - **Enterprise Ready**: Full TSDoc coverage and automated documentation.
 
@@ -75,10 +75,10 @@ const value = unwrap(doubled) // 84
 A familiar API for users coming from the `neverthrow` library.
 
 ```ts
-import { ok, err } from 'super-result/like-neverthrow'
+import { ok, err, isOk } from 'super-result/like-neverthrow'
 
 const res = ok(42)
-if (res.type === 'ok') {
+if (isOk(res)) {
   console.log(res.value)
 }
 ```

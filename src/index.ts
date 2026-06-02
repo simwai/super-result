@@ -1,5 +1,7 @@
+import type { Ok as LikeOk } from './like-neverthrow.js'
+
 /**
- * Represents a successful result.
+ * Discriminator-based success variant.
  *
  * @template T The type of the value.
  * @category Core Types
@@ -10,7 +12,7 @@ export interface Ok<T> {
 }
 
 /**
- * Represents a failed result.
+ * Discriminator-based failure variant.
  *
  * @template E The type of the error.
  * @category Core Types
@@ -373,5 +375,19 @@ export class Result<T, E> implements PromiseLike<T> {
     if (this.inner instanceof Promise)
       throw new Error('Cannot check sync on pending result')
     return isErr(this.inner)
+  }
+
+  /**
+   * Returns the success value if the result is synchronous and successful, otherwise undefined.
+   */
+  get value(): T | undefined {
+    return !isPromise(this.inner) && isOk(this.inner) ? (this.inner as Ok<T>).value : undefined
+  }
+
+  /**
+   * Returns the error value if the result is synchronous and failed, otherwise undefined.
+   */
+  get error(): E | undefined {
+    return !isPromise(this.inner) && isErr(this.inner) ? (this.inner as Err<E>).error : undefined
   }
 }

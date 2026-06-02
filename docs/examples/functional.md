@@ -28,7 +28,7 @@ const result = parseConfig('{ "apiUrl": "https://api.example.com", "retries": 3 
 if (isOk(result)) {
   console.log('Config loaded:', result.value.apiUrl);
 } else {
-  // result.error is unknown by default from fromThrowable
+  // .error is used for error access after checks
   console.error('Failed to load config:', result.error);
 }
 ```
@@ -77,7 +77,7 @@ const userRes = await getUser('123');
 if (isOk(userRes)) {
     console.log(userRes.value);
 } else {
-    // userRes.error is guaranteed to be an AppError
+    // .error is used for error access after checks
     console.error(`[${userRes.error.code}] ${userRes.error.message}`);
 }
 ```

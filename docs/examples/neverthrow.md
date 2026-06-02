@@ -29,6 +29,7 @@ const res = parseConfig('{ "apiUrl": "https://api.example.com" }');
 if (isOk(res)) {
   console.log('API URL:', res.value.apiUrl);
 } else {
+  // .error is available after isOk check fails
   console.error('Error:', res.error.message);
 }
 ```
@@ -57,6 +58,7 @@ async function fetchData() {
 
 const res = await fetchData();
 if (!isOk(res)) {
+  // .error is available after isOk check fails
   console.error(`[${res.error.code}] ${res.error.message}`);
 }
 ```
