@@ -108,3 +108,31 @@ I like that you default to `unknown` for caught errors. This is the correct way 
 The `handleResult` in `src/like-neverthrow.ts` returns `any`. This is where the type safety "leaks." If I use the `finally` option, the return type becomes a bit of a mystery to the compiler unless the overloads are 100% perfect. This is a case where the complexity of the feature (binding `finally` into the capture call) might be outweighing the type-safety benefit.
 
 ---
+
+
+---
+
+## Neverthrow Comparison: `super-result` vs. `neverthrow` 🔄
+
+Since `src/like-neverthrow.ts` exists, it's worth comparing how this stacks up against the original `neverthrow`.
+
+### 1. Architectural Philosophy
+- **`neverthrow`**: Very much class-oriented. `Result` and `ResultAsync` are dedicated classes with a rich set of methods. It feels like a port of Rust's `Result` or similar functional patterns into a OOP-friendly TypeScript wrapper.
+- **`super-result`**: Functional-first. Even in the "neverthrow" mode, it prefers pure functions and simple type aliases. `ResultAsync` here is just `Promise<Result<T, E>>`, which is much lighter than `neverthrow`'s custom `ResultAsync` class.
+
+### 2. `ResultAsync` Implementation
+- **Original**: `neverthrow`'s `ResultAsync` is a "lazy" wrapper. It doesn't start execution until you call `.then()` or `.match()`. This allows for some cool optimizations but adds complexity.
+- **This Lib**: `ResultAsync` is just a standard `Promise`. It's eager, easy to understand, and works out-of-the-box with all existing Promise utilities. However, you lose that "lazy" monadic chaining that some people love in `neverthrow`.
+
+### 3. API Surface & Naming
+- **Mapping**: `neverthrow` uses `andThen` (monadic bind). `super-result` uses `flatMap`. `flatMap` is more idiomatic in the JS/TS ecosystem (like `Array.prototype.flatMap`), whereas `andThen` is more common in traditional functional languages.
+- **Factory Methods**: `neverthrow` uses `ResultAsync.fromPromise`. `super-result` provides `fromPromise` but also that "all-in-one" `result()` / `from()` helper.
+
+### 4. Data Representation
+- **Original**: `neverthrow` relies on class instances (`instanceof Ok`).
+- **This Lib**: Uses a plain object with a discriminator (`type: 'ok'` or `ok: true`). This makes the results much easier to serialize over the wire (JSON) without losing their "result-ness." In `neverthrow`, you often have to manually convert to/from plain objects if you're sending results between a backend and frontend.
+
+### 5. Missing Pieces?
+- `neverthrow` has a lot of "through" methods (`andThrough`, `tee`) for side effects. `super-result` seems to focus more on the core `map/flatMap/match` flow. If you're a heavy `neverthrow` power user, you might miss some of those utility methods, but for 90% of use cases, `super-result` is a much leaner alternative.
+
+---
