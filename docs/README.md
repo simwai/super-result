@@ -28,3 +28,4 @@ A familiar API for users coming from the `neverthrow` library. Uses the same dis
 
 - [GitHub Repository](https://github.com/simwai/super-result)
 - [Example Guide](examples/README.md)
+- [**Library Philosophy**](../PHILOSOPHY.md)

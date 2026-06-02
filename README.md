@@ -17,6 +17,7 @@ super-result provides a robust, tree-shakeable toolkit for functional error hand
 - **Minimal Syntax**: Reach the same results with less code.
 - **Maximum Type Safety**: Discriminated unions mean no unsafe casts.
 - **Style Flexibility**: Choose between Class-based, Functional, or Neverthrow-inspired APIs.
+- [**Library Philosophy**](./PHILOSOPHY.md): Why we built this and why ROP matters.
 - **Enterprise Ready**: Full TSDoc coverage and automated documentation.
 
 ---
@@ -75,14 +76,11 @@ const value = unwrap(doubled) // 84
 A familiar API for users of the `neverthrow` library.
 
 ```ts
-import { ok } from 'super-result/like-neverthrow'
+import { ok, err, isOk } from 'super-result/like-neverthrow'
 
 const res = ok(42)
-  .map(n => n * 2)
-  .andThen(n => ok(n + 1))
-
-if (res.isOk()) {
-  console.log(res.value) // 85
+if (isOk(res)) {
+  console.log(res.value)
 }
 ```
 
