@@ -1,10 +1,14 @@
-// #region Core types
+import { FinallyError, NonErrorThrown } from './index.js'
+
+export { FinallyError, NonErrorThrown }
+
+// #region Core Types
 
 /**
- * Successful result carrying a value.
+ * Discriminator-based success variant.
  *
- * @template T The success value type.
- * @category Result
+ * @template T The type of the value.
+ * @category Core Types
  */
 export interface Ok<T> {
   readonly type: 'ok'
@@ -12,10 +16,10 @@ export interface Ok<T> {
 }
 
 /**
- * Failed result carrying an error.
+ * Discriminator-based failure variant.
  *
- * @template E The error type.
- * @category Result
+ * @template E The type of the error.
+ * @category Core Types
  */
 export interface Err<E> {
   readonly type: 'err'
@@ -23,71 +27,42 @@ export interface Err<E> {
 }
 
 /**
- * Discriminated union of {@link Ok} and {@link Err}.
+ * A discriminated union representing either a success ({@link Ok}) or a failure ({@link Err}).
  *
- * @template T The success value type.
- * @template E The error type.
- * @category Result
+ * @template T The type of the value.
+ * @template E The type of the error.
+ * @category Core Types
  */
 export type Result<T, E> = Ok<T> | Err<E>
 
 /**
- * Async variant — a `Promise` that always resolves to a {@link Result}.
+ * A promise of a {@link Result}.
  *
- * @template T The success value type.
- * @template E The error type.
- * @category Result
+ * @template T The type of the value.
+ * @template E The type of the error.
+ * @category Core Types
  */
 export type ResultAsync<T, E> = Promise<Result<T, E>>
 
-// #endregion
-
-// #region Errors
-
 /**
- * Thrown by {@link unwrap} when the error value is not an `Error` instance.
- * Wraps the raw thrown value in `.value` for inspection.
+ * Options for capturing errors during Result creation.
  *
- * @category Errors
+ * @template T The success type.
+ * @template E The error type.
+ * @category Core Types
  */
-export class NonErrorThrown extends Error {
-  public readonly value: unknown
-
-  /**
-   * @param value The non-Error value that was thrown.
-   */
-  public constructor(value: unknown) {
-    super('Non-error value thrown.')
-    this.name = 'NonErrorThrown'
-    this.value = value
-  }
-}
-
-/**
- * Wraps both the original result and a cleanup error when a finally block fails.
- *
- * @template T The success value type of the original result.
- * @template E The error type of the original result.
- * @category Errors
- */
-export class FinallyError<T, E> extends Error {
-  public readonly originalResult: Result<T, E>
-  public readonly finallyError: unknown
-
-  public constructor(originalResult: Result<T, E>, finallyError: unknown) {
-    super('Error occurred in finally block.')
-    this.name = 'FinallyError'
-    this.originalResult = originalResult
-    this.finallyError = finallyError
-  }
+export interface CaptureOptions<T, E> {
+  catch?: (error: unknown) => E
+  finally?: (result: Result<T, E>) => void | Promise<void>
+  mapFinallyError?: (error: unknown) => unknown
 }
 
 // #endregion
 
-// #region Constructors
+// #region Basic Constructors
 
 /**
- * Create a successful {@link Ok} result.
+ * Create a successful {@link Result}.
  *
  * @category Constructors
  */
@@ -96,7 +71,7 @@ export /* @__NO_SIDE_EFFECTS__ */ function ok<T>(value: T): Ok<T> {
 }
 
 /**
- * Create a failed {@link Err} result.
+ * Create a failed {@link Result}.
  *
  * @category Constructors
  */
@@ -128,60 +103,38 @@ export /* @__NO_SIDE_EFFECTS__ */ function errAsync<E>(
 
 // #endregion
 
-// #region Predicates
+// #region Checks
 
 /**
- * Type guard: check if a result is {@link Ok}.
+ * Check if a {@link Result} is successful.
  *
- * @category Predicates
+ * @category Guards
  */
-export /* @__NO_SIDE_EFFECTS__ */ function isOk<T, E>(
-  result: Result<T, E>,
-): result is Ok<T> {
+export function isOk<T, E>(result: Result<T, E>): result is Ok<T> {
   return result.type === 'ok'
 }
 
 /**
- * Type guard: check if a result is {@link Err}.
+ * Check if a {@link Result} is a failure.
  *
- * @category Predicates
+ * @category Guards
  */
-export /* @__NO_SIDE_EFFECTS__ */ function isErr<T, E>(
-  result: Result<T, E>,
-): result is Err<E> {
+export function isErr<T, E>(result: Result<T, E>): result is Err<E> {
   return result.type === 'err'
 }
 
 // #endregion
 
-// #region Capture helpers
+// #region Capture
 
 /**
- * Options for capturing operations via {@link fromThrowable} and others.
- *
- * @template T The success value type.
- * @template E The error type.
- * @category Capture
- */
-export interface CaptureOptions<T, E> {
-  /** Custom error mapper for caught exceptions. Defaults to factory default. */
-  catch?: (error: unknown) => E
-
-  /** Executes a callback after the operation, regardless of success or failure. */
-  finally?: (result: Result<T, E>) => void | PromiseLike<void>
-
-  /** Maps a finally-block failure. Overrides factory default. */
-  mapFinallyError?: (error: unknown) => unknown
-}
-
-/**
- * Executes a synchronous function and captures any thrown error.
+ * Wrap a synchronous operation that might throw.
  *
  * @category Capture
  */
-export function fromThrowable<T, E = unknown>(
+export function fromThrowable<T, E>(
   fn: () => T,
-  mapError: (error: unknown) => E = (e) => e as E,
+  mapError: (error: unknown) => E,
 ): Result<T, E> {
   try {
     return ok(fn())
@@ -191,32 +144,34 @@ export function fromThrowable<T, E = unknown>(
 }
 
 /**
- * Wraps a `PromiseLike` into a {@link ResultAsync}, capturing any rejection.
+ * Wrap a promise into a {@link ResultAsync}.
  *
  * @category Capture
  */
-export async function fromPromise<T, E = unknown>(
+export async function fromPromise<T, E>(
   promise: PromiseLike<T>,
-  mapError: (error: unknown) => E = (e) => e as E,
+  mapError: (error: unknown) => E,
 ): ResultAsync<T, E> {
   try {
-    return ok(await promise)
+    const value = await promise
+    return ok(value)
   } catch (error) {
     return err(mapError(error))
   }
 }
 
 /**
- * Executes an async function and captures any thrown error.
+ * Wrap an asynchronous operation that might throw.
  *
  * @category Capture
  */
-export async function fromAsyncThrowable<T, E = unknown>(
+export async function fromAsyncThrowable<T, E>(
   fn: () => PromiseLike<T>,
-  mapError: (error: unknown) => E = (e) => e as E,
+  mapError: (error: unknown) => E,
 ): ResultAsync<T, E> {
   try {
-    return ok(await fn())
+    const value = await fn()
+    return ok(value)
   } catch (error) {
     return err(mapError(error))
   }
@@ -224,12 +179,12 @@ export async function fromAsyncThrowable<T, E = unknown>(
 
 // #endregion
 
-// #region Transformation
+// #region Mapping
 
 /**
- * Maps the success value of a {@link Result}.
+ * Map the success value of a {@link Result}.
  *
- * @category Transformation
+ * @category Mapping
  */
 export /* @__NO_SIDE_EFFECTS__ */ function map<T, E, U>(
   result: Result<T, E>,
@@ -239,23 +194,23 @@ export /* @__NO_SIDE_EFFECTS__ */ function map<T, E, U>(
 }
 
 /**
- * Async variant of {@link map}. Awaits `resultPromise` before mapping.
+ * Async variant of {@link map}.
  *
- * @category Transformation
+ * @category Mapping
  */
 export async function mapAsync<T, E, U>(
   resultPromise: ResultAsync<T, E>,
   fn: (value: T) => U | PromiseLike<U>,
-): ResultAsync<U, E> {
+): Promise<Result<U, E>> {
   const result = await resultPromise
   if (isErr(result)) return result
   return ok(await fn(result.value))
 }
 
 /**
- * Maps the error value of a {@link Result}.
+ * Map the error value of a {@link Result}.
  *
- * @category Transformation
+ * @category Mapping
  */
 export /* @__NO_SIDE_EFFECTS__ */ function mapErr<T, E, F>(
   result: Result<T, E>,
@@ -265,23 +220,23 @@ export /* @__NO_SIDE_EFFECTS__ */ function mapErr<T, E, F>(
 }
 
 /**
- * Async variant of {@link mapErr}. Awaits `resultPromise` before mapping.
+ * Async variant of {@link mapErr}.
  *
- * @category Transformation
+ * @category Mapping
  */
 export async function mapErrAsync<T, E, F>(
   resultPromise: ResultAsync<T, E>,
   fn: (error: E) => F | PromiseLike<F>,
-): ResultAsync<T, F> {
+): Promise<Result<T, F>> {
   const result = await resultPromise
   if (isOk(result)) return result
   return err(await fn(result.error))
 }
 
 /**
- * Flat maps the success value of a {@link Result}.
+ * Map the success value to a new {@link Result}.
  *
- * @category Transformation
+ * @category Mapping
  */
 export /* @__NO_SIDE_EFFECTS__ */ function flatMap<T, E, U>(
   result: Result<T, E>,
@@ -291,17 +246,97 @@ export /* @__NO_SIDE_EFFECTS__ */ function flatMap<T, E, U>(
 }
 
 /**
- * Async variant of {@link flatMap}. Supports returning `Result` or `ResultAsync`.
+ * Async variant of {@link flatMap}.
  *
- * @category Transformation
+ * @category Mapping
  */
 export async function flatMapAsync<T, E, U>(
   resultPromise: ResultAsync<T, E>,
   fn: (value: T) => Result<U, E> | ResultAsync<U, E>,
-): ResultAsync<U, E> {
+): Promise<Result<U, E>> {
   const result = await resultPromise
   if (isErr(result)) return result
   return fn(result.value)
+}
+
+/**
+ * Alias for {@link flatMap}.
+ *
+ * @category Mapping
+ */
+export const andThen = flatMap
+
+/**
+ * Alias for {@link flatMapAsync}.
+ *
+ * @category Mapping
+ */
+export const andThenAsync = flatMapAsync
+
+/**
+ * Return `result` if `Ok`, otherwise call `onErr` and return its result.
+ *
+ * @category Mapping
+ */
+export function orElse<T, E, F>(
+  result: Result<T, E>,
+  onErr: (error: E) => Result<T, F>,
+): Result<T, F> {
+  return isOk(result) ? result : onErr(result.error)
+}
+
+/**
+ * Async variant of {@link orElse}.
+ *
+ * @category Mapping
+ */
+export async function orElseAsync<T, E, F>(
+  resultPromise: ResultAsync<T, E>,
+  onErr: (error: E) => Result<T, F> | ResultAsync<T, F>,
+): Promise<Result<T, F>> {
+  const result = await resultPromise
+  return isOk(result) ? result : onErr(result.error)
+}
+
+/**
+ * Combine multiple results into a single result containing an array of values.
+ * Fails if any of the input results are an error.
+ *
+ * @category Combination
+ */
+export function combine<T extends Result<unknown, unknown>[]>(
+  results: T,
+): Result<{ [K in keyof T]: ResultOk<T[K]> }, ResultErr<T[number]>> {
+  const values = [] as any
+  for (const result of results) {
+    if (isErr(result)) return result as any
+    values.push(result.value)
+  }
+  return ok(values)
+}
+
+/**
+ * Async variant of {@link combine}.
+ *
+ * @category Combination
+ */
+export async function combineAsync<
+  T extends (Result<unknown, unknown> | ResultAsync<unknown, unknown>)[],
+>(
+  results: T,
+): Promise<
+  Result<
+    { [K in keyof T]: ResultOk<Awaited<T[K]>> },
+    ResultErr<Awaited<T[number]>>
+  >
+> {
+  const values = [] as any
+  for (const r of results) {
+    const result = await r
+    if (isErr(result)) return result as any
+    values.push(result.value)
+  }
+  return ok(values)
 }
 
 // #endregion
@@ -309,56 +344,43 @@ export async function flatMapAsync<T, E, U>(
 // #region Lifecycle
 
 /**
- * Execute a callback regardless of the result. Returns a promise resolving to the result
- * or a {@link FinallyError} if the callback fails.
+ * Execute a callback regardless of success or failure.
  *
  * @category Lifecycle
  */
 export function onFinally<T, E>(
-  result: ResultAsync<T, E>,
-  callback: (result: Result<T, E>) => void | PromiseLike<void>,
-  mapFinallyError?: (error: unknown) => unknown,
-): ResultAsync<T, E | FinallyError<T, E>>
-export function onFinally<T, E>(
   result: Result<T, E>,
-  callback: (result: Result<T, E>) => void | PromiseLike<void>,
+  callback: (result: Result<T, E>) => void | Promise<void>,
   mapFinallyError?: (error: unknown) => unknown,
-): Result<T, E | FinallyError<T, E>> | ResultAsync<T, E | FinallyError<T, E>>
-export function onFinally<T, E>(
-  result: Result<T, E> | ResultAsync<T, E>,
-  callback: (result: Result<T, E>) => void | PromiseLike<void>,
-  mapFinallyError: (error: unknown) => unknown = (e) => e,
-): any {
-  if (isPromiseLike(result)) {
-    return result.then((res) => onFinally(res, callback, mapFinallyError))
-  }
-
+): Result<T, E | unknown> | ResultAsync<T, E | unknown> {
+  const mapper = mapFinallyError ?? ((e) => e)
   try {
-    const voidOrPromise = callback(result)
-    if (isPromiseLike(voidOrPromise)) {
-      return voidOrPromise.then(
+    const res = callback(result)
+    if (res instanceof Promise) {
+      return res.then(
         () => result,
-        (error) => err(new FinallyError(result, mapFinallyError(error))),
+        (error) => err(new FinallyError(result as any, mapper(error))),
       )
     }
     return result
   } catch (error) {
-    return err(new FinallyError(result, mapFinallyError(error)))
+    return err(new FinallyError(result as any, mapper(error)))
   }
 }
 
 /**
- * Purely async variant of {@link onFinally}.
+ * Async variant of {@link onFinally}.
  *
  * @category Lifecycle
  */
 export async function onFinallyAsync<T, E>(
   resultPromise: ResultAsync<T, E>,
-  callback: (result: Result<T, E>) => void | PromiseLike<void>,
-  mapFinallyError: (error: unknown) => unknown = (e) => e,
-): ResultAsync<T, E | FinallyError<T, E>> {
+  callback: (result: Result<T, E>) => void | Promise<void>,
+  mapFinallyError?: (error: unknown) => unknown,
+): Promise<Result<T, E | unknown>> {
   const result = await resultPromise
-  return onFinally(result, callback, mapFinallyError)
+  const final = onFinally(result, callback, mapFinallyError)
+  return Promise.resolve(final)
 }
 
 // #endregion
@@ -366,7 +388,7 @@ export async function onFinallyAsync<T, E>(
 // #region Pattern Matching
 
 /**
- * Branch logic based on the result state.
+ * Execute a function based on the result variant.
  *
  * @category Pattern Matching
  */
@@ -389,7 +411,7 @@ export async function matchAsync<T, E, U, V>(
   onErr: (error: E) => V | PromiseLike<V>,
 ): Promise<U | V> {
   const result = await resultPromise
-  return match(result, onOk, onErr)
+  return match(result, onOk, onErr) as any
 }
 
 // #endregion
@@ -435,7 +457,7 @@ export /* @__NO_SIDE_EFFECTS__ */ function unwrapOr<T, E, D>(
 }
 
 /**
- * Async variant of {@link unwrapOr}.
+ * Async variant of \{@link unwrapOr\}.
  *
  * @category Unwrap
  */
@@ -459,7 +481,7 @@ export /* @__NO_SIDE_EFFECTS__ */ function unwrapOrElse<T, E, U>(
 }
 
 /**
- * Async variant of {@link unwrapOrElse}.
+ * Async variant of \{@link unwrapOrElse\}.
  *
  * @category Unwrap
  */
@@ -563,19 +585,26 @@ export interface ResultInterface<E = unknown> {
     result: ResultAsync<T, E>,
     fn: (value: T) => U | PromiseLike<U>,
   ): Promise<Result<U, E>>
-  mapErr<T, F>(result: Result<T, E>, fn: (error: E) => F): Result<T, F>
-  mapErrAsync<T, F>(
+  mapErr<T, E, F>(result: Result<T, E>, fn: (error: E) => F): Result<T, F>
+  mapErrAsync<T, E, F>(
     result: ResultAsync<T, E>,
     fn: (error: E) => F | PromiseLike<F>,
   ): Promise<Result<T, F>>
-  flatMap<T, U>(
+  flatMap<T, E, U>(
     result: Result<T, E>,
     fn: (value: T) => Result<U, E>,
   ): Result<U, E>
-  flatMapAsync<T, U>(
+  flatMapAsync<T, E, U>(
     result: ResultAsync<T, E>,
     fn: (value: T) => Result<U, E> | ResultAsync<U, E>,
   ): Promise<Result<U, E>>
+
+  andThen: typeof andThen
+  andThenAsync: typeof andThenAsync
+  orElse: typeof orElse
+  orElseAsync: typeof orElseAsync
+  combine: typeof combine
+  combineAsync: typeof combineAsync
 
   match: typeof match
   matchAsync: typeof matchAsync
@@ -595,7 +624,7 @@ export interface ResultInterface<E = unknown> {
  * Create a {@link ResultInterface} with pre-bound error mapping.
  *
  * @param options Optional mapping configuration or a single `mapError` function.
- * @returns A bound {@link ResultInterface}.
+ * @returns A bound \{@link ResultInterface\}.
  * @category Factory
  *
  * @example
@@ -704,6 +733,12 @@ export function createResult<E = unknown>(
     mapErrAsync,
     flatMap,
     flatMapAsync,
+    andThen,
+    andThenAsync,
+    orElse,
+    orElseAsync,
+    combine,
+    combineAsync,
     match,
     matchAsync,
     unwrap,

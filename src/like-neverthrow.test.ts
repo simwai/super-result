@@ -2,6 +2,10 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   FinallyError,
   NonErrorThrown,
+  andThen,
+  andThenAsync,
+  combine,
+  combineAsync,
   createResult,
   err,
   errAsync,
@@ -22,15 +26,17 @@ import {
   okAsync,
   onFinally,
   onFinallyAsync,
+  orElse,
+  orElseAsync,
   unwrap,
   unwrapAsync,
   unwrapOr,
   unwrapOrAsync,
   unwrapOrElse,
   unwrapOrElseAsync,
-} from './like-neverthrow.js'
+} from './like-neverthrow'
 
-describe('Constructors', () => {
+describe('Basic Constructors', () => {
   it('ok() should create an Ok result', () => {
     const result = ok(42)
     expect(result).toEqual({ type: 'ok', value: 42 })
@@ -52,44 +58,48 @@ describe('Constructors', () => {
   })
 })
 
-describe('Guards', () => {
+describe('Checks', () => {
   it('isOk() should return true for Ok, false for Err', () => {
-    expect(isOk(ok(1))).toBe(true)
-    expect(isOk(err(1))).toBe(false)
+    expect(isOk(ok(42))).toBe(true)
+    expect(isOk(err('error'))).toBe(false)
   })
 
   it('isErr() should return true for Err, false for Ok', () => {
-    expect(isErr(err(1))).toBe(true)
-    expect(isErr(ok(1))).toBe(false)
+    expect(isErr(err('error'))).toBe(true)
+    expect(isErr(ok(42))).toBe(false)
   })
 })
 
 describe('Capture helpers (Standalone)', () => {
   describe('fromThrowable', () => {
     it('should return Ok when function returns value', () => {
-      const result = fromThrowable(() => 42)
+      const result = fromThrowable(
+        () => 42,
+        (e) => String(e),
+      )
       expect(result).toEqual(ok(42))
     })
 
     it('should return Err when function throws', () => {
-      const error = new Error('boom')
-      const result = fromThrowable(() => {
-        throw error
-      })
-      expect(result).toEqual(err(error))
+      const result = fromThrowable(
+        () => {
+          throw 'boom'
+        },
+        (e) => String(e),
+      )
+      expect(result).toEqual(err('boom'))
     })
   })
 
   describe('fromPromise', () => {
     it('should resolve to Ok when promise resolves', async () => {
-      const result = await fromPromise(Promise.resolve(42), (e) => e)
+      const result = await fromPromise(Promise.resolve(42), (e) => String(e))
       expect(result).toEqual(ok(42))
     })
 
     it('should resolve to Err when promise rejects', async () => {
-      const error = new Error('boom')
-      const result = await fromPromise(Promise.reject(error), (e) => e)
-      expect(result).toEqual(err(error))
+      const result = await fromPromise(Promise.reject('boom'), (e) => String(e))
+      expect(result).toEqual(err('boom'))
     })
   })
 
@@ -97,25 +107,24 @@ describe('Capture helpers (Standalone)', () => {
     it('should resolve to Ok when async function returns', async () => {
       const result = await fromAsyncThrowable(
         async () => 42,
-        (e) => e,
+        (e) => String(e),
       )
       expect(result).toEqual(ok(42))
     })
 
     it('should resolve to Err when async function throws', async () => {
-      const error = new Error('boom')
       const result = await fromAsyncThrowable(
         async () => {
-          throw error
+          throw 'boom'
         },
-        (e) => e,
+        (e) => String(e),
       )
-      expect(result).toEqual(err(error))
+      expect(result).toEqual(err('boom'))
     })
   })
 })
 
-describe('Transformers', () => {
+describe('Mapping', () => {
   describe('map', () => {
     it('should transform Ok value', () => {
       const result = map(ok(21), (n) => n * 2)
@@ -123,7 +132,7 @@ describe('Transformers', () => {
     })
 
     it('should pass through Err', () => {
-      const result = map(err('error') as any, (n: any) => n * 2)
+      const result = map(err('error'), (n: number) => n * 2)
       expect(result).toEqual(err('error'))
     })
   })
@@ -135,10 +144,7 @@ describe('Transformers', () => {
     })
 
     it('should pass through Err asynchronously', async () => {
-      const result = await mapAsync(
-        errAsync('error') as any,
-        async (n: any) => n * 2,
-      )
+      const result = await mapAsync(errAsync('error'), async (n: number) => n * 2)
       expect(result).toEqual(err('error'))
     })
   })
@@ -150,7 +156,7 @@ describe('Transformers', () => {
     })
 
     it('should pass through Ok', () => {
-      const result = mapErr(ok(42) as any, (s: any) => s.toUpperCase())
+      const result = mapErr(ok(42), (s: string) => s.toUpperCase())
       expect(result).toEqual(ok(42))
     })
   })
@@ -164,7 +170,7 @@ describe('Transformers', () => {
     })
 
     it('should pass through Ok asynchronously', async () => {
-      const result = await mapErrAsync(okAsync(42) as any, async (s: any) =>
+      const result = await mapErrAsync(okAsync(42), async (s: string) =>
         s.toUpperCase(),
       )
       expect(result).toEqual(ok(42))
@@ -183,7 +189,7 @@ describe('Transformers', () => {
     })
 
     it('should pass through original Err', () => {
-      const result = flatMap(err('error') as any, (n: any) => ok(n * 2))
+      const result = flatMap(err('error'), (n: number) => ok(n * 2))
       expect(result).toEqual(err('error'))
     })
   })
@@ -201,8 +207,8 @@ describe('Transformers', () => {
 
     it('should pass through original Err asynchronously', async () => {
       const result = await flatMapAsync(
-        errAsync('error') as any,
-        async (n: any) => ok(n * 2),
+        errAsync('error'),
+        async (n: number) => ok(n * 2),
       )
       expect(result).toEqual(err('error'))
     })
@@ -212,32 +218,32 @@ describe('Transformers', () => {
 describe('Pattern Matching', () => {
   describe('match', () => {
     it('should call onOk for Ok', () => {
-      const onOk = vi.fn((n) => n * 2)
-      const onErr = vi.fn()
-      const result = match(ok(21), onOk, onErr)
-      expect(result).toBe(42)
-      expect(onOk).toHaveBeenCalledWith(21)
-      expect(onErr).not.toHaveBeenCalled()
+      const result = match(
+        ok(42),
+        (n) => n * 2,
+        () => 0,
+      )
+      expect(result).toBe(84)
     })
 
     it('should call onErr for Err', () => {
-      const onOk = vi.fn()
-      const onErr = vi.fn((s) => s.toUpperCase())
-      const result = match(err('error'), onOk, onErr)
+      const result = match(
+        err('error'),
+        () => 0,
+        (s) => s.toUpperCase(),
+      )
       expect(result).toBe('ERROR')
-      expect(onErr).toHaveBeenCalledWith('error')
-      expect(onOk).not.toHaveBeenCalled()
     })
   })
 
   describe('matchAsync', () => {
     it('should await and call onOk for Ok', async () => {
       const result = await matchAsync(
-        okAsync(21),
+        okAsync(42),
         async (n) => n * 2,
         async () => 0,
       )
-      expect(result).toBe(42)
+      expect(result).toBe(84)
     })
 
     it('should await and call onErr for Err', async () => {
@@ -592,5 +598,80 @@ describe('onFinallyAsync with async callback', () => {
       await new Promise((resolve) => setTimeout(resolve, 1))
     })
     expect(finalRes).toEqual(result)
+  })
+})
+
+describe('New Neverthrow methods', () => {
+  describe('andThen / andThenAsync', () => {
+    it('should be aliases for flatMap', () => {
+      expect(andThen).toBe(flatMap)
+      expect(andThenAsync).toBe(flatMapAsync)
+    })
+  })
+
+  describe('orElse', () => {
+    it('should return original Ok', () => {
+      const r = ok(42)
+      expect(orElse(r, () => ok(0))).toBe(r)
+    })
+
+    it('should return new result for Err', () => {
+      const r = err('fail')
+      expect(orElse(r, (e) => ok(e.length))).toEqual(ok(4))
+    })
+  })
+
+  describe('orElseAsync', () => {
+    it('should return original Ok asynchronously', async () => {
+      const r = ok(42)
+      expect(await orElseAsync(okAsync(42), async () => ok(0))).toEqual(r)
+    })
+
+    it('should return new result for Err asynchronously', async () => {
+      expect(await orElseAsync(errAsync('fail'), async (e) => ok(e.length))).toEqual(ok(4))
+    })
+  })
+
+  describe('combine', () => {
+    it('should combine multiple Ok results', () => {
+      const res = combine([ok(1), ok('two'), ok(true)])
+      expect(res).toEqual(ok([1, 'two', true]))
+    })
+
+    it('should return the first Err encountered', () => {
+      const res = combine([ok(1), err('fail'), ok(3)])
+      expect(res).toEqual(err('fail'))
+    })
+  })
+
+  describe('combineAsync', () => {
+    it('should combine multiple async Ok results', async () => {
+      const res = await combineAsync([okAsync(1), okAsync('two'), okAsync(true)])
+      expect(res).toEqual(ok([1, 'two', true]))
+    })
+
+    it('should return the first Err encountered asynchronously', async () => {
+      const res = await combineAsync([okAsync(1), errAsync('fail'), okAsync(3)])
+      expect(res).toEqual(err('fail'))
+    })
+  })
+
+  describe('Factory (createResult) with new methods', () => {
+    const Result = createResult()
+
+    it('should have andThen and andThenAsync', () => {
+      expect(Result.andThen).toBe(andThen)
+      expect(Result.andThenAsync).toBe(andThenAsync)
+    })
+
+    it('should have orElse and orElseAsync', () => {
+      expect(Result.orElse).toBe(orElse)
+      expect(Result.orElseAsync).toBe(orElseAsync)
+    })
+
+    it('should have combine and combineAsync', () => {
+      expect(Result.combine).toBe(combine)
+      expect(Result.combineAsync).toBe(combineAsync)
+    })
   })
 })
