@@ -72,3 +72,39 @@ A compatibility layer for `neverthrow` users.
 Overall, this is a very solid and well-thought-out library. My main advice would be to decide how much "magic" (like the `result()` function) you want versus being explicit, and to keep an eye on code duplication between the different API styles.
 
 Keep up the great work! ✨
+
+---
+
+## Type Safety Deep Dive 🛡️
+
+As an external user, I want to trust that the types are doing the heavy lifting without hiding bugs behind `any`.
+
+### The `any` Tax
+In `src/functions.ts` and `src/like-neverthrow.ts`, I noticed a fair amount of `any` in the implementations.
+- **Implementation vs. Interface**: While it's common to use `any` inside a function with complex overloads to satisfy the compiler, it's a "trust me" contract. If the implementation logic drifts from the overloads, the compiler won't save you.
+- **Recommendation**: Try to use `unknown` and type guards (`isPromise`, etc.) even in the implementation. It's more work but keeps the internals honest.
+
+### Overload Overload
+The `result()` helper in `src/functions.ts` is a bit of a "god function." It handles:
+1. Sync values
+2. Promises
+3. Sync factories
+4. Async factories
+5. Existing Results
+
+This leads to a massive stack of overloads. While "easy" for the user, it makes the library harder to maintain and can lead to confusing "No overload matches this call" errors that are 20 lines long. Splitting these into `fromPromise`, `fromSync`, etc., would be more "boring" but much more predictable.
+
+### Discriminated Union Consistency
+You're managing two different shapes of results:
+1. `{ ok: true, value: T } | { ok: false, error: E }` (Core)
+2. `{ type: 'ok', value: T } | { type: 'err', error: E }` (Neverthrow-style)
+
+This is a bit of a "split personality" for the library. If I'm an external user, I might get confused which one I'm using if I just import `Result`. It might be better to rename the neverthrow-style ones to something like `LegacyResult` or `CompatResult` to make the distinction clear.
+
+### The `unknown` Error Pattern
+I like that you default to `unknown` for caught errors. This is the correct way to handle `try/catch` in modern TS. Forcing users to map these to a known error type via `createResult` is a great "pit of success" design.
+
+### complexity vs. Utility
+The `handleResult` in `src/like-neverthrow.ts` returns `any`. This is where the type safety "leaks." If I use the `finally` option, the return type becomes a bit of a mystery to the compiler unless the overloads are 100% perfect. This is a case where the complexity of the feature (binding `finally` into the capture call) might be outweighing the type-safety benefit.
+
+---
