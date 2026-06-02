@@ -29,7 +29,7 @@ if (isOk(result)) {
   console.log('Config loaded:', result.value.apiUrl);
 } else {
   // .error is used for error access after checks
-  console.error('Failed to load config:', result.error);
+  console.error('Failed to load config:', (result.error as any).message);
 }
 ```
 
