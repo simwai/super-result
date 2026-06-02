@@ -6,7 +6,7 @@
 
 # Type Alias: ResultConfig\<E, FE\>
 
-> **ResultConfig**\<`E`, `FE`\> = \{ `mapError?`: (`error`) => `E`; `mapFinallyError?`: (`error`) => `FE`; \} \| ((`error`) => `E`)
+> **ResultConfig**\<`E`, `FE`\> = { `mapError?`: (`error`) => `E`; `mapFinallyError?`: (`error`) => `FE`; } \| ((`error`) => `E`)
 
 Defined in: [src/functions.ts:238](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/functions.ts#L238)
 

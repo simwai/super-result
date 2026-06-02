@@ -457,7 +457,7 @@ export /* @__NO_SIDE_EFFECTS__ */ function unwrapOr<T, E, D>(
 }
 
 /**
- * Async variant of \{@link unwrapOr\}.
+ * Async variant of {@link unwrapOr}.
  *
  * @category Unwrap
  */
@@ -481,7 +481,7 @@ export /* @__NO_SIDE_EFFECTS__ */ function unwrapOrElse<T, E, U>(
 }
 
 /**
- * Async variant of \{@link unwrapOrElse\}.
+ * Async variant of {@link unwrapOrElse}.
  *
  * @category Unwrap
  */
@@ -624,7 +624,7 @@ export interface ResultInterface<E = unknown> {
  * Create a {@link ResultInterface} with pre-bound error mapping.
  *
  * @param options Optional mapping configuration or a single `mapError` function.
- * @returns A bound \{@link ResultInterface\}.
+ * @returns A bound {@link ResultInterface}.
  * @category Factory
  *
  * @example

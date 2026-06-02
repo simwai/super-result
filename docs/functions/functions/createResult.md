@@ -46,7 +46,7 @@ Creates a bound functional API with pre-configured error mapping.
 
 ### flatMap
 
-> **flatMap**: \{\<`T`, `E`, `U`\>(`input`, `fn`): [`RawResult`](../../index/type-aliases/RawResult.md)\<`U`, `E`\>; \<`T`, `E`, `U`\>(`input`, `fn`): `Promise`\<[`RawResult`](../../index/type-aliases/RawResult.md)\<`U`, `E`\>\>; \}
+> **flatMap**: {\<`T`, `E`, `U`\>(`input`, `fn`): [`RawResult`](../../index/type-aliases/RawResult.md)\<`U`, `E`\>; \<`T`, `E`, `U`\>(`input`, `fn`): `Promise`\<[`RawResult`](../../index/type-aliases/RawResult.md)\<`U`, `E`\>\>; }
 
 #### Call Signature
 
@@ -158,7 +158,7 @@ Maps the success value to a new [RawResult](../../index/type-aliases/RawResult.m
 
 ### map
 
-> **map**: \{\<`T`, `E`, `U`\>(`input`, `fn`): [`RawResult`](../../index/type-aliases/RawResult.md)\<`U`, `E`\>; \<`T`, `E`, `U`\>(`input`, `fn`): `Promise`\<[`RawResult`](../../index/type-aliases/RawResult.md)\<`U`, `E`\>\>; \}
+> **map**: {\<`T`, `E`, `U`\>(`input`, `fn`): [`RawResult`](../../index/type-aliases/RawResult.md)\<`U`, `E`\>; \<`T`, `E`, `U`\>(`input`, `fn`): `Promise`\<[`RawResult`](../../index/type-aliases/RawResult.md)\<`U`, `E`\>\>; }
 
 #### Call Signature
 
@@ -292,7 +292,7 @@ The success value.
 
 ### unwrap
 
-> **unwrap**: \{\<`T`, `E`\>(`input`): `T`; \<`T`, `E`\>(`input`): `Promise`\<`T`\>; \}
+> **unwrap**: {\<`T`, `E`\>(`input`): `T`; \<`T`, `E`\>(`input`): `Promise`\<`T`\>; }
 
 #### Call Signature
 
@@ -348,7 +348,7 @@ Returns the value if success, otherwise throws the error.
 
 ### unwrapOr
 
-> **unwrapOr**: \{\<`T`, `E`, `D`\>(`input`, `defaultValue`): `T` \| `D`; \<`T`, `E`, `D`\>(`input`, `defaultValue`): `Promise`\<`T` \| `D`\>; \}
+> **unwrapOr**: {\<`T`, `E`, `D`\>(`input`, `defaultValue`): `T` \| `D`; \<`T`, `E`, `D`\>(`input`, `defaultValue`): `Promise`\<`T` \| `D`\>; }
 
 #### Call Signature
 
@@ -420,7 +420,7 @@ Returns the value if success, otherwise returns the provided default value.
 
 ### unwrapOrElse
 
-> **unwrapOrElse**: \{\<`T`, `E`, `D`\>(`input`, `fallback`): `T` \| `D`; \<`T`, `E`, `D`\>(`input`, `fallback`): `Promise`\<`T` \| `D`\>; \}
+> **unwrapOrElse**: {\<`T`, `E`, `D`\>(`input`, `fallback`): `T` \| `D`; \<`T`, `E`, `D`\>(`input`, `fallback`): `Promise`\<`T` \| `D`\>; }
 
 #### Call Signature
 
