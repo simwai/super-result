@@ -33,7 +33,7 @@ This provides the functional/composable API.
 
 ### Pros
 - **Tree-shakeable**: This is the way to go for modern web apps. Small, focused functions.
-- **`createResult`**: This is a brilliant pattern. Being able to pre-configure an error mapper for a whole module/service saves so much boilerplate.
+- **`createResult`**: This is a brilliant pattern. Being able to pre-configured an error mapper for a whole module/service saves so much boilerplate.
 
 ### Suggestions
 - **The `result()` helper**: It's a bit "magical". It tries to be a Swiss army knife (handling sync values, promises, functions, results). I'd personally prefer more explicit names like `from()` or `wrap()`. When a function does too many things, it can lead to subtle bugs or confusing type errors when you pass it something unexpected.
@@ -109,9 +109,6 @@ The `handleResult` in `src/like-neverthrow.ts` returns `any`. This is where the 
 
 ---
 
-
----
-
 ## Neverthrow Comparison: `super-result` vs. `neverthrow` 🔄
 
 Since `src/like-neverthrow.ts` exists, it's worth comparing how this stacks up against the original `neverthrow`.
@@ -134,39 +131,6 @@ Since `src/like-neverthrow.ts` exists, it's worth comparing how this stacks up a
 
 ### 5. Missing Pieces?
 - `neverthrow` has a lot of "through" methods (`andThrough`, `tee`) for side effects. `super-result` seems to focus more on the core `map/flatMap/match` flow. If you're a heavy `neverthrow` power user, you might miss some of those utility methods, but for 90% of use cases, `super-result` is a much leaner alternative.
-
----
-
-
----
-
-## Design Philosophy: Why the Split? 🤔
-
-You might wonder why we have three different API styles (Class-based, Functional, and Neverthrow-style) in one library.
-
-### 1. Choice for the User
-Every developer has their own preference. Some love the fluent, chainable style of classes. Others prefer the clean, composable nature of pure functions. By providing all three, we let the user pick the tool that fits their brain and their project best.
-
-### 2. Full Tree-shakability 🌳
-The magic here is that because we've designed the entry points carefully, **you only pay for what you use**. If you only use the functional API, the  class won't end up in your final bundle. This makes the "different styles" approach a zero-cost abstraction for the end user.
-
----
-
-## Why `super-result` instead of `neverthrow`? 🚀
-
-It's a fair question. Why not just use the industry standard?
-
-### 1. Maintenance & Future-proofing
-The original `neverthrow` has become somewhat stagnant in terms of maintenance. Modern JS/TS moves fast, and having a library that is actively maintained and built with modern tooling (unbuild, vitest, biome) is a huge advantage for long-term stability.
-
-### 2. Removing Unnecessary Complexity
-`neverthrow` introduces a custom `ResultAsync` object which re-implements a lot of async logic. This creates a "dual-track" API where you have to learn one set of methods for sync and another for async.
-
-In `super-result`, we keep it lean:
-- **No `ResultAsync` wrapper**: We treat async results as standard Promises.
-- **Native Interop**: Because it's just a Promise, it works seamlessly with every existing async tool in the JS ecosystem without needing a custom "adapter" layer.
-- **Lower Cognitive Load**: You don't need to wrap/unwrap between standard Promises and a proprietary `ResultAsync` class.
-
 
 ---
 
@@ -196,3 +160,10 @@ In `super-result`, we keep it lean:
 - **No `ResultAsync` wrapper**: We treat async results as standard Promises.
 - **Native Interop**: Because it's just a Promise, it works seamlessly with every existing async tool in the JS ecosystem without needing a custom "adapter" layer.
 - **Lower Cognitive Load**: You don't need to wrap/unwrap between standard Promises and a proprietary `ResultAsync` class.
+
+---
+
+## Links
+
+- [GitHub Repository](https://github.com/simwai/super-result)
+- [Library Philosophy](https://github.com/simwai/super-result/blob/master/PHILOSOPHY.md)

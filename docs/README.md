@@ -6,13 +6,13 @@ Welcome to the documentation for **super-result**, a lightweight and powerful li
 
 One library, three ways to use it. Pick the style that fits your project and your brain. All styles are **fully tree-shakeable** — you only pay for what you use.
 
-### 1. [Default (Class-based)](index/README.md)
+### 1. [Default (Class-based)](https://github.com/simwai/super-result/blob/master/docs/index/README.md)
 The primary style. Provides a fluent, `PromiseLike` wrapper around results. Ideal for developers who love chainable, method-heavy APIs.
 
-### 2. [Functional API](functions/README.md)
+### 2. [Functional API](https://github.com/simwai/super-result/blob/master/docs/functions/README.md)
 Pure functions for a composable, functional programming style. Best for performance-sensitive applications and developers who prefer `pipe` operators or standalone helpers.
 
-### 3. [Neverthrow-compatible](like-neverthrow/README.md)
+### 3. [Neverthrow-compatible](https://github.com/simwai/super-result/blob/master/docs/like-neverthrow/README.md)
 A familiar API for users coming from the `neverthrow` library. Uses the same discriminator (`type: 'ok' | 'err'`) and method names you already know, but with a leaner, more modern implementation.
 
 ---
@@ -27,5 +27,5 @@ A familiar API for users coming from the `neverthrow` library. Uses the same dis
 ## 📖 Useful Links
 
 - [GitHub Repository](https://github.com/simwai/super-result)
-- [Example Guide](examples/README.md)
-- [**Library Philosophy**](../PHILOSOPHY.md)
+- [Example Guide](https://github.com/simwai/super-result/blob/master/docs/examples/README.md)
+- [**Library Philosophy**](https://github.com/simwai/super-result/blob/master/PHILOSOPHY.md)

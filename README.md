@@ -6,7 +6,7 @@ Lightweight, enterprise-grade railway-oriented error handling for TypeScript. Mi
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178c6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![Node](https://img.shields.io/badge/Node-20+-339933?style=flat-square&logo=node.js)](https://nodejs.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-00ffcc?style=flat-square)](./LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-00ffcc?style=flat-square)](https://github.com/simwai/super-result/blob/master/LICENSE)
 
 ---
 
@@ -17,7 +17,7 @@ super-result provides a robust, tree-shakeable toolkit for functional error hand
 - **Minimal Syntax**: Reach the same results with less code.
 - **Maximum Type Safety**: Discriminated unions mean no unsafe casts.
 - **Style Flexibility**: Choose between Class-based, Functional, or Neverthrow-inspired APIs.
-- [**Library Philosophy**](./PHILOSOPHY.md): Why we built this and why ROP matters.
+- [**Library Philosophy**](https://github.com/simwai/super-result/blob/master/PHILOSOPHY.md): Why we built this and why ROP matters.
 - **Enterprise Ready**: Full TSDoc coverage and automated documentation.
 
 ---
@@ -111,7 +111,7 @@ const name = await Result.ok({ id: 1 })
 
 ## API Reference
 
-Full API documentation is available in the [docs](https://github.com/simwai/super-result/tree/master/docs) folder.
+Full API documentation is available in the [docs](https://github.com/simwai/super-result/blob/master/docs/README.md) folder.
 
 ---
 

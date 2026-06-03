@@ -6,9 +6,9 @@ This directory provides pragmatic, real-world examples of how to use **super-res
 
 Detailed examples for each available style:
 
-1. [**Class-based API**](./class.md) (Default) - Fluent, chainable interface similar to Promises.
-2. [**Functional API**](./functional.md) - Pure functions for composable, functional programming.
-3. [**Neverthrow-style API**](./neverthrow.md) - Familiar API for users of the `neverthrow` library.
+1. [**Class-based API**](https://github.com/simwai/super-result/blob/master/docs/examples/class.md) (Default) - Fluent, chainable interface similar to Promises.
+2. [**Functional API**](https://github.com/simwai/super-result/blob/master/docs/examples/functional.md) - Pure functions for composable, functional programming.
+3. [**Neverthrow-style API**](https://github.com/simwai/super-result/blob/master/docs/examples/neverthrow.md) - Familiar API for users of the `neverthrow` library.
 
 ---
 
