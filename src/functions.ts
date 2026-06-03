@@ -18,8 +18,17 @@ function isRawResult(v: unknown): v is RawResult<unknown, unknown> {
 
 /**
  * Maps the success value using the provided function.
+ * Works with both synchronous RawResult and Promise of RawResult.
  *
+ * @param input - The Result or Promise of a Result to map.
+ * @param fn - The transformation function for the success value.
  * @category Functional API
+ *
+ * @example
+ * ```ts
+ * const res = ok(21)
+ * const doubled = map(res, n => n * 2) // { ok: true, value: 42 }
+ * ```
  */
 export function map<T, E, U>(
   input: RawResult<T, E>,
@@ -35,9 +44,18 @@ export function map(input: any, fn: any): any {
 }
 
 /**
- * Maps the success value to a new {@link RawResult} and flattens it.
+ * Maps the success value to a new RawResult and flattens it.
+ * Works with both synchronous RawResult and Promise of RawResult.
  *
+ * @param input - The Result or Promise of a Result to flatMap.
+ * @param fn - The function returning a new Result.
  * @category Functional API
+ *
+ * @example
+ * ```ts
+ * const res = ok('/api/user')
+ * const data = await flatMap(res, url => fromPromise(fetch(url), e => e))
+ * ```
  */
 export function flatMap<T, E, U>(
   input: RawResult<T, E>,
@@ -55,6 +73,9 @@ export function flatMap(input: any, fn: any): any {
 /**
  * Executes a callback regardless of whether the result is a success or failure.
  *
+ * @param input - The Result or Promise of a Result.
+ * @param callback - The side-effect function to run.
+ * @param mapFinallyError - Optional function to map errors thrown in the callback.
  * @category Functional API
  */
 export function onFinally<T, E>(
@@ -102,7 +123,9 @@ export function onFinally(
 
 /**
  * Returns the value if success, otherwise throws the error.
+ * Works with both synchronous and asynchronous inputs.
  *
+ * @param input - The Result or Promise of a Result to unwrap.
  * @category Functional API
  */
 export function unwrap<T, E>(input: RawResult<T, E>): T
@@ -116,6 +139,7 @@ export function unwrap(input: any): any {
 /**
  * Synchronously returns the value if success, otherwise throws the error.
  *
+ * @param input - The synchronous RawResult to unwrap.
  * @category Functional API
  */
 export function unwrapSync<T, E>(input: RawResult<T, E>): T {
@@ -127,6 +151,8 @@ export function unwrapSync<T, E>(input: RawResult<T, E>): T {
 /**
  * Returns the value if success, otherwise returns the provided default value.
  *
+ * @param input - The Result or Promise of a Result.
+ * @param defaultValue - The fallback value.
  * @category Functional API
  */
 export function unwrapOr<T, E, D>(
@@ -145,6 +171,8 @@ export function unwrapOr(input: any, defaultValue: any): any {
 /**
  * Returns the value if success, otherwise calls the fallback function with the error.
  *
+ * @param input - The Result or Promise of a Result.
+ * @param fallback - The function to call if result is an error.
  * @category Functional API
  */
 export function unwrapOrElse<T, E, D>(
@@ -161,8 +189,9 @@ export function unwrapOrElse(input: any, fallback: any): any {
 }
 
 /**
- * Executes a function and captures any thrown error into a {@link RawResult}.
+ * Executes a function and captures any thrown error into a RawResult.
  *
+ * @param fn - The synchronous function to wrap.
  * @category Functional API
  */
 export function fromThrowable<T>(fn: () => T): RawResult<T, unknown> {
@@ -174,8 +203,10 @@ export function fromThrowable<T>(fn: () => T): RawResult<T, unknown> {
 }
 
 /**
- * Wraps a {@link PromiseLike} into a {@link RawResult}, capturing any rejection.
+ * Wraps a PromiseLike into a RawResult, capturing any rejection.
  *
+ * @param promise - The promise to wrap.
+ * @param mapError - Function to map the caught error.
  * @category Functional API
  */
 export async function fromPromise<T, E>(
@@ -190,9 +221,18 @@ export async function fromPromise<T, E>(
 }
 
 /**
- * Unified capture entry point.
+ * Unified capture entry point. Attempts to wrap values, promises, or functions into a Result.
  *
+ * @param input - The value, promise, or function to capture.
+ * @param mapError - Optional error mapper for async/function rejections.
  * @category Functional API
+ *
+ * @example
+ * ```ts
+ * const res1 = result(42) // ok(42)
+ * const res2 = await result(Promise.resolve(42)) // ok(42)
+ * const res3 = result(() => { throw 'err' }) // err('err')
+ * ```
  */
 export function result<T>(value: T): RawResult<T, unknown>
 export function result<T, E>(r: RawResult<T, E>): RawResult<T, E>
@@ -231,7 +271,7 @@ export function result(input: any, mapError?: (e: unknown) => any): any {
 }
 
 /**
- * Configuration for {@link createResult}.
+ * Configuration for createResult.
  *
  * @category Functional API
  */
@@ -244,8 +284,17 @@ export type ResultConfig<E = unknown, FE = unknown> =
 
 /**
  * Creates a bound functional API with pre-configured error mapping.
+ * Useful for ensuring consistent error structures across a module or service.
  *
+ * @param options - Mapping configuration or a single mapError function.
  * @category Functional API
+ *
+ * @example
+ * ```ts
+ * const { result, map } = createResult(e => new AppError(String(e)))
+ *
+ * const data = await result(fetchUser(1))
+ * ```
  */
 export function createResult<E = unknown, FE = unknown>(
   options?: ResultConfig<E, FE>,

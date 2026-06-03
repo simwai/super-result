@@ -10,7 +10,7 @@
 
 > **onFinally**\<`T`, `E`\>(`input`, `callback`, `mapFinallyError?`): [`RawResult`](../../index/type-aliases/RawResult.md)\<`T`, `unknown`\>
 
-Defined in: [src/functions.ts:60](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/functions.ts#L60)
+Defined in: [src/functions.ts:81](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/functions.ts#L81)
 
 Executes a callback regardless of whether the result is a success or failure.
 
@@ -30,13 +30,19 @@ Executes a callback regardless of whether the result is a success or failure.
 
 [`RawResult`](../../index/type-aliases/RawResult.md)\<`T`, `E`\>
 
+The Result or Promise of a Result.
+
 #### callback
 
 (`r`) => `void` \| `Promise`\<`void`\>
 
+The side-effect function to run.
+
 #### mapFinallyError?
 
 (`error`) => `unknown`
+
+Optional function to map errors thrown in the callback.
 
 ### Returns
 
@@ -46,7 +52,7 @@ Executes a callback regardless of whether the result is a success or failure.
 
 > **onFinally**\<`T`, `E`\>(`input`, `callback`, `mapFinallyError?`): `Promise`\<[`RawResult`](../../index/type-aliases/RawResult.md)\<`T`, `unknown`\>\>
 
-Defined in: [src/functions.ts:65](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/functions.ts#L65)
+Defined in: [src/functions.ts:86](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/functions.ts#L86)
 
 Executes a callback regardless of whether the result is a success or failure.
 
@@ -66,13 +72,19 @@ Executes a callback regardless of whether the result is a success or failure.
 
 `Promise`\<[`RawResult`](../../index/type-aliases/RawResult.md)\<`T`, `E`\>\>
 
+The Result or Promise of a Result.
+
 #### callback
 
 (`r`) => `void` \| `Promise`\<`void`\>
 
+The side-effect function to run.
+
 #### mapFinallyError?
 
 (`error`) => `unknown`
+
+Optional function to map errors thrown in the callback.
 
 ### Returns
 

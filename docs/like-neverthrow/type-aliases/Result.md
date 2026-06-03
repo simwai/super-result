@@ -6,11 +6,11 @@
 
 # Type Alias: Result\<T, E\>
 
-> **Result**\<`T`, `E`\> = [`Ok`](../interfaces/Ok.md)\<`T`\> \| [`Err`](../interfaces/Err.md)\<`E`\>
+> **Result**\<`T`, `E`\> = [`Ok`](../classes/Ok.md)\<`T`\> \| [`Err`](../classes/Err.md)\<`E`\>
 
-Defined in: [src/like-neverthrow.ts:32](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L32)
+Defined in: [src/like-neverthrow.ts:133](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L133)
 
-Discriminated union of [Ok](../interfaces/Ok.md) and [Err](../interfaces/Err.md).
+A discriminated union representing either a success (Ok) or a failure (Err).
 
 ## Type Parameters
 
@@ -18,10 +18,10 @@ Discriminated union of [Ok](../interfaces/Ok.md) and [Err](../interfaces/Err.md)
 
 `T`
 
-The success value type.
+The type of the value.
 
 ### E
 
 `E`
 
-The error type.
+The type of the error.

@@ -6,11 +6,11 @@
 
 # Function: mapErrAsync()
 
-> **mapErrAsync**\<`T`, `E`, `F`\>(`resultPromise`, `fn`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `F`\>
+> **mapErrAsync**\<`T`, `E`, `F`\>(`res`, `fn`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `F`\>
 
-Defined in: [src/like-neverthrow.ts:272](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L272)
+Defined in: [src/like-neverthrow.ts:314](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L314)
 
-Async variant of [mapErr](mapErr.md). Awaits `resultPromise` before mapping.
+Map the error value asynchronously.
 
 ## Type Parameters
 
@@ -28,13 +28,13 @@ Async variant of [mapErr](mapErr.md). Awaits `resultPromise` before mapping.
 
 ## Parameters
 
-### resultPromise
+### res
 
 [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
 
 ### fn
 
-(`error`) => `F` \| `PromiseLike`\<`F`\>
+(`e`) => `F` \| `Promise`\<`F`\>
 
 ## Returns
 

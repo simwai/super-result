@@ -10,7 +10,7 @@
 
 > **unwrapOrElse**\<`T`, `E`, `D`\>(`input`, `fallback`): `T` \| `D`
 
-Defined in: [src/functions.ts:150](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/functions.ts#L150)
+Defined in: [src/functions.ts:178](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/functions.ts#L178)
 
 Returns the value if success, otherwise calls the fallback function with the error.
 
@@ -34,9 +34,13 @@ Returns the value if success, otherwise calls the fallback function with the err
 
 [`RawResult`](../../index/type-aliases/RawResult.md)\<`T`, `E`\>
 
+The Result or Promise of a Result.
+
 #### fallback
 
 (`e`) => `D`
+
+The function to call if result is an error.
 
 ### Returns
 
@@ -46,7 +50,7 @@ Returns the value if success, otherwise calls the fallback function with the err
 
 > **unwrapOrElse**\<`T`, `E`, `D`\>(`input`, `fallback`): `Promise`\<`T` \| `D`\>
 
-Defined in: [src/functions.ts:154](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/functions.ts#L154)
+Defined in: [src/functions.ts:182](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/functions.ts#L182)
 
 Returns the value if success, otherwise calls the fallback function with the error.
 
@@ -70,9 +74,13 @@ Returns the value if success, otherwise calls the fallback function with the err
 
 `Promise`\<[`RawResult`](../../index/type-aliases/RawResult.md)\<`T`, `E`\>\>
 
+The Result or Promise of a Result.
+
 #### fallback
 
 (`e`) => `D`
+
+The function to call if result is an error.
 
 ### Returns
 

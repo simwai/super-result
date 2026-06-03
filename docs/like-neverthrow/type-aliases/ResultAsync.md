@@ -8,9 +8,9 @@
 
 > **ResultAsync**\<`T`, `E`\> = `Promise`\<[`Result`](Result.md)\<`T`, `E`\>\>
 
-Defined in: [src/like-neverthrow.ts:41](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L41)
+Defined in: [src/like-neverthrow.ts:142](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L142)
 
-Async variant — a `Promise` that always resolves to a [Result](Result.md).
+A promise of a Result.
 
 ## Type Parameters
 
@@ -18,10 +18,10 @@ Async variant — a `Promise` that always resolves to a [Result](Result.md).
 
 `T`
 
-The success value type.
+The type of the value.
 
 ### E
 
 `E`
 
-The error type.
+The type of the error.

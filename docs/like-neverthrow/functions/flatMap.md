@@ -6,11 +6,11 @@
 
 # Function: flatMap()
 
-> **flatMap**\<`T`, `E`, `U`\>(`result`, `fn`): [`Result`](../type-aliases/Result.md)\<`U`, `E`\>
+> **flatMap**\<`T`, `E`, `U`, `F`\>(`res`, `fn`): [`Result`](../type-aliases/Result.md)\<`U`, `E` \| `F`\>
 
-Defined in: [src/like-neverthrow.ts:286](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L286)
+Defined in: [src/like-neverthrow.ts:327](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L327)
 
-Flat maps the success value of a [Result](../type-aliases/Result.md).
+Map and flatten the success value.
 
 ## Type Parameters
 
@@ -26,16 +26,20 @@ Flat maps the success value of a [Result](../type-aliases/Result.md).
 
 `U`
 
+### F
+
+`F` = `E`
+
 ## Parameters
 
-### result
+### res
 
 [`Result`](../type-aliases/Result.md)\<`T`, `E`\>
 
 ### fn
 
-(`value`) => [`Result`](../type-aliases/Result.md)\<`U`, `E`\>
+(`v`) => [`Result`](../type-aliases/Result.md)\<`U`, `F`\>
 
 ## Returns
 
-[`Result`](../type-aliases/Result.md)\<`U`, `E`\>
+[`Result`](../type-aliases/Result.md)\<`U`, `E` \| `F`\>

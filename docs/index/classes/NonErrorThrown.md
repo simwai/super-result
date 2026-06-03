@@ -6,7 +6,7 @@
 
 # Class: NonErrorThrown
 
-Defined in: [src/index.ts:67](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/index.ts#L67)
+Defined in: [src/index.ts:83](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/index.ts#L83)
 
 Error thrown when a non-error value is unwrapped and treated as an error.
 
@@ -20,7 +20,7 @@ Error thrown when a non-error value is unwrapped and treated as an error.
 
 > **new NonErrorThrown**(`value`): `NonErrorThrown`
 
-Defined in: [src/index.ts:69](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/index.ts#L69)
+Defined in: [src/index.ts:85](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/index.ts#L85)
 
 #### Parameters
 
@@ -90,4 +90,4 @@ Defined in: node\_modules/.pnpm/typescript@5.9.3/node\_modules/typescript/lib/li
 
 > `readonly` **value**: `unknown`
 
-Defined in: [src/index.ts:68](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/index.ts#L68)
+Defined in: [src/index.ts:84](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/index.ts#L84)

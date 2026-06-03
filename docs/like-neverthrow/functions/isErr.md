@@ -6,11 +6,11 @@
 
 # Function: isErr()
 
-> **isErr**\<`T`, `E`\>(`result`): `result is Err<E>`
+> **isErr**\<`T`, `E`\>(`res`): `res is Err<E>`
 
-Defined in: [src/like-neverthrow.ts:149](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L149)
+Defined in: [src/like-neverthrow.ts:274](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L274)
 
-Type guard: check if a result is [Err](../interfaces/Err.md).
+Check if a Result is Err.
 
 ## Type Parameters
 
@@ -24,10 +24,10 @@ Type guard: check if a result is [Err](../interfaces/Err.md).
 
 ## Parameters
 
-### result
+### res
 
 [`Result`](../type-aliases/Result.md)\<`T`, `E`\>
 
 ## Returns
 
-`result is Err<E>`
+`res is Err<E>`

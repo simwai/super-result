@@ -6,11 +6,11 @@
 
 # Function: unwrapOrElse()
 
-> **unwrapOrElse**\<`T`, `E`, `U`\>(`result`, `onErr`): `T` \| `U`
+> **unwrapOrElse**\<`T`, `E`, `D`\>(`res`, `fn`): `T` \| `D`
 
-Defined in: [src/like-neverthrow.ts:454](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L454)
+Defined in: [src/like-neverthrow.ts:482](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L482)
 
-Return the value if `Ok`, otherwise call `onErr` and return its result.
+Return value or call fallback.
 
 ## Type Parameters
 
@@ -22,20 +22,20 @@ Return the value if `Ok`, otherwise call `onErr` and return its result.
 
 `E`
 
-### U
+### D
 
-`U`
+`D`
 
 ## Parameters
 
-### result
+### res
 
 [`Result`](../type-aliases/Result.md)\<`T`, `E`\>
 
-### onErr
+### fn
 
-(`error`) => `U`
+(`e`) => `D`
 
 ## Returns
 
-`T` \| `U`
+`T` \| `D`

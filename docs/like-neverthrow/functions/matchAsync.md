@@ -6,11 +6,11 @@
 
 # Function: matchAsync()
 
-> **matchAsync**\<`T`, `E`, `U`, `V`\>(`resultPromise`, `onOk`, `onErr`): `Promise`\<`U` \| `V`\>
+> **matchAsync**\<`T`, `E`, `U`, `V`\>(`res`, `onOk`, `onErr`): `Promise`\<`U` \| `V`\>
 
-Defined in: [src/like-neverthrow.ts:386](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L386)
+Defined in: [src/like-neverthrow.ts:430](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L430)
 
-Async variant of [match](match.md). Awaits `resultPromise` before branching.
+Branch logic based on ResultAsync resolution.
 
 ## Type Parameters
 
@@ -32,17 +32,17 @@ Async variant of [match](match.md). Awaits `resultPromise` before branching.
 
 ## Parameters
 
-### resultPromise
+### res
 
 [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
 
 ### onOk
 
-(`value`) => `U` \| `PromiseLike`\<`U`\>
+(`v`) => `U` \| `Promise`\<`U`\>
 
 ### onErr
 
-(`error`) => `V` \| `PromiseLike`\<`V`\>
+(`e`) => `V` \| `Promise`\<`V`\>
 
 ## Returns
 

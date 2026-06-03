@@ -6,11 +6,11 @@
 
 # Function: match()
 
-> **match**\<`T`, `E`, `U`, `V`\>(`result`, `onOk`, `onErr`): `U` \| `V`
+> **match**\<`T`, `E`, `U`, `V`\>(`res`, `onOk`, `onErr`): `U` \| `V`
 
-Defined in: [src/like-neverthrow.ts:373](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L373)
+Defined in: [src/like-neverthrow.ts:418](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L418)
 
-Branch logic based on the result state.
+Branch logic based on Result type.
 
 ## Type Parameters
 
@@ -32,17 +32,17 @@ Branch logic based on the result state.
 
 ## Parameters
 
-### result
+### res
 
 [`Result`](../type-aliases/Result.md)\<`T`, `E`\>
 
 ### onOk
 
-(`value`) => `U`
+(`v`) => `U`
 
 ### onErr
 
-(`error`) => `V`
+(`e`) => `V`
 
 ## Returns
 

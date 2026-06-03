@@ -8,9 +8,9 @@
 
 > **err**\<`E`\>(`error`): [`RawResult`](../type-aliases/RawResult.md)\<`never`, `E`\>
 
-Defined in: [src/index.ts:48](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/index.ts#L48)
+Defined in: [src/index.ts:64](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/index.ts#L64)
 
-Creates a failed [RawResult](../type-aliases/RawResult.md).
+Creates a failed RawResult.
 
 ## Type Parameters
 
@@ -29,3 +29,12 @@ The error value.
 ## Returns
 
 [`RawResult`](../type-aliases/RawResult.md)\<`never`, `E`\>
+
+## Example
+
+```ts
+const res = err('fail')
+if (!res.ok) {
+  console.log(res.error) // 'fail'
+}
+```

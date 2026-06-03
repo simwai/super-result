@@ -6,11 +6,11 @@
 
 # Function: fromPromise()
 
-> **fromPromise**\<`T`, `E`\>(`promise`, `mapError?`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
+> **fromPromise**\<`T`, `E`\>(`promise`, `mapError`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
 
-Defined in: [src/like-neverthrow.ts:198](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L198)
+Defined in: [src/like-neverthrow.ts:227](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L227)
 
-Wraps a `PromiseLike` into a [ResultAsync](../type-aliases/ResultAsync.md), capturing any rejection.
+Wrap a promise into a ResultAsync.
 
 ## Type Parameters
 
@@ -20,7 +20,7 @@ Wraps a `PromiseLike` into a [ResultAsync](../type-aliases/ResultAsync.md), capt
 
 ### E
 
-`E` = `unknown`
+`E`
 
 ## Parameters
 
@@ -28,9 +28,13 @@ Wraps a `PromiseLike` into a [ResultAsync](../type-aliases/ResultAsync.md), capt
 
 `PromiseLike`\<`T`\>
 
-### mapError?
+The promise to wrap.
+
+### mapError
 
 (`error`) => `E`
+
+Error mapper.
 
 ## Returns
 

@@ -6,9 +6,9 @@
 
 # Interface: Err\<E\>
 
-Defined in: [src/index.ts:18](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/index.ts#L18)
+Defined in: [src/index.ts:18](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/index.ts#L18)
 
-Represents a failed result.
+Discriminator-based failure variant.
 
 ## Type Parameters
 
@@ -24,7 +24,7 @@ The type of the error.
 
 > **error**: `E`
 
-Defined in: [src/index.ts:20](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/index.ts#L20)
+Defined in: [src/index.ts:20](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/index.ts#L20)
 
 ***
 
@@ -32,4 +32,4 @@ Defined in: [src/index.ts:20](https://github.com/simwai/super-result/blob/826302
 
 > `readonly` **ok**: `false`
 
-Defined in: [src/index.ts:19](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/index.ts#L19)
+Defined in: [src/index.ts:19](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/index.ts#L19)

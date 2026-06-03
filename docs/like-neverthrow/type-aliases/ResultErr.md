@@ -6,16 +6,14 @@
 
 # Type Alias: ResultErr\<R\>
 
-> **ResultErr**\<`R`\> = `R` *extends* [`Result`](Result.md)\<`unknown`, infer TError\> ? `TError` : `never`
+> **ResultErr**\<`R`\> = `R` *extends* [`Result`](Result.md)\<`any`, infer E\> ? `E` : `R` *extends* [`ResultAsync`](ResultAsync.md)\<`any`, infer E\> ? `E` : `never`
 
-Defined in: [src/like-neverthrow.ts:743](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L743)
+Defined in: [src/like-neverthrow.ts:709](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L709)
 
-Extract the `Err` error type from a [Result](Result.md).
+Extract error type from Result or ResultAsync.
 
 ## Type Parameters
 
 ### R
 
-`R` *extends* [`Result`](Result.md)\<`unknown`, `unknown`\>
-
-A [Result](Result.md) type.
+`R`

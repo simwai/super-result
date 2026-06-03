@@ -6,9 +6,9 @@
 
 # Interface: CaptureOptions\<T, E\>
 
-Defined in: [src/like-neverthrow.ts:166](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L166)
+Defined in: [src/like-neverthrow.ts:541](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L541)
 
-Options for capturing operations via [fromThrowable](../functions/fromThrowable.md) and others.
+Options for createResult mappers.
 
 ## Type Parameters
 
@@ -16,13 +16,9 @@ Options for capturing operations via [fromThrowable](../functions/fromThrowable.
 
 `T`
 
-The success value type.
-
 ### E
 
 `E`
-
-The error type.
 
 ## Properties
 
@@ -30,9 +26,7 @@ The error type.
 
 > `optional` **catch?**: (`error`) => `E`
 
-Defined in: [src/like-neverthrow.ts:168](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L168)
-
-Custom error mapper for caught exceptions. Defaults to factory default.
+Defined in: [src/like-neverthrow.ts:542](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L542)
 
 #### Parameters
 
@@ -48,11 +42,9 @@ Custom error mapper for caught exceptions. Defaults to factory default.
 
 ### finally?
 
-> `optional` **finally?**: (`result`) => `void` \| `PromiseLike`\<`void`\>
+> `optional` **finally?**: (`result`) => `void` \| `Promise`\<`void`\>
 
-Defined in: [src/like-neverthrow.ts:171](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L171)
-
-Executes a callback after the operation, regardless of success or failure.
+Defined in: [src/like-neverthrow.ts:543](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L543)
 
 #### Parameters
 
@@ -62,7 +54,7 @@ Executes a callback after the operation, regardless of success or failure.
 
 #### Returns
 
-`void` \| `PromiseLike`\<`void`\>
+`void` \| `Promise`\<`void`\>
 
 ***
 
@@ -70,9 +62,7 @@ Executes a callback after the operation, regardless of success or failure.
 
 > `optional` **mapFinallyError?**: (`error`) => `unknown`
 
-Defined in: [src/like-neverthrow.ts:174](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L174)
-
-Maps a finally-block failure. Overrides factory default.
+Defined in: [src/like-neverthrow.ts:544](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L544)
 
 #### Parameters
 

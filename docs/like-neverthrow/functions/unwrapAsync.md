@@ -6,11 +6,11 @@
 
 # Function: unwrapAsync()
 
-> **unwrapAsync**\<`T`, `E`\>(`resultPromise`): `Promise`\<`T`\>
+> **unwrapAsync**\<`T`, `E`\>(`res`): `Promise`\<`T`\>
 
-Defined in: [src/like-neverthrow.ts:419](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L419)
+Defined in: [src/like-neverthrow.ts:454](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L454)
 
-Async variant of [unwrap](unwrap.md).
+Await and unwrap value or throw.
 
 ## Type Parameters
 
@@ -24,18 +24,10 @@ Async variant of [unwrap](unwrap.md).
 
 ## Parameters
 
-### resultPromise
+### res
 
 [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
 
 ## Returns
 
 `Promise`\<`T`\>
-
-## Throws
-
-The original error if it is an `Error` instance.
-
-## Throws
-
-If the error is not an `Error` instance.

@@ -10,9 +10,10 @@
 
 > **unwrap**\<`T`, `E`\>(`input`): `T`
 
-Defined in: [src/functions.ts:108](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/functions.ts#L108)
+Defined in: [src/functions.ts:131](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/functions.ts#L131)
 
 Returns the value if success, otherwise throws the error.
+Works with both synchronous and asynchronous inputs.
 
 ### Type Parameters
 
@@ -30,6 +31,8 @@ Returns the value if success, otherwise throws the error.
 
 [`RawResult`](../../index/type-aliases/RawResult.md)\<`T`, `E`\>
 
+The Result or Promise of a Result to unwrap.
+
 ### Returns
 
 `T`
@@ -38,9 +41,10 @@ Returns the value if success, otherwise throws the error.
 
 > **unwrap**\<`T`, `E`\>(`input`): `Promise`\<`T`\>
 
-Defined in: [src/functions.ts:109](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/functions.ts#L109)
+Defined in: [src/functions.ts:132](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/functions.ts#L132)
 
 Returns the value if success, otherwise throws the error.
+Works with both synchronous and asynchronous inputs.
 
 ### Type Parameters
 
@@ -57,6 +61,8 @@ Returns the value if success, otherwise throws the error.
 #### input
 
 `Promise`\<[`RawResult`](../../index/type-aliases/RawResult.md)\<`T`, `E`\>\>
+
+The Result or Promise of a Result to unwrap.
 
 ### Returns
 

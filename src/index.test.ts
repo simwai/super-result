@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { Result, err, ok } from './index'
+import { Result, err, ok } from './index.js'
 
 describe('Result Class', () => {
   it('should handle synchronous success', () => {
