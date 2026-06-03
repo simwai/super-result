@@ -6,11 +6,11 @@
 
 # Function: unwrap()
 
-> **unwrap**\<`T`, `E`\>(`result`): `T`
+> **unwrap**\<`T`, `E`\>(`res`): `T`
 
-Defined in: [src/like-neverthrow.ts:406](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L406)
+Defined in: [src/like-neverthrow.ts:444](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L444)
 
-Return the value if `Ok`, otherwise throw.
+Return Ok value or throw.
 
 ## Type Parameters
 
@@ -24,18 +24,10 @@ Return the value if `Ok`, otherwise throw.
 
 ## Parameters
 
-### result
+### res
 
 [`Result`](../type-aliases/Result.md)\<`T`, `E`\>
 
 ## Returns
 
 `T`
-
-## Throws
-
-The original error if it is an `Error` instance.
-
-## Throws
-
-If the error is not an `Error` instance.

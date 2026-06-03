@@ -6,9 +6,9 @@
 
 # Interface: ResultInterface\<E\>
 
-Defined in: [src/like-neverthrow.ts:509](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L509)
+Defined in: [src/like-neverthrow.ts:556](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L556)
 
-Interface returned by [createResult](../functions/createResult.md).
+Interface returned by createResult.
 
 ## Type Parameters
 
@@ -16,19 +16,131 @@ Interface returned by [createResult](../functions/createResult.md).
 
 `E` = `unknown`
 
-The bound error type.
-
 ## Properties
+
+### Combination
+
+#### combine
+
+> **combine**: \<`T`\>(`results`) => [`Result`](../type-aliases/Result.md)\<\{ \[K in string \| number \| symbol\]: ResultOk\<T\[K\]\> \}, [`ResultErr`](../type-aliases/ResultErr.md)\<`T`\[`number`\]\>\>
+
+Defined in: [src/like-neverthrow.ts:589](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L589)
+
+Combine multiple Results into one Result with an array of values.
+
+##### Type Parameters
+
+###### T
+
+`T` *extends* [`Result`](../type-aliases/Result.md)\<`any`, `any`\>[]
+
+##### Parameters
+
+###### results
+
+`T`
+
+##### Returns
+
+[`Result`](../type-aliases/Result.md)\<\{ \[K in string \| number \| symbol\]: ResultOk\<T\[K\]\> \}, [`ResultErr`](../type-aliases/ResultErr.md)\<`T`\[`number`\]\>\>
+
+***
+
+#### combineAsync
+
+> **combineAsync**: \<`T`\>(`results`) => `Promise`\<[`Result`](../type-aliases/Result.md)\<\{ \[K in string \| number \| symbol\]: ResultOk\<Awaited\<T\[K\]\>\> \}, [`ResultErr`](../type-aliases/ResultErr.md)\<`Awaited`\<`T`\[`number`\]\>\>\>\>
+
+Defined in: [src/like-neverthrow.ts:590](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L590)
+
+Combine multiple Results or ResultAsyncs into one.
+
+##### Type Parameters
+
+###### T
+
+`T` *extends* ([`Result`](../type-aliases/Result.md)\<`any`, `any`\> \| [`ResultAsync`](../type-aliases/ResultAsync.md)\<`any`, `any`\>)[]
+
+##### Parameters
+
+###### results
+
+`T`
+
+##### Returns
+
+`Promise`\<[`Result`](../type-aliases/Result.md)\<\{ \[K in string \| number \| symbol\]: ResultOk\<Awaited\<T\[K\]\>\> \}, [`ResultErr`](../type-aliases/ResultErr.md)\<`Awaited`\<`T`\[`number`\]\>\>\>\>
 
 ### Constructors
 
+#### err
+
+> **err**: \<`E`\>(`error`) => [`Result`](../type-aliases/Result.md)\<`never`, `E`\>
+
+Defined in: [src/like-neverthrow.ts:558](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L558)
+
+Create a failed Result.
+
+##### Type Parameters
+
+###### E
+
+`E`
+
+##### Parameters
+
+###### error
+
+`E`
+
+Error value.
+
+##### Returns
+
+[`Result`](../type-aliases/Result.md)\<`never`, `E`\>
+
+##### Example
+
+```ts
+const res = err('fail')
+```
+
+***
+
+#### errAsync
+
+> **errAsync**: \<`E`\>(`error`) => [`ResultAsync`](../type-aliases/ResultAsync.md)\<`never`, `E`\>
+
+Defined in: [src/like-neverthrow.ts:560](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L560)
+
+Create a failed ResultAsync.
+
+##### Type Parameters
+
+###### E
+
+`E`
+
+##### Parameters
+
+###### error
+
+`E`
+
+Error value.
+
+##### Returns
+
+[`ResultAsync`](../type-aliases/ResultAsync.md)\<`never`, `E`\>
+
+***
+
 #### ok
 
-> **ok**: \<`T`\>(`value`) => [`Ok`](Ok.md)\<`T`\>
+> **ok**: \<`T`\>(`value`) => [`Result`](../type-aliases/Result.md)\<`T`, `never`\>
 
-Defined in: [src/like-neverthrow.ts:510](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L510)
+Defined in: [src/like-neverthrow.ts:557](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L557)
 
-Create a successful [Ok](Ok.md) result.
+Create a successful Result.
 
 ##### Type Parameters
 
@@ -42,9 +154,17 @@ Create a successful [Ok](Ok.md) result.
 
 `T`
 
+Success value.
+
 ##### Returns
 
-[`Ok`](Ok.md)\<`T`\>
+[`Result`](../type-aliases/Result.md)\<`T`, `never`\>
+
+##### Example
+
+```ts
+const res = ok(42)
+```
 
 ***
 
@@ -52,9 +172,9 @@ Create a successful [Ok](Ok.md) result.
 
 > **okAsync**: \<`T`\>(`value`) => [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `never`\>
 
-Defined in: [src/like-neverthrow.ts:512](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L512)
+Defined in: [src/like-neverthrow.ts:559](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L559)
 
-Create a successful [ResultAsync](../type-aliases/ResultAsync.md).
+Create a successful ResultAsync.
 
 ##### Type Parameters
 
@@ -68,97 +188,21 @@ Create a successful [ResultAsync](../type-aliases/ResultAsync.md).
 
 `T`
 
+Success value.
+
 ##### Returns
 
 [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `never`\>
 
-### Lifecycle
+### Guards
 
-#### onFinally
+#### isErr
 
-> **onFinally**: \{\<`T`, `E`\>(`result`, `callback`, `mapFinallyError?`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `E`\>\>; \<`T`, `E`\>(`result`, `callback`, `mapFinallyError?`): [`Result`](../type-aliases/Result.md)\<`T`, `E` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `E`\>\> \| [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `E`\>\>; \}
+> **isErr**: \<`T`, `E`\>(`res`) => `res is Err<E>`
 
-Defined in: [src/like-neverthrow.ts:590](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L590)
+Defined in: [src/like-neverthrow.ts:562](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L562)
 
-##### Call Signature
-
-> \<`T`, `E`\>(`result`, `callback`, `mapFinallyError?`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `E`\>\>
-
-Execute a callback regardless of the result. Returns a promise resolving to the result
-or a [FinallyError](../classes/FinallyError.md) if the callback fails.
-
-###### Type Parameters
-
-###### T
-
-`T`
-
-###### E
-
-`E`
-
-###### Parameters
-
-###### result
-
-[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
-
-###### callback
-
-(`result`) => `void` \| `PromiseLike`\<`void`\>
-
-###### mapFinallyError?
-
-(`error`) => `unknown`
-
-###### Returns
-
-[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `E`\>\>
-
-##### Call Signature
-
-> \<`T`, `E`\>(`result`, `callback`, `mapFinallyError?`): [`Result`](../type-aliases/Result.md)\<`T`, `E` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `E`\>\> \| [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `E`\>\>
-
-Execute a callback regardless of the result. Returns a promise resolving to the result
-or a [FinallyError](../classes/FinallyError.md) if the callback fails.
-
-###### Type Parameters
-
-###### T
-
-`T`
-
-###### E
-
-`E`
-
-###### Parameters
-
-###### result
-
-[`Result`](../type-aliases/Result.md)\<`T`, `E`\>
-
-###### callback
-
-(`result`) => `void` \| `PromiseLike`\<`void`\>
-
-###### mapFinallyError?
-
-(`error`) => `unknown`
-
-###### Returns
-
-[`Result`](../type-aliases/Result.md)\<`T`, `E` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `E`\>\> \| [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `E`\>\>
-
-***
-
-#### onFinallyAsync
-
-> **onFinallyAsync**: \<`T`, `E`\>(`resultPromise`, `callback`, `mapFinallyError`) => [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `E`\>\>
-
-Defined in: [src/like-neverthrow.ts:591](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L591)
-
-Purely async variant of [onFinally](../functions/onFinally.md).
+Check if a Result is Err.
 
 ##### Type Parameters
 
@@ -172,13 +216,73 @@ Purely async variant of [onFinally](../functions/onFinally.md).
 
 ##### Parameters
 
-###### resultPromise
+###### res
 
-[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
+[`Result`](../type-aliases/Result.md)\<`T`, `E`\>
+
+##### Returns
+
+`res is Err<E>`
+
+***
+
+#### isOk
+
+> **isOk**: \<`T`, `E`\>(`res`) => `res is Ok<T>`
+
+Defined in: [src/like-neverthrow.ts:561](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L561)
+
+Check if a Result is Ok.
+
+##### Type Parameters
+
+###### T
+
+`T`
+
+###### E
+
+`E`
+
+##### Parameters
+
+###### res
+
+[`Result`](../type-aliases/Result.md)\<`T`, `E`\>
+
+##### Returns
+
+`res is Ok<T>`
+
+### Lifecycle
+
+#### onFinally
+
+> **onFinally**: \<`T`, `E`\>(`res`, `callback`, `mapFinallyError?`) => [`Result`](../type-aliases/Result.md)\<`T`, `unknown`\> \| [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `unknown`\>
+
+Defined in: [src/like-neverthrow.ts:599](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L599)
+
+Execute a callback regardless of success or failure.
+
+##### Type Parameters
+
+###### T
+
+`T`
+
+###### E
+
+`E`
+
+##### Parameters
+
+###### res
+
+[`Result`](../type-aliases/Result.md)\<`T`, `E`\>
 
 ###### callback
 
-(`result`) => `void` \| `PromiseLike`\<`void`\>
+(`result`) => `void` \| `Promise`\<`void`\>
 
 ###### mapFinallyError?
 
@@ -186,17 +290,291 @@ Purely async variant of [onFinally](../functions/onFinally.md).
 
 ##### Returns
 
-[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `E`\>\>
+[`Result`](../type-aliases/Result.md)\<`T`, `unknown`\> \| [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `unknown`\>
+
+***
+
+#### onFinallyAsync
+
+> **onFinallyAsync**: \<`T`, `E`\>(`res`, `callback`, `mapFinallyError?`) => [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `unknown`\>
+
+Defined in: [src/like-neverthrow.ts:600](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L600)
+
+Await ResultAsync and execute callback.
+
+##### Type Parameters
+
+###### T
+
+`T`
+
+###### E
+
+`E`
+
+##### Parameters
+
+###### res
+
+[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
+
+###### callback
+
+(`result`) => `void` \| `Promise`\<`void`\>
+
+###### mapFinallyError?
+
+(`error`) => `unknown`
+
+##### Returns
+
+[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `unknown`\>
+
+### Mapping
+
+#### map
+
+> **map**: \<`T`, `E`, `U`\>(`res`, `fn`) => [`Result`](../type-aliases/Result.md)\<`U`, `E`\>
+
+Defined in: [src/like-neverthrow.ts:579](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L579)
+
+Map the success value.
+
+##### Type Parameters
+
+###### T
+
+`T`
+
+###### E
+
+`E`
+
+###### U
+
+`U`
+
+##### Parameters
+
+###### res
+
+[`Result`](../type-aliases/Result.md)\<`T`, `E`\>
+
+###### fn
+
+(`v`) => `U`
+
+##### Returns
+
+[`Result`](../type-aliases/Result.md)\<`U`, `E`\>
+
+***
+
+#### mapAsync
+
+> **mapAsync**: \<`T`, `E`, `U`\>(`res`, `fn`) => [`ResultAsync`](../type-aliases/ResultAsync.md)\<`U`, `E`\>
+
+Defined in: [src/like-neverthrow.ts:580](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L580)
+
+Map the success value asynchronously.
+
+##### Type Parameters
+
+###### T
+
+`T`
+
+###### E
+
+`E`
+
+###### U
+
+`U`
+
+##### Parameters
+
+###### res
+
+[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
+
+###### fn
+
+(`v`) => `U` \| `Promise`\<`U`\>
+
+##### Returns
+
+[`ResultAsync`](../type-aliases/ResultAsync.md)\<`U`, `E`\>
+
+***
+
+#### mapErr
+
+> **mapErr**: \<`T`, `E`, `F`\>(`res`, `fn`) => [`Result`](../type-aliases/Result.md)\<`T`, `F`\>
+
+Defined in: [src/like-neverthrow.ts:581](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L581)
+
+Map the error value.
+
+##### Type Parameters
+
+###### T
+
+`T`
+
+###### E
+
+`E`
+
+###### F
+
+`F`
+
+##### Parameters
+
+###### res
+
+[`Result`](../type-aliases/Result.md)\<`T`, `E`\>
+
+###### fn
+
+(`e`) => `F`
+
+##### Returns
+
+[`Result`](../type-aliases/Result.md)\<`T`, `F`\>
+
+***
+
+#### mapErrAsync
+
+> **mapErrAsync**: \<`T`, `E`, `F`\>(`res`, `fn`) => [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `F`\>
+
+Defined in: [src/like-neverthrow.ts:582](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L582)
+
+Map the error value asynchronously.
+
+##### Type Parameters
+
+###### T
+
+`T`
+
+###### E
+
+`E`
+
+###### F
+
+`F`
+
+##### Parameters
+
+###### res
+
+[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
+
+###### fn
+
+(`e`) => `F` \| `Promise`\<`F`\>
+
+##### Returns
+
+[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `F`\>
+
+***
+
+#### orElse
+
+> **orElse**: \<`T`, `E`, `U`, `F`\>(`res`, `fn`) => [`Result`](../type-aliases/Result.md)\<`T` \| `U`, `F`\>
+
+Defined in: [src/like-neverthrow.ts:587](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L587)
+
+Handle error by returning a new Result.
+
+##### Type Parameters
+
+###### T
+
+`T`
+
+###### E
+
+`E`
+
+###### U
+
+`U` = `T`
+
+###### F
+
+`F` = `E`
+
+##### Parameters
+
+###### res
+
+[`Result`](../type-aliases/Result.md)\<`T`, `E`\>
+
+###### fn
+
+(`e`) => [`Result`](../type-aliases/Result.md)\<`U`, `F`\>
+
+##### Returns
+
+[`Result`](../type-aliases/Result.md)\<`T` \| `U`, `F`\>
+
+***
+
+#### orElseAsync
+
+> **orElseAsync**: \<`T`, `E`, `U`, `F`\>(`res`, `fn`) => [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T` \| `U`, `F`\>
+
+Defined in: [src/like-neverthrow.ts:588](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L588)
+
+Handle error by returning a new Result asynchronously.
+
+##### Type Parameters
+
+###### T
+
+`T`
+
+###### E
+
+`E`
+
+###### U
+
+`U` = `T`
+
+###### F
+
+`F` = `E`
+
+##### Parameters
+
+###### res
+
+[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
+
+###### fn
+
+(`e`) => [`Result`](../type-aliases/Result.md)\<`U`, `F`\> \| [`ResultAsync`](../type-aliases/ResultAsync.md)\<`U`, `F`\>
+
+##### Returns
+
+[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T` \| `U`, `F`\>
 
 ### Pattern Matching
 
 #### match
 
-> **match**: \<`T`, `E`, `U`, `V`\>(`result`, `onOk`, `onErr`) => `U` \| `V`
+> **match**: \<`T`, `E`, `U`, `V`\>(`res`, `onOk`, `onErr`) => `U` \| `V`
 
-Defined in: [src/like-neverthrow.ts:580](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L580)
+Defined in: [src/like-neverthrow.ts:591](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L591)
 
-Branch logic based on the result state.
+Branch logic based on Result type.
 
 ##### Type Parameters
 
@@ -218,17 +596,17 @@ Branch logic based on the result state.
 
 ##### Parameters
 
-###### result
+###### res
 
 [`Result`](../type-aliases/Result.md)\<`T`, `E`\>
 
 ###### onOk
 
-(`value`) => `U`
+(`v`) => `U`
 
 ###### onErr
 
-(`error`) => `V`
+(`e`) => `V`
 
 ##### Returns
 
@@ -238,11 +616,11 @@ Branch logic based on the result state.
 
 #### matchAsync
 
-> **matchAsync**: \<`T`, `E`, `U`, `V`\>(`resultPromise`, `onOk`, `onErr`) => `Promise`\<`U` \| `V`\>
+> **matchAsync**: \<`T`, `E`, `U`, `V`\>(`res`, `onOk`, `onErr`) => `Promise`\<`U` \| `V`\>
 
-Defined in: [src/like-neverthrow.ts:581](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L581)
+Defined in: [src/like-neverthrow.ts:592](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L592)
 
-Async variant of [match](../functions/match.md). Awaits `resultPromise` before branching.
+Branch logic based on ResultAsync resolution.
 
 ##### Type Parameters
 
@@ -264,31 +642,31 @@ Async variant of [match](../functions/match.md). Awaits `resultPromise` before b
 
 ##### Parameters
 
-###### resultPromise
+###### res
 
 [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
 
 ###### onOk
 
-(`value`) => `U` \| `PromiseLike`\<`U`\>
+(`v`) => `U` \| `Promise`\<`U`\>
 
 ###### onErr
 
-(`error`) => `V` \| `PromiseLike`\<`V`\>
+(`e`) => `V` \| `Promise`\<`V`\>
 
 ##### Returns
 
 `Promise`\<`U` \| `V`\>
 
-### Predicates
+### Transformation
 
-#### isErr
+#### andThen
 
-> **isErr**: \<`T`, `E`\>(`result`) => `result is Err<E>`
+> **andThen**: \<`T`, `E`, `U`, `F`\>(`res`, `fn`) => [`Result`](../type-aliases/Result.md)\<`U`, `E` \| `F`\>
 
-Defined in: [src/like-neverthrow.ts:516](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L516)
+Defined in: [src/like-neverthrow.ts:585](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L585)
 
-Type guard: check if a result is [Err](Err.md).
+Map and flatten the success value.
 
 ##### Type Parameters
 
@@ -300,25 +678,37 @@ Type guard: check if a result is [Err](Err.md).
 
 `E`
 
+###### U
+
+`U`
+
+###### F
+
+`F` = `E`
+
 ##### Parameters
 
-###### result
+###### res
 
 [`Result`](../type-aliases/Result.md)\<`T`, `E`\>
 
+###### fn
+
+(`v`) => [`Result`](../type-aliases/Result.md)\<`U`, `F`\>
+
 ##### Returns
 
-`result is Err<E>`
+[`Result`](../type-aliases/Result.md)\<`U`, `E` \| `F`\>
 
 ***
 
-#### isOk
+#### andThenAsync
 
-> **isOk**: \<`T`, `E`\>(`result`) => `result is Ok<T>`
+> **andThenAsync**: \<`T`, `E`, `U`, `F`\>(`res`, `fn`) => [`ResultAsync`](../type-aliases/ResultAsync.md)\<`U`, `E` \| `F`\>
 
-Defined in: [src/like-neverthrow.ts:515](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L515)
+Defined in: [src/like-neverthrow.ts:586](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L586)
 
-Type guard: check if a result is [Ok](Ok.md).
+Map and flatten the success value asynchronously.
 
 ##### Type Parameters
 
@@ -330,25 +720,121 @@ Type guard: check if a result is [Ok](Ok.md).
 
 `E`
 
+###### U
+
+`U`
+
+###### F
+
+`F` = `E`
+
 ##### Parameters
 
-###### result
+###### res
 
-[`Result`](../type-aliases/Result.md)\<`T`, `E`\>
+[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
+
+###### fn
+
+(`v`) => [`Result`](../type-aliases/Result.md)\<`U`, `F`\> \| [`ResultAsync`](../type-aliases/ResultAsync.md)\<`U`, `F`\>
 
 ##### Returns
 
-`result is Ok<T>`
+[`ResultAsync`](../type-aliases/ResultAsync.md)\<`U`, `E` \| `F`\>
+
+***
+
+#### flatMap
+
+> **flatMap**: \<`T`, `E`, `U`, `F`\>(`res`, `fn`) => [`Result`](../type-aliases/Result.md)\<`U`, `E` \| `F`\>
+
+Defined in: [src/like-neverthrow.ts:583](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L583)
+
+Map and flatten the success value.
+
+##### Type Parameters
+
+###### T
+
+`T`
+
+###### E
+
+`E`
+
+###### U
+
+`U`
+
+###### F
+
+`F` = `E`
+
+##### Parameters
+
+###### res
+
+[`Result`](../type-aliases/Result.md)\<`T`, `E`\>
+
+###### fn
+
+(`v`) => [`Result`](../type-aliases/Result.md)\<`U`, `F`\>
+
+##### Returns
+
+[`Result`](../type-aliases/Result.md)\<`U`, `E` \| `F`\>
+
+***
+
+#### flatMapAsync
+
+> **flatMapAsync**: \<`T`, `E`, `U`, `F`\>(`res`, `fn`) => [`ResultAsync`](../type-aliases/ResultAsync.md)\<`U`, `E` \| `F`\>
+
+Defined in: [src/like-neverthrow.ts:584](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L584)
+
+Map and flatten the success value asynchronously.
+
+##### Type Parameters
+
+###### T
+
+`T`
+
+###### E
+
+`E`
+
+###### U
+
+`U`
+
+###### F
+
+`F` = `E`
+
+##### Parameters
+
+###### res
+
+[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
+
+###### fn
+
+(`v`) => [`Result`](../type-aliases/Result.md)\<`U`, `F`\> \| [`ResultAsync`](../type-aliases/ResultAsync.md)\<`U`, `F`\>
+
+##### Returns
+
+[`ResultAsync`](../type-aliases/ResultAsync.md)\<`U`, `E` \| `F`\>
 
 ### Unwrap
 
 #### unwrap
 
-> **unwrap**: \<`T`, `E`\>(`result`) => `T`
+> **unwrap**: \<`T`, `E`\>(`res`) => `T`
 
-Defined in: [src/like-neverthrow.ts:583](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L583)
+Defined in: [src/like-neverthrow.ts:593](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L593)
 
-Return the value if `Ok`, otherwise throw.
+Return Ok value or throw.
 
 ##### Type Parameters
 
@@ -362,7 +848,7 @@ Return the value if `Ok`, otherwise throw.
 
 ##### Parameters
 
-###### result
+###### res
 
 [`Result`](../type-aliases/Result.md)\<`T`, `E`\>
 
@@ -370,23 +856,15 @@ Return the value if `Ok`, otherwise throw.
 
 `T`
 
-##### Throws
-
-The original error if it is an `Error` instance.
-
-##### Throws
-
-If the error is not an `Error` instance.
-
 ***
 
 #### unwrapAsync
 
-> **unwrapAsync**: \<`T`, `E`\>(`resultPromise`) => `Promise`\<`T`\>
+> **unwrapAsync**: \<`T`, `E`\>(`res`) => `Promise`\<`T`\>
 
-Defined in: [src/like-neverthrow.ts:586](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L586)
+Defined in: [src/like-neverthrow.ts:596](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L596)
 
-Async variant of [unwrap](../functions/unwrap.md).
+Await and unwrap value or throw.
 
 ##### Type Parameters
 
@@ -400,7 +878,7 @@ Async variant of [unwrap](../functions/unwrap.md).
 
 ##### Parameters
 
-###### resultPromise
+###### res
 
 [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
 
@@ -408,23 +886,15 @@ Async variant of [unwrap](../functions/unwrap.md).
 
 `Promise`\<`T`\>
 
-##### Throws
-
-The original error if it is an `Error` instance.
-
-##### Throws
-
-If the error is not an `Error` instance.
-
 ***
 
 #### unwrapOr
 
-> **unwrapOr**: \<`T`, `E`, `D`\>(`result`, `defaultValue`) => `T` \| `D`
+> **unwrapOr**: \<`T`, `E`, `D`\>(`res`, `defaultValue`) => `T` \| `D`
 
-Defined in: [src/like-neverthrow.ts:584](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L584)
+Defined in: [src/like-neverthrow.ts:594](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L594)
 
-Return the value if `Ok`, otherwise return `defaultValue`.
+Return value or default.
 
 ##### Type Parameters
 
@@ -442,7 +912,7 @@ Return the value if `Ok`, otherwise return `defaultValue`.
 
 ##### Parameters
 
-###### result
+###### res
 
 [`Result`](../type-aliases/Result.md)\<`T`, `E`\>
 
@@ -458,11 +928,11 @@ Return the value if `Ok`, otherwise return `defaultValue`.
 
 #### unwrapOrAsync
 
-> **unwrapOrAsync**: \<`T`, `E`, `D`\>(`resultPromise`, `defaultValue`) => `Promise`\<`T` \| `D`\>
+> **unwrapOrAsync**: \<`T`, `E`, `D`\>(`res`, `defaultValue`) => `Promise`\<`T` \| `D`\>
 
-Defined in: [src/like-neverthrow.ts:587](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L587)
+Defined in: [src/like-neverthrow.ts:597](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L597)
 
-Async variant of [unwrapOr](../functions/unwrapOr.md).
+Await and return value or default.
 
 ##### Type Parameters
 
@@ -480,7 +950,7 @@ Async variant of [unwrapOr](../functions/unwrapOr.md).
 
 ##### Parameters
 
-###### resultPromise
+###### res
 
 [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
 
@@ -496,11 +966,11 @@ Async variant of [unwrapOr](../functions/unwrapOr.md).
 
 #### unwrapOrElse
 
-> **unwrapOrElse**: \<`T`, `E`, `U`\>(`result`, `onErr`) => `T` \| `U`
+> **unwrapOrElse**: \<`T`, `E`, `D`\>(`res`, `fn`) => `T` \| `D`
 
-Defined in: [src/like-neverthrow.ts:585](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L585)
+Defined in: [src/like-neverthrow.ts:595](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L595)
 
-Return the value if `Ok`, otherwise call `onErr` and return its result.
+Return value or call fallback.
 
 ##### Type Parameters
 
@@ -512,33 +982,33 @@ Return the value if `Ok`, otherwise call `onErr` and return its result.
 
 `E`
 
-###### U
+###### D
 
-`U`
+`D`
 
 ##### Parameters
 
-###### result
+###### res
 
 [`Result`](../type-aliases/Result.md)\<`T`, `E`\>
 
-###### onErr
+###### fn
 
-(`error`) => `U`
+(`e`) => `D`
 
 ##### Returns
 
-`T` \| `U`
+`T` \| `D`
 
 ***
 
 #### unwrapOrElseAsync
 
-> **unwrapOrElseAsync**: \<`T`, `E`, `U`\>(`resultPromise`, `onErr`) => `Promise`\<`T` \| `U`\>
+> **unwrapOrElseAsync**: \<`T`, `E`, `D`\>(`res`, `fn`) => `Promise`\<`T` \| `D`\>
 
-Defined in: [src/like-neverthrow.ts:588](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L588)
+Defined in: [src/like-neverthrow.ts:598](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L598)
 
-Async variant of [unwrapOrElse](../functions/unwrapOrElse.md).
+Await and return value or call fallback.
 
 ##### Type Parameters
 
@@ -550,257 +1020,63 @@ Async variant of [unwrapOrElse](../functions/unwrapOrElse.md).
 
 `E`
 
-###### U
+###### D
 
-`U`
+`D`
 
 ##### Parameters
 
-###### resultPromise
+###### res
 
 [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
 
-###### onErr
+###### fn
 
-(`error`) => `U` \| `PromiseLike`\<`U`\>
+(`e`) => `D` \| `Promise`\<`D`\>
 
 ##### Returns
 
-`Promise`\<`T` \| `U`\>
+`Promise`\<`T` \| `D`\>
 
 ## Methods
 
-### err()
-
-> **err**(`error`): [`Err`](Err.md)\<`E`\>
-
-Defined in: [src/like-neverthrow.ts:511](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L511)
-
-#### Parameters
-
-##### error
-
-`E`
-
-#### Returns
-
-[`Err`](Err.md)\<`E`\>
-
-***
-
-### errAsync()
-
-> **errAsync**(`error`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`never`, `E`\>
-
-Defined in: [src/like-neverthrow.ts:513](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L513)
-
-#### Parameters
-
-##### error
-
-`E`
-
-#### Returns
-
-[`ResultAsync`](../type-aliases/ResultAsync.md)\<`never`, `E`\>
-
-***
-
-### flatMap()
-
-> **flatMap**\<`T`, `U`\>(`result`, `fn`): [`Result`](../type-aliases/Result.md)\<`U`, `E`\>
-
-Defined in: [src/like-neverthrow.ts:571](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L571)
-
-#### Type Parameters
-
-##### T
-
-`T`
-
-##### U
-
-`U`
-
-#### Parameters
-
-##### result
-
-[`Result`](../type-aliases/Result.md)\<`T`, `E`\>
-
-##### fn
-
-(`value`) => [`Result`](../type-aliases/Result.md)\<`U`, `E`\>
-
-#### Returns
-
-[`Result`](../type-aliases/Result.md)\<`U`, `E`\>
-
-***
-
-### flatMapAsync()
-
-> **flatMapAsync**\<`T`, `U`\>(`result`, `fn`): `Promise`\<[`Result`](../type-aliases/Result.md)\<`U`, `E`\>\>
-
-Defined in: [src/like-neverthrow.ts:575](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L575)
-
-#### Type Parameters
-
-##### T
-
-`T`
-
-##### U
-
-`U`
-
-#### Parameters
-
-##### result
-
-[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
-
-##### fn
-
-(`value`) => [`Result`](../type-aliases/Result.md)\<`U`, `E`\> \| [`ResultAsync`](../type-aliases/ResultAsync.md)\<`U`, `E`\>
-
-#### Returns
-
-`Promise`\<[`Result`](../type-aliases/Result.md)\<`U`, `E`\>\>
-
-***
-
 ### from()
 
-#### Call Signature
+> **from**\<`T`, `F`\>(`input`, `opts?`): [`Result`](../type-aliases/Result.md)\<`T`, `F` \| [`FinallyError`](../../index/classes/FinallyError.md)\<`T`, `F`\>\> \| [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `F` \| [`FinallyError`](../../index/classes/FinallyError.md)\<`T`, `F`\>\>
 
-> **from**\<`T`, `F`\>(`fn`, `options`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `F` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `F`\>\>
+Defined in: [src/like-neverthrow.ts:563](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L563)
 
-Defined in: [src/like-neverthrow.ts:521](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L521)
+#### Type Parameters
 
-Unified capture entry point. Accepts a sync/async factory or a `PromiseLike`.
-
-##### Type Parameters
-
-###### T
+##### T
 
 `T`
 
-###### F
+##### F
 
 `F` = `E`
 
-##### Parameters
+#### Parameters
 
-###### fn
+##### input
 
-() => `T`
+`PromiseLike`\<`T`\> \| (() => `T` \| `PromiseLike`\<`T`\>)
 
-###### options
-
-[`CaptureOptions`](CaptureOptions.md)\<`T`, `F`\> & `object`
-
-##### Returns
-
-[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `F` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `F`\>\>
-
-#### Call Signature
-
-> **from**\<`T`, `F`\>(`fn`, `options?`): [`Result`](../type-aliases/Result.md)\<`T`, `F` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `F`\>\> \| [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `F` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `F`\>\>
-
-Defined in: [src/like-neverthrow.ts:527](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L527)
-
-##### Type Parameters
-
-###### T
-
-`T`
-
-###### F
-
-`F` = `E`
-
-##### Parameters
-
-###### fn
-
-() => `T`
-
-###### options?
+##### opts?
 
 [`CaptureOptions`](CaptureOptions.md)\<`T`, `F`\>
 
-##### Returns
+#### Returns
 
-[`Result`](../type-aliases/Result.md)\<`T`, `F` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `F`\>\> \| [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `F` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `F`\>\>
-
-#### Call Signature
-
-> **from**\<`T`, `F`\>(`fn`, `options?`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `F` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `F`\>\>
-
-Defined in: [src/like-neverthrow.ts:531](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L531)
-
-##### Type Parameters
-
-###### T
-
-`T`
-
-###### F
-
-`F` = `E`
-
-##### Parameters
-
-###### fn
-
-() => `PromiseLike`\<`T`\>
-
-###### options?
-
-[`CaptureOptions`](CaptureOptions.md)\<`T`, `F`\>
-
-##### Returns
-
-[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `F` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `F`\>\>
-
-#### Call Signature
-
-> **from**\<`T`, `F`\>(`promise`, `options?`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `F` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `F`\>\>
-
-Defined in: [src/like-neverthrow.ts:535](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L535)
-
-##### Type Parameters
-
-###### T
-
-`T`
-
-###### F
-
-`F` = `E`
-
-##### Parameters
-
-###### promise
-
-`PromiseLike`\<`T`\>
-
-###### options?
-
-[`CaptureOptions`](CaptureOptions.md)\<`T`, `F`\>
-
-##### Returns
-
-[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `F` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `F`\>\>
+[`Result`](../type-aliases/Result.md)\<`T`, `F` \| [`FinallyError`](../../index/classes/FinallyError.md)\<`T`, `F`\>\> \| [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `F` \| [`FinallyError`](../../index/classes/FinallyError.md)\<`T`, `F`\>\>
 
 ***
 
 ### fromAsyncThrowable()
 
-> **fromAsyncThrowable**\<`T`, `F`\>(`fn`, `options?`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `F` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `F`\>\>
+> **fromAsyncThrowable**\<`T`, `F`\>(`fn`, `opts?`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `F` \| [`FinallyError`](../../index/classes/FinallyError.md)\<`T`, `F`\>\>
 
-Defined in: [src/like-neverthrow.ts:556](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L556)
+Defined in: [src/like-neverthrow.ts:575](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L575)
 
 #### Type Parameters
 
@@ -818,21 +1094,21 @@ Defined in: [src/like-neverthrow.ts:556](https://github.com/simwai/super-result/
 
 () => `PromiseLike`\<`T`\>
 
-##### options?
+##### opts?
 
 [`CaptureOptions`](CaptureOptions.md)\<`T`, `F`\>
 
 #### Returns
 
-[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `F` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `F`\>\>
+[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `F` \| [`FinallyError`](../../index/classes/FinallyError.md)\<`T`, `F`\>\>
 
 ***
 
 ### fromPromise()
 
-> **fromPromise**\<`T`, `F`\>(`promise`, `options?`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `F` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `F`\>\>
+> **fromPromise**\<`T`, `F`\>(`promise`, `opts?`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `F` \| [`FinallyError`](../../index/classes/FinallyError.md)\<`T`, `F`\>\>
 
-Defined in: [src/like-neverthrow.ts:551](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L551)
+Defined in: [src/like-neverthrow.ts:571](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L571)
 
 #### Type Parameters
 
@@ -850,202 +1126,42 @@ Defined in: [src/like-neverthrow.ts:551](https://github.com/simwai/super-result/
 
 `PromiseLike`\<`T`\>
 
-##### options?
+##### opts?
 
 [`CaptureOptions`](CaptureOptions.md)\<`T`, `F`\>
 
 #### Returns
 
-[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `F` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `F`\>\>
+[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `F` \| [`FinallyError`](../../index/classes/FinallyError.md)\<`T`, `F`\>\>
 
 ***
 
 ### fromThrowable()
 
-#### Call Signature
+> **fromThrowable**\<`T`, `F`\>(`fn`, `opts?`): [`Result`](../type-aliases/Result.md)\<`T`, `F` \| [`FinallyError`](../../index/classes/FinallyError.md)\<`T`, `F`\>\>
 
-> **fromThrowable**\<`T`, `F`\>(`fn`, `options`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `F` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `F`\>\>
+Defined in: [src/like-neverthrow.ts:567](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L567)
 
-Defined in: [src/like-neverthrow.ts:540](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L540)
+#### Type Parameters
 
-##### Type Parameters
-
-###### T
+##### T
 
 `T`
 
-###### F
+##### F
 
 `F` = `E`
 
-##### Parameters
+#### Parameters
 
-###### fn
-
-() => `T`
-
-###### options
-
-[`CaptureOptions`](CaptureOptions.md)\<`T`, `F`\> & `object`
-
-##### Returns
-
-[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `F` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `F`\>\>
-
-#### Call Signature
-
-> **fromThrowable**\<`T`, `F`\>(`fn`, `options?`): [`Result`](../type-aliases/Result.md)\<`T`, `F` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `F`\>\> \| [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `F` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `F`\>\>
-
-Defined in: [src/like-neverthrow.ts:546](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L546)
-
-##### Type Parameters
-
-###### T
-
-`T`
-
-###### F
-
-`F` = `E`
-
-##### Parameters
-
-###### fn
+##### fn
 
 () => `T`
 
-###### options?
+##### opts?
 
 [`CaptureOptions`](CaptureOptions.md)\<`T`, `F`\>
 
-##### Returns
-
-[`Result`](../type-aliases/Result.md)\<`T`, `F` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `F`\>\> \| [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `F` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `F`\>\>
-
-***
-
-### map()
-
-> **map**\<`T`, `U`\>(`result`, `fn`): [`Result`](../type-aliases/Result.md)\<`U`, `E`\>
-
-Defined in: [src/like-neverthrow.ts:561](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L561)
-
-#### Type Parameters
-
-##### T
-
-`T`
-
-##### U
-
-`U`
-
-#### Parameters
-
-##### result
-
-[`Result`](../type-aliases/Result.md)\<`T`, `E`\>
-
-##### fn
-
-(`value`) => `U`
-
 #### Returns
 
-[`Result`](../type-aliases/Result.md)\<`U`, `E`\>
-
-***
-
-### mapAsync()
-
-> **mapAsync**\<`T`, `U`\>(`result`, `fn`): `Promise`\<[`Result`](../type-aliases/Result.md)\<`U`, `E`\>\>
-
-Defined in: [src/like-neverthrow.ts:562](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L562)
-
-#### Type Parameters
-
-##### T
-
-`T`
-
-##### U
-
-`U`
-
-#### Parameters
-
-##### result
-
-[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
-
-##### fn
-
-(`value`) => `U` \| `PromiseLike`\<`U`\>
-
-#### Returns
-
-`Promise`\<[`Result`](../type-aliases/Result.md)\<`U`, `E`\>\>
-
-***
-
-### mapErr()
-
-> **mapErr**\<`T`, `F`\>(`result`, `fn`): [`Result`](../type-aliases/Result.md)\<`T`, `F`\>
-
-Defined in: [src/like-neverthrow.ts:566](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L566)
-
-#### Type Parameters
-
-##### T
-
-`T`
-
-##### F
-
-`F`
-
-#### Parameters
-
-##### result
-
-[`Result`](../type-aliases/Result.md)\<`T`, `E`\>
-
-##### fn
-
-(`error`) => `F`
-
-#### Returns
-
-[`Result`](../type-aliases/Result.md)\<`T`, `F`\>
-
-***
-
-### mapErrAsync()
-
-> **mapErrAsync**\<`T`, `F`\>(`result`, `fn`): `Promise`\<[`Result`](../type-aliases/Result.md)\<`T`, `F`\>\>
-
-Defined in: [src/like-neverthrow.ts:567](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L567)
-
-#### Type Parameters
-
-##### T
-
-`T`
-
-##### F
-
-`F`
-
-#### Parameters
-
-##### result
-
-[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
-
-##### fn
-
-(`error`) => `F` \| `PromiseLike`\<`F`\>
-
-#### Returns
-
-`Promise`\<[`Result`](../type-aliases/Result.md)\<`T`, `F`\>\>
+[`Result`](../type-aliases/Result.md)\<`T`, `F` \| [`FinallyError`](../../index/classes/FinallyError.md)\<`T`, `F`\>\>

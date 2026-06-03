@@ -6,11 +6,11 @@
 
 # Function: unwrapOrElseAsync()
 
-> **unwrapOrElseAsync**\<`T`, `E`, `U`\>(`resultPromise`, `onErr`): `Promise`\<`T` \| `U`\>
+> **unwrapOrElseAsync**\<`T`, `E`, `D`\>(`res`, `fn`): `Promise`\<`T` \| `D`\>
 
-Defined in: [src/like-neverthrow.ts:466](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L466)
+Defined in: [src/like-neverthrow.ts:490](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L490)
 
-Async variant of [unwrapOrElse](unwrapOrElse.md).
+Await and return value or call fallback.
 
 ## Type Parameters
 
@@ -22,20 +22,20 @@ Async variant of [unwrapOrElse](unwrapOrElse.md).
 
 `E`
 
-### U
+### D
 
-`U`
+`D`
 
 ## Parameters
 
-### resultPromise
+### res
 
 [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
 
-### onErr
+### fn
 
-(`error`) => `U` \| `PromiseLike`\<`U`\>
+(`e`) => `D` \| `Promise`\<`D`\>
 
 ## Returns
 
-`Promise`\<`T` \| `U`\>
+`Promise`\<`T` \| `D`\>

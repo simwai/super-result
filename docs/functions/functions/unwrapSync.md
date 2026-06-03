@@ -8,7 +8,7 @@
 
 > **unwrapSync**\<`T`, `E`\>(`input`): `T`
 
-Defined in: [src/functions.ts:121](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/functions.ts#L121)
+Defined in: [src/functions.ts:145](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/functions.ts#L145)
 
 Synchronously returns the value if success, otherwise throws the error.
 
@@ -27,6 +27,8 @@ Synchronously returns the value if success, otherwise throws the error.
 ### input
 
 [`RawResult`](../../index/type-aliases/RawResult.md)\<`T`, `E`\>
+
+The synchronous RawResult to unwrap.
 
 ## Returns
 

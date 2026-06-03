@@ -10,9 +10,10 @@
 
 > **flatMap**\<`T`, `E`, `U`\>(`input`, `fn`): [`RawResult`](../../index/type-aliases/RawResult.md)\<`U`, `E`\>
 
-Defined in: [src/functions.ts:42](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/functions.ts#L42)
+Defined in: [src/functions.ts:60](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/functions.ts#L60)
 
-Maps the success value to a new [RawResult](../../index/type-aliases/RawResult.md) and flattens it.
+Maps the success value to a new RawResult and flattens it.
+Works with both synchronous RawResult and Promise of RawResult.
 
 ### Type Parameters
 
@@ -34,21 +35,33 @@ Maps the success value to a new [RawResult](../../index/type-aliases/RawResult.m
 
 [`RawResult`](../../index/type-aliases/RawResult.md)\<`T`, `E`\>
 
+The Result or Promise of a Result to flatMap.
+
 #### fn
 
 (`v`) => [`RawResult`](../../index/type-aliases/RawResult.md)\<`U`, `E`\>
+
+The function returning a new Result.
 
 ### Returns
 
 [`RawResult`](../../index/type-aliases/RawResult.md)\<`U`, `E`\>
 
+### Example
+
+```ts
+const res = ok('/api/user')
+const data = await flatMap(res, url => fromPromise(fetch(url), e => e))
+```
+
 ## Call Signature
 
 > **flatMap**\<`T`, `E`, `U`\>(`input`, `fn`): `Promise`\<[`RawResult`](../../index/type-aliases/RawResult.md)\<`U`, `E`\>\>
 
-Defined in: [src/functions.ts:46](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/functions.ts#L46)
+Defined in: [src/functions.ts:64](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/functions.ts#L64)
 
-Maps the success value to a new [RawResult](../../index/type-aliases/RawResult.md) and flattens it.
+Maps the success value to a new RawResult and flattens it.
+Works with both synchronous RawResult and Promise of RawResult.
 
 ### Type Parameters
 
@@ -70,10 +83,21 @@ Maps the success value to a new [RawResult](../../index/type-aliases/RawResult.m
 
 `Promise`\<[`RawResult`](../../index/type-aliases/RawResult.md)\<`T`, `E`\>\>
 
+The Result or Promise of a Result to flatMap.
+
 #### fn
 
 (`v`) => [`RawResult`](../../index/type-aliases/RawResult.md)\<`U`, `E`\>
 
+The function returning a new Result.
+
 ### Returns
 
 `Promise`\<[`RawResult`](../../index/type-aliases/RawResult.md)\<`U`, `E`\>\>
+
+### Example
+
+```ts
+const res = ok('/api/user')
+const data = await flatMap(res, url => fromPromise(fetch(url), e => e))
+```

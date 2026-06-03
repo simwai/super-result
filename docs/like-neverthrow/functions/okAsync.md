@@ -8,9 +8,9 @@
 
 > **okAsync**\<`T`\>(`value`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `never`\>
 
-Defined in: [src/like-neverthrow.ts:112](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L112)
+Defined in: [src/like-neverthrow.ts:184](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L184)
 
-Create a successful [ResultAsync](../type-aliases/ResultAsync.md).
+Create a successful ResultAsync.
 
 ## Type Parameters
 
@@ -23,6 +23,8 @@ Create a successful [ResultAsync](../type-aliases/ResultAsync.md).
 ### value
 
 `T`
+
+Success value.
 
 ## Returns
 

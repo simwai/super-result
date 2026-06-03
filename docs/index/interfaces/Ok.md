@@ -6,9 +6,9 @@
 
 # Interface: Ok\<T\>
 
-Defined in: [src/index.ts:7](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/index.ts#L7)
+Defined in: [src/index.ts:7](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/index.ts#L7)
 
-Represents a successful result.
+Discriminator-based success variant.
 
 ## Type Parameters
 
@@ -24,7 +24,7 @@ The type of the value.
 
 > `readonly` **ok**: `true`
 
-Defined in: [src/index.ts:8](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/index.ts#L8)
+Defined in: [src/index.ts:8](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/index.ts#L8)
 
 ***
 
@@ -32,4 +32,4 @@ Defined in: [src/index.ts:8](https://github.com/simwai/super-result/blob/8263022
 
 > **value**: `T`
 
-Defined in: [src/index.ts:9](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/index.ts#L9)
+Defined in: [src/index.ts:9](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/index.ts#L9)

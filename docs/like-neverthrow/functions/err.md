@@ -6,11 +6,11 @@
 
 # Function: err()
 
-> **err**\<`E`\>(`error`): [`Err`](../interfaces/Err.md)\<`E`\>
+> **err**\<`E`\>(`error`): [`Result`](../type-aliases/Result.md)\<`never`, `E`\>
 
-Defined in: [src/like-neverthrow.ts:103](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L103)
+Defined in: [src/like-neverthrow.ts:174](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L174)
 
-Create a failed [Err](../interfaces/Err.md) result.
+Create a failed Result.
 
 ## Type Parameters
 
@@ -24,6 +24,14 @@ Create a failed [Err](../interfaces/Err.md) result.
 
 `E`
 
+Error value.
+
 ## Returns
 
-[`Err`](../interfaces/Err.md)\<`E`\>
+[`Result`](../type-aliases/Result.md)\<`never`, `E`\>
+
+## Example
+
+```ts
+const res = err('fail')
+```

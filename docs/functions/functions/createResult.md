@@ -8,9 +8,10 @@
 
 > **createResult**\<`E`, `FE`\>(`options?`): `object`
 
-Defined in: [src/functions.ts:250](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/functions.ts#L250)
+Defined in: [src/functions.ts:299](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/functions.ts#L299)
 
 Creates a bound functional API with pre-configured error mapping.
+Useful for ensuring consistent error structures across a module or service.
 
 ## Type Parameters
 
@@ -27,6 +28,8 @@ Creates a bound functional API with pre-configured error mapping.
 ### options?
 
 [`ResultConfig`](../type-aliases/ResultConfig.md)\<`E`, `FE`\>
+
+Mapping configuration or a single mapError function.
 
 ## Returns
 
@@ -52,7 +55,8 @@ Creates a bound functional API with pre-configured error mapping.
 
 > \<`T`, `E`, `U`\>(`input`, `fn`): [`RawResult`](../../index/type-aliases/RawResult.md)\<`U`, `E`\>
 
-Maps the success value to a new [RawResult](../../index/type-aliases/RawResult.md) and flattens it.
+Maps the success value to a new RawResult and flattens it.
+Works with both synchronous RawResult and Promise of RawResult.
 
 ##### Type Parameters
 
@@ -74,19 +78,31 @@ Maps the success value to a new [RawResult](../../index/type-aliases/RawResult.m
 
 [`RawResult`](../../index/type-aliases/RawResult.md)\<`T`, `E`\>
 
+The Result or Promise of a Result to flatMap.
+
 ###### fn
 
 (`v`) => [`RawResult`](../../index/type-aliases/RawResult.md)\<`U`, `E`\>
+
+The function returning a new Result.
 
 ##### Returns
 
 [`RawResult`](../../index/type-aliases/RawResult.md)\<`U`, `E`\>
 
+##### Example
+
+```ts
+const res = ok('/api/user')
+const data = await flatMap(res, url => fromPromise(fetch(url), e => e))
+```
+
 #### Call Signature
 
 > \<`T`, `E`, `U`\>(`input`, `fn`): `Promise`\<[`RawResult`](../../index/type-aliases/RawResult.md)\<`U`, `E`\>\>
 
-Maps the success value to a new [RawResult](../../index/type-aliases/RawResult.md) and flattens it.
+Maps the success value to a new RawResult and flattens it.
+Works with both synchronous RawResult and Promise of RawResult.
 
 ##### Type Parameters
 
@@ -108,13 +124,24 @@ Maps the success value to a new [RawResult](../../index/type-aliases/RawResult.m
 
 `Promise`\<[`RawResult`](../../index/type-aliases/RawResult.md)\<`T`, `E`\>\>
 
+The Result or Promise of a Result to flatMap.
+
 ###### fn
 
 (`v`) => [`RawResult`](../../index/type-aliases/RawResult.md)\<`U`, `E`\>
 
+The function returning a new Result.
+
 ##### Returns
 
 `Promise`\<[`RawResult`](../../index/type-aliases/RawResult.md)\<`U`, `E`\>\>
+
+##### Example
+
+```ts
+const res = ok('/api/user')
+const data = await flatMap(res, url => fromPromise(fetch(url), e => e))
+```
 
 ### fromPromise
 
@@ -165,6 +192,7 @@ Maps the success value to a new [RawResult](../../index/type-aliases/RawResult.m
 > \<`T`, `E`, `U`\>(`input`, `fn`): [`RawResult`](../../index/type-aliases/RawResult.md)\<`U`, `E`\>
 
 Maps the success value using the provided function.
+Works with both synchronous RawResult and Promise of RawResult.
 
 ##### Type Parameters
 
@@ -186,19 +214,31 @@ Maps the success value using the provided function.
 
 [`RawResult`](../../index/type-aliases/RawResult.md)\<`T`, `E`\>
 
+The Result or Promise of a Result to map.
+
 ###### fn
 
 (`v`) => `U`
 
+The transformation function for the success value.
+
 ##### Returns
 
 [`RawResult`](../../index/type-aliases/RawResult.md)\<`U`, `E`\>
+
+##### Example
+
+```ts
+const res = ok(21)
+const doubled = map(res, n => n * 2) // { ok: true, value: 42 }
+```
 
 #### Call Signature
 
 > \<`T`, `E`, `U`\>(`input`, `fn`): `Promise`\<[`RawResult`](../../index/type-aliases/RawResult.md)\<`U`, `E`\>\>
 
 Maps the success value using the provided function.
+Works with both synchronous RawResult and Promise of RawResult.
 
 ##### Type Parameters
 
@@ -220,19 +260,30 @@ Maps the success value using the provided function.
 
 `Promise`\<[`RawResult`](../../index/type-aliases/RawResult.md)\<`T`, `E`\>\>
 
+The Result or Promise of a Result to map.
+
 ###### fn
 
 (`v`) => `U`
+
+The transformation function for the success value.
 
 ##### Returns
 
 `Promise`\<[`RawResult`](../../index/type-aliases/RawResult.md)\<`U`, `E`\>\>
 
+##### Example
+
+```ts
+const res = ok(21)
+const doubled = map(res, n => n * 2) // { ok: true, value: 42 }
+```
+
 ### ok
 
 > **ok**: \<`T`\>(`value`) => [`RawResult`](../../index/type-aliases/RawResult.md)\<`T`, `never`\>
 
-Creates a successful [RawResult](../../index/type-aliases/RawResult.md).
+Creates a successful RawResult.
 
 #### Type Parameters
 
@@ -251,6 +302,15 @@ The success value.
 #### Returns
 
 [`RawResult`](../../index/type-aliases/RawResult.md)\<`T`, `never`\>
+
+#### Example
+
+```ts
+const res = ok(42)
+if (res.ok) {
+  console.log(res.value) // 42
+}
+```
 
 ### onFinally
 
@@ -299,6 +359,7 @@ The success value.
 > \<`T`, `E`\>(`input`): `T`
 
 Returns the value if success, otherwise throws the error.
+Works with both synchronous and asynchronous inputs.
 
 ##### Type Parameters
 
@@ -316,6 +377,8 @@ Returns the value if success, otherwise throws the error.
 
 [`RawResult`](../../index/type-aliases/RawResult.md)\<`T`, `E`\>
 
+The Result or Promise of a Result to unwrap.
+
 ##### Returns
 
 `T`
@@ -325,6 +388,7 @@ Returns the value if success, otherwise throws the error.
 > \<`T`, `E`\>(`input`): `Promise`\<`T`\>
 
 Returns the value if success, otherwise throws the error.
+Works with both synchronous and asynchronous inputs.
 
 ##### Type Parameters
 
@@ -341,6 +405,8 @@ Returns the value if success, otherwise throws the error.
 ###### input
 
 `Promise`\<[`RawResult`](../../index/type-aliases/RawResult.md)\<`T`, `E`\>\>
+
+The Result or Promise of a Result to unwrap.
 
 ##### Returns
 
@@ -376,9 +442,13 @@ Returns the value if success, otherwise returns the provided default value.
 
 [`RawResult`](../../index/type-aliases/RawResult.md)\<`T`, `E`\>
 
+The Result or Promise of a Result.
+
 ###### defaultValue
 
 `D`
+
+The fallback value.
 
 ##### Returns
 
@@ -410,9 +480,13 @@ Returns the value if success, otherwise returns the provided default value.
 
 `Promise`\<[`RawResult`](../../index/type-aliases/RawResult.md)\<`T`, `E`\>\>
 
+The Result or Promise of a Result.
+
 ###### defaultValue
 
 `D`
+
+The fallback value.
 
 ##### Returns
 
@@ -448,9 +522,13 @@ Returns the value if success, otherwise calls the fallback function with the err
 
 [`RawResult`](../../index/type-aliases/RawResult.md)\<`T`, `E`\>
 
+The Result or Promise of a Result.
+
 ###### fallback
 
 (`e`) => `D`
+
+The function to call if result is an error.
 
 ##### Returns
 
@@ -482,9 +560,13 @@ Returns the value if success, otherwise calls the fallback function with the err
 
 `Promise`\<[`RawResult`](../../index/type-aliases/RawResult.md)\<`T`, `E`\>\>
 
+The Result or Promise of a Result.
+
 ###### fallback
 
 (`e`) => `D`
+
+The function to call if result is an error.
 
 ##### Returns
 
@@ -512,6 +594,16 @@ Synchronously returns the value if success, otherwise throws the error.
 
 [`RawResult`](../../index/type-aliases/RawResult.md)\<`T`, `E`\>
 
+The synchronous RawResult to unwrap.
+
 #### Returns
 
 `T`
+
+## Example
+
+```ts
+const { result, map } = createResult(e => new AppError(String(e)))
+
+const data = await result(fetchUser(1))
+```

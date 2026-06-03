@@ -6,11 +6,11 @@
 
 # Function: mapErr()
 
-> **mapErr**\<`T`, `E`, `F`\>(`result`, `fn`): [`Result`](../type-aliases/Result.md)\<`T`, `F`\>
+> **mapErr**\<`T`, `E`, `F`\>(`res`, `fn`): [`Result`](../type-aliases/Result.md)\<`T`, `F`\>
 
-Defined in: [src/like-neverthrow.ts:260](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L260)
+Defined in: [src/like-neverthrow.ts:303](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L303)
 
-Maps the error value of a [Result](../type-aliases/Result.md).
+Map the error value.
 
 ## Type Parameters
 
@@ -28,13 +28,13 @@ Maps the error value of a [Result](../type-aliases/Result.md).
 
 ## Parameters
 
-### result
+### res
 
 [`Result`](../type-aliases/Result.md)\<`T`, `E`\>
 
 ### fn
 
-(`error`) => `F`
+(`e`) => `F`
 
 ## Returns
 

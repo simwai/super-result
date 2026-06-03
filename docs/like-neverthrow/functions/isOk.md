@@ -6,11 +6,11 @@
 
 # Function: isOk()
 
-> **isOk**\<`T`, `E`\>(`result`): `result is Ok<T>`
+> **isOk**\<`T`, `E`\>(`res`): `res is Ok<T>`
 
-Defined in: [src/like-neverthrow.ts:138](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L138)
+Defined in: [src/like-neverthrow.ts:266](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L266)
 
-Type guard: check if a result is [Ok](../interfaces/Ok.md).
+Check if a Result is Ok.
 
 ## Type Parameters
 
@@ -24,10 +24,10 @@ Type guard: check if a result is [Ok](../interfaces/Ok.md).
 
 ## Parameters
 
-### result
+### res
 
 [`Result`](../type-aliases/Result.md)\<`T`, `E`\>
 
 ## Returns
 
-`result is Ok<T>`
+`res is Ok<T>`

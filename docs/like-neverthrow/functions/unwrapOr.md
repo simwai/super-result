@@ -6,11 +6,11 @@
 
 # Function: unwrapOr()
 
-> **unwrapOr**\<`T`, `E`, `D`\>(`result`, `defaultValue`): `T` \| `D`
+> **unwrapOr**\<`T`, `E`, `D`\>(`res`, `defaultValue`): `T` \| `D`
 
-Defined in: [src/like-neverthrow.ts:430](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L430)
+Defined in: [src/like-neverthrow.ts:462](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L462)
 
-Return the value if `Ok`, otherwise return `defaultValue`.
+Return value or default.
 
 ## Type Parameters
 
@@ -28,7 +28,7 @@ Return the value if `Ok`, otherwise return `defaultValue`.
 
 ## Parameters
 
-### result
+### res
 
 [`Result`](../type-aliases/Result.md)\<`T`, `E`\>
 

@@ -6,11 +6,11 @@
 
 # Function: fromAsyncThrowable()
 
-> **fromAsyncThrowable**\<`T`, `E`\>(`fn`, `mapError?`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
+> **fromAsyncThrowable**\<`T`, `E`\>(`fn`, `mapError`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
 
-Defined in: [src/like-neverthrow.ts:214](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L214)
+Defined in: [src/like-neverthrow.ts:246](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L246)
 
-Executes an async function and captures any thrown error.
+Wrap an asynchronous factory that might throw.
 
 ## Type Parameters
 
@@ -20,7 +20,7 @@ Executes an async function and captures any thrown error.
 
 ### E
 
-`E` = `unknown`
+`E`
 
 ## Parameters
 
@@ -28,9 +28,13 @@ Executes an async function and captures any thrown error.
 
 () => `PromiseLike`\<`T`\>
 
-### mapError?
+The async function to wrap.
+
+### mapError
 
 (`error`) => `E`
+
+Error mapper.
 
 ## Returns
 

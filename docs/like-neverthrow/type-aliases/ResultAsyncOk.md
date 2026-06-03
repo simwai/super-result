@@ -6,16 +6,14 @@
 
 # Type Alias: ResultAsyncOk\<R\>
 
-> **ResultAsyncOk**\<`R`\> = `R` *extends* [`ResultAsync`](ResultAsync.md)\<infer TData, `unknown`\> ? `TData` : `never`
+> **ResultAsyncOk**\<`R`\> = [`ResultOk`](ResultOk.md)\<`R`\>
 
-Defined in: [src/like-neverthrow.ts:756](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L756)
+Defined in: [src/like-neverthrow.ts:716](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L716)
 
-Extract the `Ok` value type from a [ResultAsync](ResultAsync.md).
+Extract success type from ResultAsync.
 
 ## Type Parameters
 
 ### R
 
-`R` *extends* [`ResultAsync`](ResultAsync.md)\<`unknown`, `unknown`\>
-
-A [ResultAsync](ResultAsync.md) type.
+`R`

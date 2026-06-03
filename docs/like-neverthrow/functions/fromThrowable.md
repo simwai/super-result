@@ -6,11 +6,11 @@
 
 # Function: fromThrowable()
 
-> **fromThrowable**\<`T`, `E`\>(`fn`, `mapError?`): [`Result`](../type-aliases/Result.md)\<`T`, `E`\>
+> **fromThrowable**\<`T`, `E`\>(`fn`, `mapError`): [`Result`](../type-aliases/Result.md)\<`T`, `E`\>
 
-Defined in: [src/like-neverthrow.ts:182](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L182)
+Defined in: [src/like-neverthrow.ts:209](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L209)
 
-Executes a synchronous function and captures any thrown error.
+Wrap a synchronous operation that might throw.
 
 ## Type Parameters
 
@@ -20,7 +20,7 @@ Executes a synchronous function and captures any thrown error.
 
 ### E
 
-`E` = `unknown`
+`E`
 
 ## Parameters
 
@@ -28,9 +28,13 @@ Executes a synchronous function and captures any thrown error.
 
 () => `T`
 
-### mapError?
+The function to wrap.
+
+### mapError
 
 (`error`) => `E`
+
+Error mapper.
 
 ## Returns
 

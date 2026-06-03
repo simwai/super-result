@@ -8,9 +8,9 @@
 
 > **RawResult**\<`T`, `E`\> = [`Ok`](../interfaces/Ok.md)\<`T`\> \| [`Err`](../interfaces/Err.md)\<`E`\>
 
-Defined in: [src/index.ts:30](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/index.ts#L30)
+Defined in: [src/index.ts:30](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/index.ts#L30)
 
-A discriminated union representing either a success ([Ok](../interfaces/Ok.md)) or a failure ([Err](../interfaces/Err.md)).
+A discriminated union representing either a success (Ok) or a failure (Err).
 
 ## Type Parameters
 

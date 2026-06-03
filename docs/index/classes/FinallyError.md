@@ -6,7 +6,7 @@
 
 # Class: FinallyError\<T, E\>
 
-Defined in: [src/index.ts:83](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/index.ts#L83)
+Defined in: [src/index.ts:99](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/index.ts#L99)
 
 Error thrown when an error occurs within a finally block.
 
@@ -38,7 +38,7 @@ The type of the error.
 
 > **new FinallyError**\<`T`, `E`\>(`originalResult`, `error`): `FinallyError`\<`T`, `E`\>
 
-Defined in: [src/index.ts:87](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/index.ts#L87)
+Defined in: [src/index.ts:103](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/index.ts#L103)
 
 #### Parameters
 
@@ -76,7 +76,7 @@ Defined in: node\_modules/.pnpm/typescript@5.9.3/node\_modules/typescript/lib/li
 
 > `readonly` **error**: `unknown`
 
-Defined in: [src/index.ts:85](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/index.ts#L85)
+Defined in: [src/index.ts:101](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/index.ts#L101)
 
 #### Implementation of
 
@@ -112,7 +112,7 @@ Defined in: node\_modules/.pnpm/typescript@5.9.3/node\_modules/typescript/lib/li
 
 > `readonly` **ok**: `false` = `false`
 
-Defined in: [src/index.ts:84](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/index.ts#L84)
+Defined in: [src/index.ts:100](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/index.ts#L100)
 
 #### Implementation of
 
@@ -124,7 +124,7 @@ Defined in: [src/index.ts:84](https://github.com/simwai/super-result/blob/826302
 
 > `readonly` **originalResult**: [`RawResult`](../type-aliases/RawResult.md)\<`T`, `E`\>
 
-Defined in: [src/index.ts:86](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/index.ts#L86)
+Defined in: [src/index.ts:102](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/index.ts#L102)
 
 ***
 

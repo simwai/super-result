@@ -6,11 +6,11 @@
 
 # Function: onFinallyAsync()
 
-> **onFinallyAsync**\<`T`, `E`\>(`resultPromise`, `callback`, `mapFinallyError?`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `E`\>\>
+> **onFinallyAsync**\<`T`, `E`\>(`res`, `callback`, `mapFinallyError?`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `unknown`\>
 
-Defined in: [src/like-neverthrow.ts:355](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L355)
+Defined in: [src/like-neverthrow.ts:527](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L527)
 
-Purely async variant of [onFinally](onFinally.md).
+Await ResultAsync and execute callback.
 
 ## Type Parameters
 
@@ -24,13 +24,13 @@ Purely async variant of [onFinally](onFinally.md).
 
 ## Parameters
 
-### resultPromise
+### res
 
 [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
 
 ### callback
 
-(`result`) => `void` \| `PromiseLike`\<`void`\>
+(`result`) => `void` \| `Promise`\<`void`\>
 
 ### mapFinallyError?
 
@@ -38,4 +38,4 @@ Purely async variant of [onFinally](onFinally.md).
 
 ## Returns
 
-[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E` \| [`FinallyError`](../classes/FinallyError.md)\<`T`, `E`\>\>
+[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `unknown`\>

@@ -6,11 +6,11 @@
 
 # Function: unwrapOrAsync()
 
-> **unwrapOrAsync**\<`T`, `E`, `D`\>(`resultPromise`, `defaultValue`): `Promise`\<`T` \| `D`\>
+> **unwrapOrAsync**\<`T`, `E`, `D`\>(`res`, `defaultValue`): `Promise`\<`T` \| `D`\>
 
-Defined in: [src/like-neverthrow.ts:442](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/like-neverthrow.ts#L442)
+Defined in: [src/like-neverthrow.ts:470](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/like-neverthrow.ts#L470)
 
-Async variant of [unwrapOr](unwrapOr.md).
+Await and return value or default.
 
 ## Type Parameters
 
@@ -28,7 +28,7 @@ Async variant of [unwrapOr](unwrapOr.md).
 
 ## Parameters
 
-### resultPromise
+### res
 
 [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
 

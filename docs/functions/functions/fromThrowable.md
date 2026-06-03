@@ -8,9 +8,9 @@
 
 > **fromThrowable**\<`T`\>(`fn`): [`RawResult`](../../index/type-aliases/RawResult.md)\<`T`, `unknown`\>
 
-Defined in: [src/functions.ts:168](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/functions.ts#L168)
+Defined in: [src/functions.ts:197](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/functions.ts#L197)
 
-Executes a function and captures any thrown error into a [RawResult](../../index/type-aliases/RawResult.md).
+Executes a function and captures any thrown error into a RawResult.
 
 ## Type Parameters
 
@@ -23,6 +23,8 @@ Executes a function and captures any thrown error into a [RawResult](../../index
 ### fn
 
 () => `T`
+
+The synchronous function to wrap.
 
 ## Returns
 

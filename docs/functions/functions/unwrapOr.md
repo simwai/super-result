@@ -10,7 +10,7 @@
 
 > **unwrapOr**\<`T`, `E`, `D`\>(`input`, `defaultValue`): `T` \| `D`
 
-Defined in: [src/functions.ts:132](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/functions.ts#L132)
+Defined in: [src/functions.ts:158](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/functions.ts#L158)
 
 Returns the value if success, otherwise returns the provided default value.
 
@@ -34,9 +34,13 @@ Returns the value if success, otherwise returns the provided default value.
 
 [`RawResult`](../../index/type-aliases/RawResult.md)\<`T`, `E`\>
 
+The Result or Promise of a Result.
+
 #### defaultValue
 
 `D`
+
+The fallback value.
 
 ### Returns
 
@@ -46,7 +50,7 @@ Returns the value if success, otherwise returns the provided default value.
 
 > **unwrapOr**\<`T`, `E`, `D`\>(`input`, `defaultValue`): `Promise`\<`T` \| `D`\>
 
-Defined in: [src/functions.ts:136](https://github.com/simwai/super-result/blob/826302294b2f8dec4f3b605b2dd1d8ab1c4c08e4/src/functions.ts#L136)
+Defined in: [src/functions.ts:162](https://github.com/simwai/super-result/blob/f46d5c2afbce2ea4a7eacc418bb34e4c8a37b1f1/src/functions.ts#L162)
 
 Returns the value if success, otherwise returns the provided default value.
 
@@ -70,9 +74,13 @@ Returns the value if success, otherwise returns the provided default value.
 
 `Promise`\<[`RawResult`](../../index/type-aliases/RawResult.md)\<`T`, `E`\>\>
 
+The Result or Promise of a Result.
+
 #### defaultValue
 
 `D`
+
+The fallback value.
 
 ### Returns
 
