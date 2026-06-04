@@ -10,18 +10,6 @@ Lightweight, enterprise-grade railway-oriented error handling for TypeScript. Mi
 
 ---
 
-## The Mission
-
-super-result provides a robust, tree-shakeable toolkit for functional error handling in TypeScript. It is designed to be unobtrusive, explicit, and highly performant, offering multiple API styles to suit your team's preference.
-
-- **Minimal Syntax**: Reach the same results with less code.
-- **Maximum Type Safety**: Discriminated unions mean no unsafe casts.
-- **Style Flexibility**: Choose between Class-based, Functional, or Neverthrow-inspired APIs.
-- [**Library Philosophy**](https://github.com/simwai/super-result/blob/master/PHILOSOPHY.md): Why we built this and why ROP matters.
-- **Enterprise Ready**: Full TSDoc coverage and automated documentation.
-
----
-
 ## 📦 Installation
 
 ```bash
@@ -30,81 +18,46 @@ pnpm add super-result
 
 ---
 
-## Why super-result? 🚀
-
-If you are looking for a modern alternative to libraries like `neverthrow`, here is why `super-result` might be for you:
-
-### 1. Choice Without Compromise
-We provide three distinct API styles (Class-based, Functional, and Neverthrow-style) because every developer thinks differently. Some prefer fluent chaining, others prefer pure functions. **You only pay for what you use** — the library is fully tree-shakeable, meaning only the code for the style you choose ends up in your bundle.
-
-### 2. No Unnecessary Complexity
-Unlike other libraries that introduce a custom `ResultAsync` class with its own set of methods, `super-result` treats async results as standard **Promises**.
-- **Native Interop**: Works seamlessly with `Promise.all`, `await`, and every existing async tool in the JS ecosystem.
-- **Lower Cognitive Load**: No need to learn a second API for asynchronous operations.
-
-### 3. Actively Maintained
-Built with modern tooling (unbuild, vitest, biome), `super-result` is designed for performance and compatibility with the latest TypeScript features.
-
----
-
-## API Styles
-
-One library, three ways to use it. All styles share the same core engine and are fully tree-shakeable.
-
-### 1. Default (Class-based) - `super-result`
-The primary style. Provides a fluent, PromiseLike wrapper around results.
+## Quick Start
 
 ```ts
-import { Result } from 'super-result'
+import { from, ok, err } from 'super-result'
 
-const res = Result.ok(42).map(n => n * 2)
-const value = await res.unwrap() // 84
-```
+// Capture synchronous errors
+const res1 = from(() => {
+  if (Math.random() > 0.5) throw new Error('boom')
+  return 42
+})
 
-### 2. Functional - `super-result/functions`
-Pure functions for a composable, functional programming style.
+// Capture asynchronous errors
+const res2 = await from(async () => {
+  const data = await fetch('...')
+  return data.json()
+})
 
-```ts
-import { ok, map, unwrap } from 'super-result/functions'
-
-const res = ok(42)
-const doubled = map(res, n => n * 2)
-const value = unwrap(doubled) // 84
-```
-
-### 3. Neverthrow Style - `super-result/like-neverthrow`
-A familiar API for users of the `neverthrow` library.
-
-```ts
-import { ok, err, isOk } from 'super-result/like-neverthrow'
-
-const res = ok(42)
-if (isOk(res)) {
-  console.log(res.value)
+// Type narrowing
+if (res1.ok) {
+  console.log(res1.value)
+} else {
+  console.error(res1.error.message)
 }
 ```
 
 ---
 
-## Quick Start (Class Style)
+## Custom Factories
 
 ```ts
-import { Result } from 'super-result'
+import { createResult } from 'super-result'
 
-// Capture synchronous errors
-const parsed = Result.fromThrowable(() => JSON.parse('{ "valid": true }'))
+class MyError extends Error {}
 
-// Capture asynchronous errors
-const user = await Result.fromPromiseLike(
-  fetchUser(id),
-  err => new Error('Fetch failed')
+const R = createResult(error =>
+  error instanceof MyError ? error : new MyError(String(error))
 )
 
-// Fluent chaining
-const name = await Result.ok({ id: 1 })
-  .map(u => u.id)
-  .flatMap(id => Result.fromThrowable(() => getSafeName(id)))
-  .unwrapOr('Anonymous')
+const res = R.from(() => { throw new Error('raw') })
+// res.error is guaranteed to be MyError
 ```
 
 ---
