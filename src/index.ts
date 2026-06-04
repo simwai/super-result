@@ -1,445 +1,148 @@
-/**
- * Discriminator-based success variant.
- *
- * @template T The type of the value.
- * @category Core Types
- */
+// #region Core types
+
 export interface Ok<T> {
   readonly ok: true
-  value: T
+  readonly value: T
 }
 
-/**
- * Discriminator-based failure variant.
- *
- * @template E The type of the error.
- * @category Core Types
- */
 export interface Err<E> {
   readonly ok: false
-  error: E
+  readonly error: E
 }
 
-/**
- * A discriminated union representing either a success (Ok) or a failure (Err).
- *
- * @template T The type of the value.
- * @template E The type of the error.
- * @category Core Types
- */
-export type RawResult<T, E> = Ok<T> | Err<E>
+export type Result<T, E> = Ok<T> | Err<E>
+export type ResultAsync<T, E> = Promise<Result<T, E>>
 
-/**
- * Creates a successful RawResult.
- *
- * @param value The success value.
- * @category Core Functions
- *
- * @example
- * ```ts
- * const res = ok(42)
- * if (res.ok) {
- *   console.log(res.value) // 42
- * }
- * ```
- */
-export function ok<T>(value: T): RawResult<T, never> {
+// #endregion
+
+// #region Constructors
+
+export function ok<T>(value: T): Ok<T> {
   return { ok: true, value }
 }
 
-/**
- * Creates a failed RawResult.
- *
- * @param error The error value.
- * @category Core Functions
- *
- * @example
- * ```ts
- * const res = err('fail')
- * if (!res.ok) {
- *   console.log(res.error) // 'fail'
- * }
- * ```
- */
-export function err<E>(error: E): RawResult<never, E> {
+export function err<E>(error: E): Err<E> {
   return { ok: false, error }
 }
 
-function isOk<T, E>(r: RawResult<T, E>): r is Ok<T> {
-  return r.ok === true
-}
-function isErr<T, E>(r: RawResult<T, E>): r is Err<E> {
-  return r.ok === false
-}
-function isPromise(v: unknown): v is Promise<unknown> {
-  return !!v && typeof v === 'object' && 'then' in v
-}
+// #endregion
 
-/**
- * Error thrown when a non-error value is unwrapped and treated as an error.
- *
- * @category Errors
- */
-export class NonErrorThrown extends Error {
-  public readonly value: unknown
-  constructor(value: unknown) {
-    super('Non-error value thrown.')
-    this.name = 'NonErrorThrown'
-    this.value = value
-  }
+// #region Internal helpers
+
+function isPromiseLike<T>(value: unknown): value is PromiseLike<T> {
+  return (
+    value !== null &&
+    (typeof value === 'object' || typeof value === 'function') &&
+    'then' in value &&
+    typeof (value as { then: unknown }).then === 'function'
+  )
 }
 
-/**
- * Error thrown when an error occurs within a finally block.
- *
- * @template T The type of the value.
- * @template E The type of the error.
- * @category Errors
- */
-export class FinallyError<T, E> extends Error implements Err<unknown> {
-  readonly ok = false
-  readonly error: unknown
-  public readonly originalResult: RawResult<T, E>
-  constructor(originalResult: RawResult<T, E>, error: unknown) {
-    super('Error occurred in finally block.')
-    this.name = 'FinallyError'
-    this.originalResult = originalResult
-    this.error = error
-  }
-}
+function createFrom<E>(mapError: (error: unknown) => E) {
+  function from<T>(fn: () => PromiseLike<T>): ResultAsync<T, E>
+  function from<T>(fn: () => T): Result<T, E>
+  function from<T>(promise: PromiseLike<T>): ResultAsync<T, E>
 
-/**
- * A class-based wrapper for RawResult that provides a fluent API
- * for both synchronous and asynchronous operations.
- *
- * @template T The type of the value.
- * @template E The type of the error.
- * @category Main
- */
-export class Result<T, E> implements PromiseLike<T> {
-  constructor(
-    public readonly inner: RawResult<T, E> | Promise<RawResult<T, E>>,
-  ) {}
+  function from<T>(
+    input: PromiseLike<T> | (() => T | PromiseLike<T>),
+  ): Result<T, E> | ResultAsync<T, E> {
+    const wrapErr = (error: unknown): Err<E> => err(mapError(error))
 
-  /**
-   * Wraps a synchronous RawResult into a Result.
-   *
-   * @param value The raw result to wrap.
-   */
-  static sync<T, E>(value: RawResult<T, E>): Result<T, E> {
-    return new Result(value)
-  }
+    if (typeof input === 'function') {
+      try {
+        const value = input()
 
-  /**
-   * Wraps a promise of a RawResult into a Result.
-   *
-   * @param promise The promise of a raw result to wrap.
-   */
-  static async<T, E>(promise: Promise<RawResult<T, E>>): Result<T, E> {
-    return new Result(promise)
-  }
+        if (isPromiseLike<T>(value)) {
+          return Promise.resolve(value).then(
+            (resolved) => ok(resolved),
+            (error) => wrapErr(error),
+          )
+        }
 
-  /**
-   * Creates a successful Result.
-   *
-   * @param value The success value.
-   */
-  static ok<T>(value: T): Result<T, never> {
-    return Result.sync(ok(value))
-  }
-
-  /**
-   * Creates a failed Result.
-   *
-   * @param error The error value.
-   */
-  static err<E>(error: E): Result<never, E> {
-    return Result.sync(err(error))
-  }
-
-  /**
-   * Executes a function and captures any thrown error into a Result.
-   *
-   * @param fn The function to execute.
-   *
-   * @example
-   * ```ts
-   * const res = Result.fromThrowable(() => JSON.parse('{ "ok": true }'))
-   * ```
-   */
-  static fromThrowable<T>(fn: () => T): Result<T, unknown> {
-    try {
-      return Result.ok(fn())
-    } catch (e) {
-      return Result.err(e)
-    }
-  }
-
-  /**
-   * Wraps a PromiseLike into a Result, capturing any rejection.
-   *
-   * @param promise The promise-like to wrap.
-   * @param mapError A function to map the potential rejection error.
-   */
-  static async fromPromiseLike<T, E>(
-    promise: PromiseLike<T>,
-    mapError: (e: unknown) => E,
-  ): Promise<Result<T, E>> {
-    try {
-      return Result.ok(await promise)
-    } catch (e) {
-      return Result.err(mapError(e))
-    }
-  }
-
-  /**
-   * Combines multiple results into a single result containing an array of values.
-   * Fails if any of the input results are an error.
-   *
-   * @param results An array of results or promises of results.
-   */
-  static async all<T, E>(
-    results: (Result<T, E> | Promise<Result<T, E>>)[],
-  ): Promise<Result<T[], E>> {
-    const promises = results.map(async (r) => {
-      const res = await r
-      const inner =
-        res instanceof Result ? await res.inner : (res as RawResult<T, E>)
-      if (inner.ok) return inner.value
-      throw inner.error
-    })
-    try {
-      const values = await Promise.all(promises)
-      return Result.ok(values)
-    } catch (error) {
-      return Result.err(error as E)
-    }
-  }
-
-  /**
-   * Combines multiple results into a single result containing an array of RawResults.
-   * Never fails, instead captures all outcomes.
-   *
-   * @param results An array of results or promises of results.
-   */
-  static async allSettled<T, E>(
-    results: (Result<T, E> | Promise<Result<T, E>>)[],
-  ): Promise<Result<RawResult<T, E>[], never>> {
-    const promises = results.map(async (r) => {
-      const res = await r
-      const inner =
-        res instanceof Result ? await res.inner : (res as RawResult<T, E>)
-      return inner
-    })
-    const settled = await Promise.all(promises)
-    return Result.ok(settled)
-  }
-
-  /**
-   * Implements PromiseLike.then to allow awaiting the Result directly.
-   */
-  then<TResult1 = T, TResult2 = never>(
-    onfulfilled?: (value: T) => TResult1 | PromiseLike<TResult1>,
-    onrejected?: (reason: any) => TResult2 | PromiseLike<TResult2>,
-  ): Promise<TResult1 | TResult2> {
-    const promise =
-      this.inner instanceof Promise ? this.inner : Promise.resolve(this.inner)
-    return promise.then(
-      (r) => (isOk(r) ? onfulfilled?.(r.value) : onrejected?.(r.error)),
-      onrejected,
-    ) as Promise<TResult1 | TResult2>
-  }
-
-  /**
-   * Maps the success value using the provided function.
-   *
-   * @param fn The transformation function.
-   *
-   * @example
-   * ```ts
-   * const res = Result.ok(21).map(n => n * 2)
-   * ```
-   */
-  map<U>(fn: (value: T) => U): Result<U, E> {
-    if (this.inner instanceof Promise) {
-      const newPromise = this.inner.then((r) => (isOk(r) ? ok(fn(r.value)) : r))
-      return new Result(newPromise)
-    }
-    const r = this.inner
-    return new Result(isOk(r) ? ok(fn(r.value)) : r)
-  }
-
-  /**
-   * Maps the success value to a new Result and flattens it.
-   *
-   * @param fn The transformation function that returns a Result or Promise of a result.
-   */
-  flatMap<U>(
-    fn: (value: T) => Result<U, E> | RawResult<U, E> | Promise<RawResult<U, E>>,
-  ): Result<U, E> {
-    const flatten = (
-      r: RawResult<T, E>,
-    ): RawResult<U, E> | Promise<RawResult<U, E>> => {
-      if (isErr(r)) return r
-      const next = fn(r.value)
-      return next instanceof Result
-        ? next.inner instanceof Promise
-          ? next.inner
-          : Promise.resolve(next.inner)
-        : next
-    }
-    if (this.inner instanceof Promise) {
-      return new Result(this.inner.then(flatten))
-    }
-    const next = flatten(this.inner)
-    return new Result(next instanceof Promise ? next : Promise.resolve(next))
-  }
-
-  /**
-   * Executes a callback regardless of whether the result is a success or failure.
-   *
-   * @param callback The callback to execute.
-   * @param mapFinallyError Optional function to map errors thrown within the callback.
-   */
-  finally(
-    callback: (result: RawResult<T, E>) => void | Promise<void>,
-    mapFinallyError?: (error: unknown) => unknown,
-  ): Result<T, E | unknown> {
-    const mapper = mapFinallyError ?? ((e: unknown) => e)
-    const toErrResult = (
-      original: RawResult<T, E>,
-      err: unknown,
-    ): RawResult<T, E | unknown> => {
-      const fe = mapper(err)
-      return new FinallyError(original, fe)
-    }
-
-    if (this.inner instanceof Promise) {
-      const newPromise = this.inner.then(
-        (
-          result,
-        ): RawResult<T, E | unknown> | Promise<RawResult<T, E | unknown>> => {
-          const res = callback(result)
-          if (isPromise(res)) {
-            return res.then(
-              () => result as RawResult<T, E | unknown>,
-              (e) => toErrResult(result, e),
-            )
-          }
-          return result as RawResult<T, E | unknown>
-        },
-        (e): RawResult<T, E | unknown> =>
-          toErrResult(err(e) as RawResult<T, E>, e),
-      )
-      return new Result(newPromise)
-    }
-    const syncInner = this.inner as RawResult<T, E>
-    try {
-      const res = callback(syncInner)
-      if (isPromise(res)) {
-        const promise = res.then(
-          () => syncInner as RawResult<T, E | unknown>,
-          (e) => toErrResult(syncInner, e),
-        )
-        return new Result(promise)
+        return ok(value)
+      } catch (error) {
+        return wrapErr(error)
       }
-      return new Result(syncInner as RawResult<T, E | unknown>)
-    } catch (e) {
-      return new Result(toErrResult(syncInner, e))
     }
+
+    return Promise.resolve(input).then(
+      (resolved) => ok(resolved),
+      (error) => wrapErr(error),
+    )
   }
 
-  /**
-   * Returns the value if success, otherwise throws the error.
-   */
-  async unwrap(): Promise<T> {
-    const r = await this.inner
-    if (isOk(r)) return r.value
-    throw r.error
-  }
+  return from
+}
 
-  /**
-   * Synchronously returns the value if success, otherwise throws the error.
-   *
-   * @throws {Error} If the result is pending (async).
-   */
-  unwrapSync(): T {
-    if (this.inner instanceof Promise)
-      throw new Error('Cannot unwrapSync a pending result')
-    if (isOk(this.inner)) return this.inner.value
-    if (this.inner.error instanceof Error) throw this.inner.error
-    throw new NonErrorThrown(this.inner.error)
-  }
+// #endregion
 
-  /**
-   * Returns the value if success, otherwise returns the provided default value.
-   *
-   * @param defaultValue The value to return if the result is an error.
-   */
-  async unwrapOr<D>(defaultValue: D): Promise<T | D> {
-    const r = await this.inner
-    return isOk(r) ? r.value : defaultValue
-  }
+// #region Factory
 
-  /**
-   * Returns the value if success, otherwise calls the fallback function with the error.
-   *
-   * @param fallback The function to call if the result is an error.
-   */
-  async unwrapOrElse<D>(fallback: (error: E) => D): Promise<T | D> {
-    const r = await this.inner
-    return isOk(r) ? r.value : fallback(r.error)
-  }
+export interface ResultFactory<E> {
+  from<T>(fn: () => PromiseLike<T>): ResultAsync<T, E>
+  from<T>(fn: () => T): Result<T, E>
+  from<T>(promise: PromiseLike<T>): ResultAsync<T, E>
+}
 
-  /**
-   * Checks if the result is a success.
-   */
-  async isOk(): Promise<boolean> {
-    const r = await this.inner
-    return isOk(r)
-  }
-
-  /**
-   * Checks if the result is a failure.
-   */
-  async isErr(): Promise<boolean> {
-    const r = await this.inner
-    return isErr(r)
-  }
-
-  /**
-   * Synchronously checks if the result is a success.
-   *
-   * @throws {Error} If the result is pending (async).
-   */
-  isOkSync(): this is this & { readonly value: T; readonly error: undefined } {
-    if (this.inner instanceof Promise)
-      throw new Error('Cannot check sync on pending result')
-    return isOk(this.inner)
-  }
-
-  /**
-   * Synchronously checks if the result is a failure.
-   *
-   * @throws {Error} If the result is pending (async).
-   */
-  isErrSync(): this is this & { readonly value: undefined; readonly error: E } {
-    if (this.inner instanceof Promise)
-      throw new Error('Cannot check sync on pending result')
-    return isErr(this.inner)
-  }
-
-  /**
-   * Returns the success value if the result is synchronous and successful, otherwise undefined.
-   */
-  get value(): T | undefined {
-    return !isPromise(this.inner) && isOk(this.inner) ? (this.inner as Ok<T>).value : undefined
-  }
-
-  /**
-   * Returns the error value if the result is synchronous and failed, otherwise undefined.
-   */
-  get error(): E | undefined {
-    return !isPromise(this.inner) && isErr(this.inner) ? (this.inner as Err<E>).error : undefined
+export function createResult<E>(
+  mapError: (error: unknown) => E,
+): ResultFactory<E> {
+  return {
+    from: createFrom(mapError),
   }
 }
+
+// #endregion
+
+// #region Default entry points
+
+export const from = createFrom<Error>((error) =>
+  error instanceof Error ? error : new Error(String(error)),
+)
+
+export const fromUnknown = createFrom<unknown>((error) => error)
+
+// #endregion
+
+// #region Type verification
+
+class CustomError extends Error {
+  public constructor(message: string) {
+    super(message)
+    this.name = 'CustomError'
+  }
+}
+
+const R = createResult((error) =>
+  error instanceof Error
+    ? new CustomError(error.message)
+    : new CustomError(String(error)),
+)
+
+const syncOk = from(() => 123)
+// expected: Result<number, Error>
+
+const asyncOk = from(async () => 123)
+// expected: ResultAsync<number, Error>
+
+const rawThrow = fromUnknown((): number => {
+  throw 'wat'
+})
+// expected: Result<number, unknown>
+
+const typedSyncOk = R.from(() => 123)
+// expected: Result<number, CustomError>
+
+// @ts-ignore sync from should not return ResultAsync
+const bad1: ResultAsync<number, Error> = syncOk
+
+// @ts-ignore async from should not return plain Result
+const bad2: Result<number, Error> = asyncOk
+
+// @ts-ignore typed factory should not widen to plain Error
+const bad3: Result<number, Error> = typedSyncOk
+
+// @ts-ignore raw path should stay unknown
+const bad4: Result<number, Error> = rawThrow
+
+// #endregion
