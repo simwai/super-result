@@ -73,10 +73,3 @@ Rust changed the world by proving that you don't need a garbage collector or a m
 When every failure is typed and every check is enforced, you stop being afraid of your own code. You stop hoping things won't break and start **knowing** how they will fail.
 
 **Don't just catch errors. Design them.** ✨
-
----
-
-## Links
-
-- [GitHub Repository](https://github.com/simwai/super-result)
-- [API Documentation](https://github.com/simwai/super-result/blob/master/docs/README.md)
