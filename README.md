@@ -10,6 +10,12 @@ Lightweight, enterprise-grade railway-oriented error handling for TypeScript. Mi
 
 ---
 
+## 📖 Philosophy
+
+`super-result` is built on the principles of Railway-Oriented Programming and Rust-inspired error handling. Read our [Philosophy](https://github.com/simwai/super-result/blob/master/PHILOSOPHY.md) to learn more about why we avoid `try/catch` and embrace Honest Types.
+
+---
+
 ## 📦 Installation
 
 ```bash
