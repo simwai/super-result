@@ -88,7 +88,7 @@ export function createResult<E>(
   mapError: (error: unknown) => E,
 ): ResultFactory<E> {
   return {
-    from: createFrom(mapError),
+    from: /* @__PURE__ */ createFrom(mapError),
   }
 }
 
@@ -96,10 +96,10 @@ export function createResult<E>(
 
 // #region Default entry points
 
-export const from = createFrom<Error>((error) =>
+export const from = /* @__PURE__ */ createFrom<Error>((error) =>
   error instanceof Error ? error : new Error(String(error)),
 )
 
-export const fromUnknown = createFrom<unknown>((error) => error)
+export const fromUnknown = /* @__PURE__ */ createFrom<unknown>((error) => error)
 
 // #endregion
