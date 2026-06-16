@@ -8,7 +8,9 @@
 
 > **err**\<`E`\>(`error`): [`Err`](../interfaces/Err.md)\<`E`\>
 
-Defined in: [index.ts:24](https://github.com/simwai/super-result/blob/a0cc9018c15334ae9e4aad00ecc53d5f0684f316/src/index.ts#L24)
+Defined in: [index.ts:86](https://github.com/simwai/super-result/blob/c8c5eec8472f853bcbc6d2f4528dda310e35c600/src/index.ts#L86)
+
+Creates a failed result.
 
 ## Type Parameters
 
@@ -22,6 +24,19 @@ Defined in: [index.ts:24](https://github.com/simwai/super-result/blob/a0cc9018c1
 
 `E`
 
+The error to wrap in an Err result
+
 ## Returns
 
 [`Err`](../interfaces/Err.md)\<`E`\>
+
+An Err result containing the error
+
+## Example
+
+```ts
+const res = err(new Error('failure'))
+if (!res.ok) {
+  console.error(res.error.message)
+}
+```
