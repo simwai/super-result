@@ -1,4 +1,4 @@
-# The Philosophy of `super-result` 🦀🚋
+# The Philosophy of `super-result`
 
 Stop throwing explosions at your users. Stop pretending errors don't exist.
 
@@ -6,17 +6,7 @@ Stop throwing explosions at your users. Stop pretending errors don't exist.
 
 ---
 
-## 1. Exceptions are GOTO in Disguise 👺
-
-When you `throw`, you are using a non-local jump. You are effectively using `GOTO`.
-Your code stops executing where it is and teleports to some arbitrary `catch` block that might be ten files away. This is the definition of **Spaghetti Code**. It's hard to trace, impossible to reason about locally, and a nightmare to debug.
-
-**The `super-result` way:**
-Control flow remains **local**. Errors are returned, not thrown. Your logic flows linearly through the type system, not randomly through the call stack.
-
----
-
-## 2. Stop Lying with Your Types 🤥
+## 1. Stop Lying with Your Types 🤥
 
 Let's look at a standard TypeScript signature:
 `function getUser(id: string): User`
@@ -30,41 +20,16 @@ We believe in **Honest Types**.
 
 This type tells the truth. It says: "I will *try* to give you a User, but I might give you a DbError." The caller is now **forced** by the compiler to acknowledge reality. You cannot access the user without dealing with the possibility that they don't exist.
 
----
-
-## 3. There is No "Happy Path" 🛤️
-
-The "Happy Path" is a myth. In a production system, error cases are just as frequent and just as important as success cases. By treating errors as "exceptional," we push them to the fringes of our architecture, where they rot and cause outages.
-
-Railway-Oriented Programming (ROP) acknowledges that there are **two tracks**:
-1. The Success Track
-2. The Failure Track
-
-Neither is "more important." ROP gives you the tools (`map`, `flatMap`, `andThen`) to navigate between these tracks with surgical precision. Your code becomes a predictable pipeline of data transformations, where errors are just another form of data.
-
----
-
-## 4. The Cognitive Load Tax 🧠
+## 2. The Cognitive Load Tax 🧠
 
 Traditional error handling requires you to keep a mental map of every possible exception that could bubble up from every nested function call. This is an impossible cognitive burden.
 
-With `super-result`, the burden is shifted to the **Compiler**.
+With `super-result`, the burden is shifted to the **TS type system**.
 - You don't need to remember what `fetch()` might throw.
 - You don't need to wrap every line in `try/catch` "just in case."
 - You just look at the return type.
 
-This allows you to focus 100% of your brainpower on the **Business Logic**, because the plumbing is handled by the type system.
-
----
-
-## 5. Rust's Legacy in TypeScript 🦀
-
-Rust changed the world by proving that you don't need a garbage collector or a massive runtime to be safe. It proved that **Explicitness is better than Magic**.
-
-`super-result` brings that philosophy to the TS ecosystem. We favor:
-- **Explicitness** over Magic.
-- **Values** over Exceptions.
-- **Safety** over "Convenience."
+This allows you to focus 100% of your brainpower on the **Business Logic**.
 
 ---
 
