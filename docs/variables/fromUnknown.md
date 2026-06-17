@@ -8,7 +8,11 @@
 
 > `const` **fromUnknown**: \{\<`T`\>(`fn`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `unknown`\>; \<`T`\>(`fn`): [`Result`](../type-aliases/Result.md)\<`T`, `unknown`\>; \<`T`\>(`promise`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `unknown`\>; \}
 
-Defined in: [index.ts:103](https://github.com/simwai/super-result/blob/a0cc9018c15334ae9e4aad00ecc53d5f0684f316/src/index.ts#L103)
+Defined in: [index.ts:224](https://github.com/simwai/super-result/blob/c8c5eec8472f853bcbc6d2f4528dda310e35c600/src/index.ts#L224)
+
+Captures errors from functions or promises into a Result without transformation.
+
+This is useful when you want to handle the 'unknown' error type yourself later.
 
 ## Call Signature
 
@@ -69,3 +73,12 @@ Defined in: [index.ts:103](https://github.com/simwai/super-result/blob/a0cc9018c
 ### Returns
 
 [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `unknown`\>
+
+## Example
+
+```ts
+const res = fromUnknown(() => { throw 'string error' })
+if (!res.ok) {
+  console.log(typeof res.error) // 'string'
+}
+```
