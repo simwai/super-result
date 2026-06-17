@@ -58,11 +58,11 @@ import { createResult } from 'super-result'
 
 class MyError extends Error {}
 
-const R = createResult(error =>
+const coolResult = createResult(error =>
   error instanceof MyError ? error : new MyError(String(error))
 )
 
-const result = R.from(() => { throw new Error('raw') })
+const result = coolResult.from(() => { throw new Error('raw') }) // no need to provide the error mapper anymore
 // result.error is MyError
 ```
 
