@@ -1,6 +1,6 @@
 {
   "name": "super-result",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Lightweight railway-oriented error handling for TypeScript — discriminated Result<T,E>, typed async, zero unsafe casts, composable logging & tracing.",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -14,11 +14,7 @@
     }
   },
   "sideEffects": false,
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
+  "files": ["dist", "README.md", "LICENSE"],
   "scripts": {
     "lint": "biome check src",
     "format": "biome check --write src",
