@@ -8,7 +8,7 @@
 
 > `const` **fromUnknown**: \{\<`T`\>(`fn`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `unknown`\>; \<`T`\>(`fn`): [`Result`](../type-aliases/Result.md)\<`T`, `unknown`\>; \<`T`\>(`promise`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `unknown`\>; \}
 
-Defined in: [index.ts:224](https://github.com/simwai/super-result/blob/c8c5eec8472f853bcbc6d2f4528dda310e35c600/src/index.ts#L224)
+Defined in: [index.ts:212](https://github.com/simwai/super-result/blob/0bc1c39ef5720eb6d5312b7353b4acd581ef9390/src/index.ts#L212)
 
 Captures errors from functions or promises into a Result without transformation.
 

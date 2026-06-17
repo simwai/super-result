@@ -23,5 +23,3 @@
 ## Functions
 
 - [createResult](functions/createResult.md)
-- [err](functions/err.md)
-- [ok](functions/ok.md)

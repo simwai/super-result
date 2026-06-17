@@ -8,7 +8,7 @@
 
 > **ResultAsync**\<`T`, `E`\> = `Promise`\<[`Result`](Result.md)\<`T`, `E`\>\>
 
-Defined in: [index.ts:52](https://github.com/simwai/super-result/blob/c8c5eec8472f853bcbc6d2f4528dda310e35c600/src/index.ts#L52)
+Defined in: [index.ts:52](https://github.com/simwai/super-result/blob/0bc1c39ef5720eb6d5312b7353b4acd581ef9390/src/index.ts#L52)
 
 A Promise that resolves to a Result.
 

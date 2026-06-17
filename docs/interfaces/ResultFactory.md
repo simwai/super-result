@@ -6,7 +6,7 @@
 
 # Interface: ResultFactory\<E\>
 
-Defined in: [index.ts:152](https://github.com/simwai/super-result/blob/c8c5eec8472f853bcbc6d2f4528dda310e35c600/src/index.ts#L152)
+Defined in: [index.ts:140](https://github.com/simwai/super-result/blob/0bc1c39ef5720eb6d5312b7353b4acd581ef9390/src/index.ts#L140)
 
 A factory for creating results with a pre-configured error mapper.
 
@@ -24,7 +24,7 @@ A factory for creating results with a pre-configured error mapper.
 
 > **from**\<`T`\>(`fn`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
 
-Defined in: [index.ts:156](https://github.com/simwai/super-result/blob/c8c5eec8472f853bcbc6d2f4528dda310e35c600/src/index.ts#L156)
+Defined in: [index.ts:144](https://github.com/simwai/super-result/blob/0bc1c39ef5720eb6d5312b7353b4acd581ef9390/src/index.ts#L144)
 
 Captures an asynchronous function execution into a ResultAsync.
 
@@ -48,7 +48,7 @@ Captures an asynchronous function execution into a ResultAsync.
 
 > **from**\<`T`\>(`fn`): [`Result`](../type-aliases/Result.md)\<`T`, `E`\>
 
-Defined in: [index.ts:160](https://github.com/simwai/super-result/blob/c8c5eec8472f853bcbc6d2f4528dda310e35c600/src/index.ts#L160)
+Defined in: [index.ts:148](https://github.com/simwai/super-result/blob/0bc1c39ef5720eb6d5312b7353b4acd581ef9390/src/index.ts#L148)
 
 Captures a synchronous function execution into a Result.
 
@@ -72,7 +72,7 @@ Captures a synchronous function execution into a Result.
 
 > **from**\<`T`\>(`promise`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
 
-Defined in: [index.ts:164](https://github.com/simwai/super-result/blob/c8c5eec8472f853bcbc6d2f4528dda310e35c600/src/index.ts#L164)
+Defined in: [index.ts:152](https://github.com/simwai/super-result/blob/0bc1c39ef5720eb6d5312b7353b4acd581ef9390/src/index.ts#L152)
 
 Captures a Promise into a ResultAsync.
 
