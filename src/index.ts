@@ -33,8 +33,8 @@ export interface Err<E> {
  *
  * @example
  * function divide(a: number, b: number): Result<number, string> {
- *   if (b === 0) return err('Division by zero')
- *   return ok(a / b)
+ *   if (b === 0) return { ok: false, error: 'Division by zero' }
+ *   return { ok: true, value: a / b }
  * }
  */
 export type Result<T, E> = Ok<T> | Err<E>
@@ -60,14 +60,8 @@ export type ResultAsync<T, E> = Promise<Result<T, E>>
  *
  * @param value - The value to wrap in an Ok result
  * @returns An Ok result containing the value
- *
- * @example
- * const res = ok(42)
- * if (res.ok) {
- *   console.log(res.value) // 42
- * }
  */
-export function ok<T>(value: T): Ok<T> {
+function ok<T>(value: T): Ok<T> {
   return { ok: true, value }
 }
 
@@ -76,14 +70,8 @@ export function ok<T>(value: T): Ok<T> {
  *
  * @param error - The error to wrap in an Err result
  * @returns An Err result containing the error
- *
- * @example
- * const res = err(new Error('failure'))
- * if (!res.ok) {
- *   console.error(res.error.message)
- * }
  */
-export function err<E>(error: E): Err<E> {
+function err<E>(error: E): Err<E> {
   return { ok: false, error }
 }
 
@@ -224,4 +212,3 @@ export const from = /* @__PURE__ */ createFrom<Error>((error) =>
 export const fromUnknown = /* @__PURE__ */ createFrom<unknown>((error) => error)
 
 // #endregion
-
