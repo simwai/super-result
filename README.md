@@ -2,7 +2,7 @@
 
 # super-result
 
-Lightweight, enterprise-grade railway-oriented error handling for TypeScript. Minimal syntax, maximum type safety.
+Lightweight Result pattern for neater error handling written in TypeScript. Minimal syntax, maximum type safety.
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178c6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![Node](https://img.shields.io/badge/Node-20+-339933?style=flat-square&logo=node.js)](https://nodejs.org/)
@@ -12,7 +12,7 @@ Lightweight, enterprise-grade railway-oriented error handling for TypeScript. Mi
 
 ## 📖 Philosophy
 
-`super-result` is built on the principles of Railway-Oriented Programming and Rust-inspired error handling. Read our [Philosophy](https://github.com/simwai/super-result/blob/master/PHILOSOPHY.md) to learn more about why we avoid `try/catch` and embrace Honest Types.
+`super-result` is follows the Result pattern approach some know as Rust-inspired error handling. Read our [Philosophy](https://github.com/simwai/super-result/blob/master/PHILOSOPHY.md) to learn more about it.
 
 ---
 
@@ -27,7 +27,7 @@ pnpm add super-result
 ## Quick Start
 
 ```ts
-import { from, ok, err } from 'super-result'
+import { from } from 'super-result'
 
 // Capture synchronous errors
 const res1 = from(() => {
@@ -62,8 +62,8 @@ const R = createResult(error =>
   error instanceof MyError ? error : new MyError(String(error))
 )
 
-const res = R.from(() => { throw new Error('raw') })
-// res.error is guaranteed to be MyError
+const result = R.from(() => { throw new Error('raw') })
+// result.error is MyError
 ```
 
 ---
