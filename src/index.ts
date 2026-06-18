@@ -92,42 +92,35 @@ function isPromiseLike<T>(value: unknown): value is PromiseLike<T> {
 }
 
 /**
- * Internal factory to create a scoped 'from' function with a custom error mapper.
+ * Internal implementation for capturing errors from functions or promises.
  */
-function createFrom<E>(mapError: (error: unknown) => E) {
-  function from<T>(fn: () => PromiseLike<T>): ResultAsync<T, E>
-  function from<T>(fn: () => T): Result<T, E>
-  function from<T>(promise: PromiseLike<T>): ResultAsync<T, E>
+function _from<T, E>(
+  input: PromiseLike<T> | (() => T | PromiseLike<T>),
+  mapError: (error: unknown) => E,
+): Result<T, E> | ResultAsync<T, E> {
+  const wrapErr = (error: unknown): Err<E> => err(mapError(error))
 
-  function from<T>(
-    input: PromiseLike<T> | (() => T | PromiseLike<T>),
-  ): Result<T, E> | ResultAsync<T, E> {
-    const wrapErr = (error: unknown): Err<E> => err(mapError(error))
+  if (typeof input === 'function') {
+    try {
+      const value = input()
 
-    if (typeof input === 'function') {
-      try {
-        const value = input()
-
-        if (isPromiseLike<T>(value)) {
-          return Promise.resolve(value).then(
-            (resolved) => ok(resolved),
-            (error) => wrapErr(error),
-          )
-        }
-
-        return ok(value)
-      } catch (error) {
-        return wrapErr(error)
+      if (isPromiseLike<T>(value)) {
+        return Promise.resolve(value).then(
+          (resolved) => ok(resolved),
+          (error) => wrapErr(error),
+        )
       }
-    }
 
-    return Promise.resolve(input).then(
-      (resolved) => ok(resolved),
-      (error) => wrapErr(error),
-    )
+      return ok(value)
+    } catch (error) {
+      return wrapErr(error)
+    }
   }
 
-  return from
+  return Promise.resolve(input).then(
+    (resolved) => ok(resolved),
+    (error) => wrapErr(error),
+  )
 }
 
 // #endregion
@@ -172,7 +165,7 @@ export function createResult<E>(
   mapError: (error: unknown) => E,
 ): ResultFactory<E> {
   return {
-    from: /* @__PURE__ */ createFrom(mapError),
+    from: <T>(input: any) => _from<T, E>(input, mapError) as any,
   }
 }
 
@@ -180,6 +173,18 @@ export function createResult<E>(
 
 // #region Default entry points
 
+/**
+ * Captures errors from an asynchronous function execution into a ResultAsync.
+ */
+export function from<T>(fn: () => PromiseLike<T>): ResultAsync<T, Error>
+/**
+ * Captures errors from a synchronous function execution into a Result.
+ */
+export function from<T>(fn: () => T): Result<T, Error>
+/**
+ * Captures errors from a Promise into a ResultAsync.
+ */
+export function from<T>(promise: PromiseLike<T>): ResultAsync<T, Error>
 /**
  * Captures errors from functions or promises into a Result.
  *
@@ -194,10 +199,28 @@ export function createResult<E>(
  * // Asynchronous
  * const res2 = await from(fetch('/api').then(r => r.json()))
  */
-export const from = /* @__PURE__ */ createFrom<Error>((error) =>
-  error instanceof Error ? error : new Error(String(error)),
-)
+export function from<T>(
+  input: PromiseLike<T> | (() => T | PromiseLike<T>),
+): Result<T, Error> | ResultAsync<T, Error> {
+  return _from(input, (error) =>
+    error instanceof Error ? error : new Error(String(error)),
+  )
+}
 
+/**
+ * Captures errors from an asynchronous function execution into a ResultAsync without transformation.
+ */
+export function fromUnknown<T>(
+  fn: () => PromiseLike<T>,
+): ResultAsync<T, unknown>
+/**
+ * Captures errors from a synchronous function execution into a Result without transformation.
+ */
+export function fromUnknown<T>(fn: () => T): Result<T, unknown>
+/**
+ * Captures errors from a Promise into a ResultAsync without transformation.
+ */
+export function fromUnknown<T>(promise: PromiseLike<T>): ResultAsync<T, unknown>
 /**
  * Captures errors from functions or promises into a Result without transformation.
  *
@@ -209,6 +232,10 @@ export const from = /* @__PURE__ */ createFrom<Error>((error) =>
  *   console.log(typeof res.error) // 'string'
  * }
  */
-export const fromUnknown = /* @__PURE__ */ createFrom<unknown>((error) => error)
+export function fromUnknown<T>(
+  input: PromiseLike<T> | (() => T | PromiseLike<T>),
+): Result<T, unknown> | ResultAsync<T, unknown> {
+  return _from(input, (error) => error)
+}
 
 // #endregion
