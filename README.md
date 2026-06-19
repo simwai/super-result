@@ -12,7 +12,7 @@ Lightweight Result pattern for neater error handling written in TypeScript. Mini
 
 ## 📖 Philosophy
 
-`super-result` is follows the Result pattern approach some know as Rust-inspired error handling. Read our [Philosophy](https://github.com/simwai/super-result/blob/master/PHILOSOPHY.md) to learn more about it.
+`super-result` follows the Result pattern approach some know as Rust-inspired error handling. Read our [Philosophy](https://github.com/simwai/super-result/blob/master/PHILOSOPHY.md) to learn more about it.
 
 ---
 
