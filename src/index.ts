@@ -61,7 +61,7 @@ export type ResultAsync<T, E> = Promise<Result<T, E>>
  * @param value - The value to wrap in an Ok result
  * @returns An Ok result containing the value
  */
-function ok<T>(value: T): Ok<T> {
+export function ok<T>(value: T): Ok<T> {
   return { ok: true, value }
 }
 
@@ -71,7 +71,7 @@ function ok<T>(value: T): Ok<T> {
  * @param error - The error to wrap in an Err result
  * @returns An Err result containing the error
  */
-function err<E>(error: E): Err<E> {
+export function err<E>(error: E): Err<E> {
   return { ok: false, error }
 }
 
