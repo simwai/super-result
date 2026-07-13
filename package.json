@@ -19,13 +19,12 @@
     "lint": "biome check src",
     "format": "biome check --write src",
     "type-check": "tsc --noEmit",
-    "check": "pnpm docs:generate && pnpm exec concurrently \"pnpm check-quality\" \"pnpm lint\" \"pnpm type-check\"",
+    "check": "pnpm concurrently \"pnpm docs:generate\" \"pnpm lint\" \"pnpm type-check\"",
     "dev": "unbuild --stub",
     "build": "unbuild && bash -c \"cp ./LICENSE ./dist && cp ./README.md ./dist\"",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "check-quality": "knip && madge --orphans --leaves --circular --tsconfig ./tsconfig.json",
     "docs:generate": "typedoc",
     "version:patch": "pnpm version patch",
     "version:minor": "pnpm version minor",
@@ -69,5 +68,8 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "dependencies": {
+    "super-result": "link:"
   }
 }

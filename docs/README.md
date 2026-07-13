@@ -1,8 +1,8 @@
-**super-result API v0.1.0**
+**super-result API v1.3.1**
 
 ***
 
-# super-result API v0.1.0
+# super-result API v1.3.1
 
 ## Interfaces
 
@@ -13,7 +13,7 @@
 ## Type Aliases
 
 - [Result](type-aliases/Result.md)
-- [ResultAsync](type-aliases/ResultAsync.md)
+- [~~ResultAsync~~](type-aliases/ResultAsync.md)
 
 ## Variables
 
@@ -23,3 +23,5 @@
 ## Functions
 
 - [createResult](functions/createResult.md)
+- [err](functions/err.md)
+- [ok](functions/ok.md)

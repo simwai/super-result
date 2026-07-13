@@ -1,18 +1,14 @@
-[**super-result API v0.1.0**](../README.md)
+[**super-result API v1.3.1**](../README.md)
 
 ***
 
 [super-result API](../README.md) / ResultAsync
 
-# Type Alias: ResultAsync\<T, E\>
+# ~~Type Alias: ResultAsync\<T, E\>~~
 
 > **ResultAsync**\<`T`, `E`\> = `Promise`\<[`Result`](Result.md)\<`T`, `E`\>\>
 
-Defined in: [index.ts:52](https://github.com/simwai/super-result/blob/0bc1c39ef5720eb6d5312b7353b4acd581ef9390/src/index.ts#L52)
-
-A Promise that resolves to a Result.
-
-Useful for representing asynchronous operations that can fail.
+Defined in: [index.ts:53](https://gitlab.com/simwai/super-result/-/blob/d2883e855743f731cc8789c6b707f7643b62baec/src/index.ts#L53)
 
 ## Type Parameters
 
@@ -23,6 +19,13 @@ Useful for representing asynchronous operations that can fail.
 ### E
 
 `E`
+
+## Deprecated
+
+Use Promise<Result<T, E> instead
+A Promise that resolves to a Result.
+
+Useful for representing asynchronous operations that can fail.
 
 ## Example
 

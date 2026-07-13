@@ -1,4 +1,4 @@
-[**super-result API v0.1.0**](../README.md)
+[**super-result API v1.3.1**](../README.md)
 
 ***
 
@@ -8,7 +8,7 @@
 
 > **createResult**\<`E`\>(`mapError`): [`ResultFactory`](../interfaces/ResultFactory.md)\<`E`\>
 
-Defined in: [index.ts:171](https://github.com/simwai/super-result/blob/0bc1c39ef5720eb6d5312b7353b4acd581ef9390/src/index.ts#L171)
+Defined in: [index.ts:172](https://gitlab.com/simwai/super-result/-/blob/d2883e855743f731cc8789c6b707f7643b62baec/src/index.ts#L172)
 
 Creates a specialized Result factory with a custom error mapping function.
 

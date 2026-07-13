@@ -1,4 +1,4 @@
-[**super-result API v0.1.0**](../README.md)
+[**super-result API v1.3.1**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: ResultFactory\<E\>
 
-Defined in: [index.ts:140](https://github.com/simwai/super-result/blob/0bc1c39ef5720eb6d5312b7353b4acd581ef9390/src/index.ts#L140)
+Defined in: [index.ts:141](https://gitlab.com/simwai/super-result/-/blob/d2883e855743f731cc8789c6b707f7643b62baec/src/index.ts#L141)
 
 A factory for creating results with a pre-configured error mapper.
 
@@ -24,7 +24,7 @@ A factory for creating results with a pre-configured error mapper.
 
 > **from**\<`T`\>(`fn`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
 
-Defined in: [index.ts:144](https://github.com/simwai/super-result/blob/0bc1c39ef5720eb6d5312b7353b4acd581ef9390/src/index.ts#L144)
+Defined in: [index.ts:145](https://gitlab.com/simwai/super-result/-/blob/d2883e855743f731cc8789c6b707f7643b62baec/src/index.ts#L145)
 
 Captures an asynchronous function execution into a ResultAsync.
 
@@ -48,7 +48,7 @@ Captures an asynchronous function execution into a ResultAsync.
 
 > **from**\<`T`\>(`fn`): [`Result`](../type-aliases/Result.md)\<`T`, `E`\>
 
-Defined in: [index.ts:148](https://github.com/simwai/super-result/blob/0bc1c39ef5720eb6d5312b7353b4acd581ef9390/src/index.ts#L148)
+Defined in: [index.ts:149](https://gitlab.com/simwai/super-result/-/blob/d2883e855743f731cc8789c6b707f7643b62baec/src/index.ts#L149)
 
 Captures a synchronous function execution into a Result.
 
@@ -72,7 +72,7 @@ Captures a synchronous function execution into a Result.
 
 > **from**\<`T`\>(`promise`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
 
-Defined in: [index.ts:152](https://github.com/simwai/super-result/blob/0bc1c39ef5720eb6d5312b7353b4acd581ef9390/src/index.ts#L152)
+Defined in: [index.ts:153](https://gitlab.com/simwai/super-result/-/blob/d2883e855743f731cc8789c6b707f7643b62baec/src/index.ts#L153)
 
 Captures a Promise into a ResultAsync.
 

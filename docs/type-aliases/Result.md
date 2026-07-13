@@ -1,4 +1,4 @@
-[**super-result API v0.1.0**](../README.md)
+[**super-result API v1.3.1**](../README.md)
 
 ***
 
@@ -8,7 +8,7 @@
 
 > **Result**\<`T`, `E`\> = [`Ok`](../interfaces/Ok.md)\<`T`\> \| [`Err`](../interfaces/Err.md)\<`E`\>
 
-Defined in: [index.ts:40](https://github.com/simwai/super-result/blob/0bc1c39ef5720eb6d5312b7353b4acd581ef9390/src/index.ts#L40)
+Defined in: [index.ts:40](https://gitlab.com/simwai/super-result/-/blob/d2883e855743f731cc8789c6b707f7643b62baec/src/index.ts#L40)
 
 A discriminated union representing either success (Ok) or failure (Err).
 

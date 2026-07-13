@@ -40,6 +40,7 @@ export interface Err<E> {
 export type Result<T, E> = Ok<T> | Err<E>
 
 /**
+ * @deprecated Use Promise<Result<T, E> instead
  * A Promise that resolves to a Result.
  *
  * Useful for representing asynchronous operations that can fail.
@@ -95,13 +96,13 @@ function isPromiseLike<T>(value: unknown): value is PromiseLike<T> {
  * Internal factory to create a scoped 'from' function with a custom error mapper.
  */
 function createFrom<E>(mapError: (error: unknown) => E) {
-  function from<T>(fn: () => PromiseLike<T>): ResultAsync<T, E>
   function from<T>(fn: () => T): Result<T, E>
-  function from<T>(promise: PromiseLike<T>): ResultAsync<T, E>
+  function from<T>(fn: () => PromiseLike<T>): Promise<Result<T, E>>
+  function from<T>(promise: PromiseLike<T>): Promise<Result<T, E>>
 
   function from<T>(
     input: PromiseLike<T> | (() => T | PromiseLike<T>),
-  ): Result<T, E> | ResultAsync<T, E> {
+  ): Result<T, E> | Promise<Result<T, E>> {
     const wrapErr = (error: unknown): Err<E> => err(mapError(error))
 
     if (typeof input === 'function') {
@@ -139,17 +140,17 @@ function createFrom<E>(mapError: (error: unknown) => E) {
  */
 export interface ResultFactory<E> {
   /**
-   * Captures an asynchronous function execution into a ResultAsync.
+   * Captures an asynchronous function execution into a Promise<Result<T, E>>.
    */
-  from<T>(fn: () => PromiseLike<T>): ResultAsync<T, E>
+  from<T>(fn: () => PromiseLike<T>): Promise<Result<T, E>>
   /**
    * Captures a synchronous function execution into a Result.
    */
   from<T>(fn: () => T): Result<T, E>
   /**
-   * Captures a Promise into a ResultAsync.
+   * Captures a Promise into a Promise<Result<T, E>>.
    */
-  from<T>(promise: PromiseLike<T>): ResultAsync<T, E>
+  from<T>(promise: PromiseLike<T>): Promise<Result<T, E>>
 }
 
 /**
