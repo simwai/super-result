@@ -1,0 +1,195 @@
+[project]
+name = "super-result"
+version = "0.1.0"
+description = "Default template for PDM package"
+authors = [
+  { name = "simwai", email = "16225108+simwai@users.noreply.github.com" },
+]
+dependencies = ["typing-extensions>=4.16.0"]
+requires-python = ">=3.9"
+readme = "README.md"
+license = { text = "MIT" }
+
+
+[tool.pdm]
+distribution = false
+
+[tool.pdm.scripts]
+start = "python -m src.index"
+lint = "ruff check ."
+format = "ruff format . && ruff check . --fix"
+
+[tool.ruff]
+target-version = "py312"
+exclude = [
+  ".git",
+  ".pytest_cache",
+  ".ruff_cache",
+  ".venv",
+  "__pypackages__",
+  "build",
+  "dist",
+  "node_modules",
+  "venv",
+  "*.json",
+]
+line-length = 80
+indent-width = 2
+
+[tool.ruff.lint]
+select = [
+  "E",
+  "W",
+  "F",
+  "UP",
+  "FA",
+  "I",
+  "B",
+  "ANN",
+  "RUF",
+  "N",
+  "YTT",
+  "ASYNC",
+  "S",
+  "BLE",
+  "A",
+  "COM",
+  "DTZ",
+  "EM",
+  "EXE",
+  "ISC",
+  "ICN",
+  "G",
+  "INP",
+  "PIE",
+  "PYI",
+  "PT",
+  "RSE",
+  "RET",
+  "SLF",
+  "SLOT",
+  "SIM",
+  "TID",
+  "INT",
+  "ARG",
+  "PTH",
+  "TD",
+  "FIX",
+  "ERA",
+  "PD",
+  "PGH",
+  "TRY",
+  "FLY",
+  "NPY",
+  "AIR",
+  "PERF",
+  "FURB",
+  "LOG",
+]
+
+ignore = [
+  "B008",
+  "C901",
+  "RUF012",
+  "W293",
+  "RUF043",
+  "COM812",
+  "ISC001",
+  "ANN401",
+  "PYI032",
+  "ARG002",
+  "RET501",
+  "TRY003",
+  "EM101",
+  "PGH003",
+  "E501",
+]
+
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.lint.per-file-ignores]
+"src/**/__init__.py" = ["F401"]
+"tests/**" = ["ANN", "PT", "S101"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["src"]
+force-single-line = false
+combine-as-imports = true
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+docstring-code-format = false
+docstring-code-line-length = "dynamic"
+
+[tool.pyright]
+include = ["src/**"]
+pythonVersion = "3.12"
+typeCheckingMode = "strict"
+# reportMissingImports = "warning"
+# reportMissingTypeStubs = false
+# reportImportCycles = "warning"
+# reportInvalidTypeForm = true
+# reportOptionalSubscript = true
+# reportOptionalMemberAccess = false
+# reportOptionalCall = false
+# reportOptionalIterable = false
+# reportOptionalContextManager = false
+# reportOptionalOperand = false
+# reportTypedDictNotRequiredAccess = false
+# reportIncompatibleMethodOverride = "warning"
+# reportIncompatibleVariableOverride = "warning"
+reportOverlappingOverload = false
+reportInconsistentOverload = false
+# reportConstantRedefinition = "warning"
+# reportUnusedImport = false
+# reportUnusedClass = false
+# reportUnusedFunction = false
+# reportUnusedVariable = false
+# reportDuplicateImport = false
+# reportPrivateImportUsage = false
+# reportUntypedFunctionDecorator = false
+# reportUntypedClassDecorator = false
+# reportUntypedBaseClass = false
+# reportUntypedNamedTuple = false
+reportPrivateUsage = false
+# reportTypeCommentUsage = false
+# reportInvalidStringEscapeSequence = "error"
+# reportUnknownParameterType = false
+# reportUnknownArgumentType = false
+# reportUnknownLambdaType = false
+# reportUnknownVariableType = false
+# reportUnknownMemberType = false
+# reportMissingParameterType = false
+# reportMissingTypeArgument = false
+# reportInvalidTypeVarUse = false
+# reportCallInDefaultInitializer = false
+# reportUnnecessaryIsInstance = false
+# reportUnnecessaryCast = false
+# reportUnnecessaryComparison = false
+# reportUnnecessaryContains = false
+# reportAssertAlwaysTrue = "error"
+# reportSelfClsParameterName = "error"
+# reportImplicitStringConcatenation = false
+# reportInvalidStubStatement = false
+# reportIncompleteStub = false
+# reportUnsupportedDunderAll = false
+# reportUnusedCoroutine = "warning"
+# reportUnnecessaryTypeIgnoreComment = false
+# reportMatchNotExhaustive = false
+# reportAttributeAccessIssue = false
+# reportCallIssue = false
+
+[dependency-groups]
+dev = [
+  "ruff>=0.15.21",
+  "pre-commit>=4.3.0",
+  "twine>=6.2.0",
+  "mkdocs>=1.6.1",
+  "mkdocs-material>=9.7.6",
+  "lazydocs>=0.4.8",
+  "mkdocs-awesome-pages-plugin>=2.10.1",
+]
