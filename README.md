@@ -1,4 +1,4 @@
-![super-result](https://raw.githubusercontent.com/simwai/super-result/refs/heads/master/assets/banner.svg)
+![super-result](https://gitlab.com/simwai/super-result/-/raw/master/assets/banner.svg)
 
 # super-result
 
@@ -7,7 +7,7 @@ Minimal syntax, maximum type safety.
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178c6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![Node](https://img.shields.io/badge/Node-20+-339933?style=flat-square&logo=node.js)](https://nodejs.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-00ffcc?style=flat-square)](https://github.com/simwai/super-result/blob/master/LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-00ffcc?style=flat-square)](https://gitlab.com/simwai/super-result/-/blob/master/LICENSE)
 
 A small Result utility for codebases that prefer normal TypeScript control flow over fluent chaining.
 
@@ -463,4 +463,4 @@ When every failure path is typed and every check is enforced, you stop fearing y
 
 ## License
 
-MIT © [simwai](https://github.com/simwai)
+MIT © [simwai](https://gitlab.com/simwai)
