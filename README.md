@@ -149,7 +149,9 @@ async function main(): Promise<Result<void, Error>> {
   const setupResult = await ensureAutoSetupRemote()
   if (!setupResult.ok) return setupResult
 
-  await startApplication(configResult.value)
+  const startResult = await startApplication(configResult.value)
+  if (!startResult.ok) return startResult
+
   return ok(undefined)
 }
 ```
