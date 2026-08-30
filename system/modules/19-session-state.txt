@@ -61,6 +61,7 @@ must be kept in sync:
 - `32-filesystem-first.txt` — SESSION_STATE recovery cross-reference
 - `33-commit-and-push-gate.txt` — edited-file staging source and gate outcome writes
 - `34-fileless-mode.txt` — carrier selection (`FILE_CAPABLE`/`READ_ONLY`)
+- `38-session-file-locks.txt` — `## Edited Files` allow-list source for locks, and `## Locked Files` section owner
 
 ## Fresh-session validity
 
