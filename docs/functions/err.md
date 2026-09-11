@@ -1,4 +1,4 @@
-[**super-result API v1.3.1**](../README.md)
+[**super-result API v1.4.0**](../README.md)
 
 ***
 
@@ -8,7 +8,7 @@
 
 > **err**\<`E`\>(`error`): [`Err`](../interfaces/Err.md)\<`E`\>
 
-Defined in: [index.ts:75](https://gitlab.com/simwai/super-result/-/blob/d2883e855743f731cc8789c6b707f7643b62baec/src/index.ts#L75)
+Defined in: [index.ts:75](https://gitlab.com/simwai/super-result/-/blob/faa5e41e622b302945078a30dfc4b0ae73b14f21/src/index.ts#L75)
 
 Creates a failed result.
 

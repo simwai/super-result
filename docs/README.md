@@ -1,8 +1,8 @@
-**super-result API v1.3.1**
+**super-result API v1.4.0**
 
 ***
 
-# super-result API v1.3.1
+# super-result API v1.4.0
 
 ## Interfaces
 

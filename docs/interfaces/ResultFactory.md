@@ -1,4 +1,4 @@
-[**super-result API v1.3.1**](../README.md)
+[**super-result API v1.4.0**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: ResultFactory\<E\>
 
-Defined in: [index.ts:141](https://gitlab.com/simwai/super-result/-/blob/d2883e855743f731cc8789c6b707f7643b62baec/src/index.ts#L141)
+Defined in: [index.ts:141](https://gitlab.com/simwai/super-result/-/blob/faa5e41e622b302945078a30dfc4b0ae73b14f21/src/index.ts#L141)
 
 A factory for creating results with a pre-configured error mapper.
 
@@ -22,11 +22,11 @@ A factory for creating results with a pre-configured error mapper.
 
 #### Call Signature
 
-> **from**\<`T`\>(`fn`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
+> **from**\<`T`\>(`fn`): `Promise`\<[`Result`](../type-aliases/Result.md)\<`T`, `E`\>\>
 
-Defined in: [index.ts:145](https://gitlab.com/simwai/super-result/-/blob/d2883e855743f731cc8789c6b707f7643b62baec/src/index.ts#L145)
+Defined in: [index.ts:145](https://gitlab.com/simwai/super-result/-/blob/faa5e41e622b302945078a30dfc4b0ae73b14f21/src/index.ts#L145)
 
-Captures an asynchronous function execution into a ResultAsync.
+Captures an asynchronous function execution into a Promise<Result<T, E>>.
 
 ##### Type Parameters
 
@@ -42,13 +42,13 @@ Captures an asynchronous function execution into a ResultAsync.
 
 ##### Returns
 
-[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
+`Promise`\<[`Result`](../type-aliases/Result.md)\<`T`, `E`\>\>
 
 #### Call Signature
 
 > **from**\<`T`\>(`fn`): [`Result`](../type-aliases/Result.md)\<`T`, `E`\>
 
-Defined in: [index.ts:149](https://gitlab.com/simwai/super-result/-/blob/d2883e855743f731cc8789c6b707f7643b62baec/src/index.ts#L149)
+Defined in: [index.ts:149](https://gitlab.com/simwai/super-result/-/blob/faa5e41e622b302945078a30dfc4b0ae73b14f21/src/index.ts#L149)
 
 Captures a synchronous function execution into a Result.
 
@@ -70,11 +70,11 @@ Captures a synchronous function execution into a Result.
 
 #### Call Signature
 
-> **from**\<`T`\>(`promise`): [`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
+> **from**\<`T`\>(`promise`): `Promise`\<[`Result`](../type-aliases/Result.md)\<`T`, `E`\>\>
 
-Defined in: [index.ts:153](https://gitlab.com/simwai/super-result/-/blob/d2883e855743f731cc8789c6b707f7643b62baec/src/index.ts#L153)
+Defined in: [index.ts:153](https://gitlab.com/simwai/super-result/-/blob/faa5e41e622b302945078a30dfc4b0ae73b14f21/src/index.ts#L153)
 
-Captures a Promise into a ResultAsync.
+Captures a Promise into a Promise<Result<T, E>>.
 
 ##### Type Parameters
 
@@ -90,4 +90,4 @@ Captures a Promise into a ResultAsync.
 
 ##### Returns
 
-[`ResultAsync`](../type-aliases/ResultAsync.md)\<`T`, `E`\>
+`Promise`\<[`Result`](../type-aliases/Result.md)\<`T`, `E`\>\>
