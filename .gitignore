@@ -1,4 +1,4 @@
-# Dependencies
+﻿# Dependencies
 node_modules/
 
 # Build output
@@ -23,3 +23,5 @@ Thumbs.db
 *.log
 npm-debug.log*
 pnpm-debug.log*
+.session-locks/
+.playwright-mcp/
