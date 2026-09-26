@@ -97,8 +97,8 @@ function isPromiseLike<T>(value: unknown): value is PromiseLike<T> {
  */
 function createFrom<E>(mapError: (error: unknown) => E) {
   function from<T>(fn: () => PromiseLike<T>): Promise<Result<T, E>>
-  function from<T>(promise: PromiseLike<T>): Promise<Result<T, E>>
   function from<T>(fn: () => T): Result<T, E>
+  function from<T>(promise: PromiseLike<T>): Promise<Result<T, E>>
 
   function from<T>(
     input: PromiseLike<T> | (() => T | PromiseLike<T>),
