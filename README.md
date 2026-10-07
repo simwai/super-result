@@ -10,7 +10,7 @@ Minimal syntax, explicit failures.
 [![Node](https://img.shields.io/badge/Node-20+-260b28?style=flat-square&logo=node.js)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-260b28?style=flat-square)](https://gitlab.com/simwai/super-result/-/blob/master/LICENSE)
 
-A small Result utility for codebases that prefer normal TypeScript control flow over fluent chaining.
+A small Result utility for codebases that prefer ordinary TypeScript control flow over fluent chaining.
 
 ---
 
@@ -24,84 +24,94 @@ npm install super-result
 yarn add super-result
 ```
 
-### Running the examples
+### Example prerequisites
 
-Examples assume Node.js 20+, TypeScript with strict checking, and `super-result` installed.
+The examples use Node.js 20+, strict TypeScript, and Zod 4.
 
-To run the standalone examples:
+The parsing, filesystem, and HTTP helpers below are application code, not exports from `super-result`.
+
+Install the example dependencies:
 
 ```bash
+pnpm add zod@^4
 pnpm add -D typescript tsx @types/node
 ```
 
-Examples that use Zod also require:
+For examples using top-level `await`, use an ESM project:
 
-```bash
-pnpm add zod
+```json
+{
+  "type": "module"
+}
 ```
 
-For examples using top-level `await`, use an ESM project with `"type": "module"` in `package.json`.
+A minimal TypeScript configuration:
 
-Run an example with:
+```json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true
+  },
+  "include": ["*.ts"]
+}
+```
+
+Run and type-check examples separately:
 
 ```bash
 npx tsx example.ts
+npx tsc
 ```
 
-`tsx` executes TypeScript without type-checking it. Check your examples separately with your project's TypeScript configuration.
+`tsx` executes TypeScript without type-checking it.
 
-HTTP examples use placeholder URLs. Replace them with a real endpoint before running them.
+The `.js` relative imports are intentional for NodeNext projects. The corresponding source files are `.ts` files.
+
+HTTP examples use placeholder URLs. Replace them with real endpoints before running them.
 
 ---
 
 ## Quick Start
 
-Wrap an unsafe external call once. Callers receive a Result and decide what happens next.
+Wrap an unsafe call, then handle its Result with ordinary control flow.
 
 ```ts
-import { from, type Result } from 'super-result'
+// quick-start.ts
+import { from } from 'super-result'
+import { z } from 'zod'
 
-async function safeFetch(
-  input: RequestInfo | URL,
-  init?: RequestInit,
-): Promise<Result<Response, Error>> {
-  return from(() => fetch(input, init))
+const ConfigSchema = z.object({
+  port: z.number().int().min(1).max(65535),
+})
+
+const result = from(() =>
+  ConfigSchema.parse({ port: 3000 }),
+)
+
+if (!result.ok) {
+  console.error('Invalid configuration:', result.error.message)
+} else {
+  console.log('Configured port:', result.value.port)
 }
-
-async function main() {
-  const result = await safeFetch('[https://api.example.com/health](https://api.example.com/health)')
-
-  if (!result.ok) {
-    console.error('Request failed:', result.error.message)
-    return
-  }
-
-  const response = result.value
-
-  if (!response.ok) {
-    console.error('HTTP error:', response.status)
-    return
-  }
-
-  console.log('Received successful HTTP response:', response.status)
-}
-
-await main()
 ```
 
-`fetch()` does not reject merely because the server returns an HTTP error status. Check `response.ok` when HTTP status matters.
-
-Wrapping a call captures failures from that call. It does not make unrelated operations exception-free.
+For repeated operations, extract the wrapper into a shared helper. The examples below reuse parsing and boundary helpers instead of repeating error handling.
 
 ---
 
 ## Core API
 
-| Function | Use when |
+| Function | Purpose |
 | --- | --- |
 | `ok(value)` | Construct a successful `Ok<T>` |
 | `err(error)` | Construct a failure `Err<E>` |
-| `from(fn)` | Capture a throwing callback or a rejected Promise, normalizing the failure to `Error` |
+| `from(fn)` | Capture a throwing callback or rejected Promise, normalizing the failure to `Error` |
 | `fromUnknown(fn)` | Capture a thrown or rejected value without converting it; the error remains `unknown` |
 | `createResult(mapError)` | Create a scoped factory with a shared error-mapping rule |
 
@@ -115,24 +125,10 @@ type Result<T, E> =
   | { readonly ok: false; readonly error: E }
 ```
 
-For asynchronous functions, use:
+For asynchronous operations, use:
 
 ```ts
 Promise<Result<T, E>>
-```
-
-For example:
-
-```ts
-import { ok, type Result } from 'super-result'
-
-interface Config {
-  port: number
-}
-
-async function readConfig(): Promise<Result<Config, Error>> {
-  return ok({ port: 3000 })
-}
 ```
 
 `ResultAsync<T, E>` is available as a deprecated alias for `Promise<Result<T, E>>`.
@@ -148,15 +144,19 @@ await from(() => fetch(url))
 
 The callback form also puts invocation inside the wrapper. Prefer it when invoking the dependency might throw synchronously.
 
-### Do not automatically wrap Result-returning functions
+### Handle existing Results directly
 
-If a function already returns a Result, handle that Result directly:
+If a function already returns a Result, inspect that Result:
 
 ```ts
 const result = await resultReturningFunction()
+
+if (!result.ok) {
+  return result
+}
 ```
 
-A returned `Err` is a normal returned value, not a thrown exception. Do not assume that `from()` automatically flattens a Result returned by its callback.
+A returned `Err` is a normal value, not an exception. Do not assume that `from()` automatically flattens a Result returned by its callback.
 
 ---
 
@@ -171,6 +171,7 @@ A returned `Err` is a normal returned value, not a thrown exception. Do not assu
 - Access `.value` in the success branch.
 - Access `.error` in the failure branch.
 - Propagate compatible failure Results directly.
+- Map returned failures directly when changing error types.
 
 There are no fluent combinators such as `.map()`, `.andThen()`, or `.orElse()`.
 
@@ -178,39 +179,48 @@ If you prefer a chaining-heavy API, use a library built for that.
 
 If you prefer `if` statements and early returns with typed failures, this is the small option.
 
+### Keep exception handling at boundaries
+
+The examples do not require handwritten `try/catch` blocks.
+
+Use `from()` or a factory's `.from()` around dependencies that can throw or reject. Use direct Result checks once the boundary has returned.
+
+Do not throw a returned error merely to catch and convert it again.
+
 ### What the types guarantee
 
-The discriminated union makes success and failure explicit. TypeScript requires narrowing before accessing variant-specific properties.
+The discriminated union makes modeled success and failure explicit.
 
-It does not require callers to consume every Result, and a Result return annotation does not prevent a function from throwing.
+TypeScript requires narrowing before accessing variant-specific properties. It does not require callers to consume every Result.
+
+A Result return annotation does not prevent a function from throwing or an asynchronous function from rejecting. The implementation must capture the failures it intends to represent as Results.
 
 ---
 
-## Patterns
+## 1. Shared Parsing Helpers
 
-### 1. Wrap External Boundaries with `from()`
-
-Use a boundary wrapper when a dependency can throw or reject and callers need a Result instead.
-
-Typical boundaries include:
-
-- HTTP clients
-- Filesystem operations
-- Subprocesses
-- Database drivers
-- Parsers
-- Third-party libraries
-
-Keep the operations that can fail inside the wrapper.
-
-#### Synchronous parsing
+Define parsing boundaries once and reuse them for configuration, JSON strings, HTTP responses, and other external data.
 
 ```ts
-// Run: npx tsx safe-json.ts
+// parsing.ts
 import { from, type Result } from 'super-result'
 import { z } from 'zod'
 
-export function safeJsonParse(
+export function safeParse<S extends z.ZodType>(
+  schema: S,
+  input: unknown,
+): Result<z.output<S>, Error> {
+  return from(() => schema.parse(input))
+}
+
+export async function safeParseAsync<S extends z.ZodType>(
+  schema: S,
+  input: unknown,
+): Promise<Result<z.output<S>, Error>> {
+  return from(() => schema.parseAsync(input))
+}
+
+export function safeJsonDecode(
   input: string,
 ): Result<unknown, Error> {
   return from(() => {
@@ -219,74 +229,557 @@ export function safeJsonParse(
   })
 }
 
-const UserSchema = z.object({
-  name: z.string().min(1),
-  age: z.number().int().positive(),
-})
+export function safeJsonParse<S extends z.ZodType>(
+  schema: S,
+  input: string,
+): Result<z.output<S>, Error> {
+  const decoded = safeJsonDecode(input)
+  if (!decoded.ok) return decoded
 
-type User = z.infer<typeof UserSchema>
-
-function parseUser(input: unknown): Result<User, Error> {
-  return from(() => UserSchema.parse(input))
+  return safeParse(schema, decoded.value)
 }
 
-console.log(safeJsonParse('{"name":"Alice"}'))
-// Success containing an unvalidated value.
+export async function safeJsonParseAsync<S extends z.ZodType>(
+  schema: S,
+  input: string,
+): Promise<Result<z.output<S>, Error>> {
+  const decoded = safeJsonDecode(input)
+  if (!decoded.ok) return decoded
 
-console.log(safeJsonParse('not json'))
-// Failure containing a parsing error.
-
-console.log(parseUser({ name: 'Alice', age: 30 }))
-// { ok: true, value: { name: 'Alice', age: 30 } }
-
-console.log(parseUser({ name: '', age: -5 }))
-// Failure containing a validation error.
+  return safeParseAsync(schema, decoded.value)
+}
 ```
 
-Parsing JSON establishes that the input is valid JSON. It does not establish that the result matches an application-specific type.
+These helpers use Zod's throwing parsing methods inside `from()`, adapting them to the library's Result shape.
 
-Use runtime validation before treating external data as a particular shape.
+Use the asynchronous helpers for schemas with asynchronous refinements or transforms.
 
-#### Fetch and HTTP body parsing
+The successful type is `z.output<S>`, representing the value after validation and schema transformations.
+
+### Reuse schemas
 
 ```ts
-// Run: npx tsx fetch-json.ts
-import { from, err, type Result } from 'super-result'
+// schemas.ts
+import { z } from 'zod'
 
-async function fetchJson(
-  url: string,
-): Promise<Result<unknown, Error>> {
-  const responseResult = await from(() => fetch(url))
-  if (!responseResult.ok) return responseResult
+export const UserSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1),
+  age: z.number().int().nonnegative(),
+})
 
-  const response = responseResult.value
+export const UsersSchema = z.array(UserSchema)
 
-  if (!response.ok) {
-    return err(new Error(`HTTP ${response.status}`))
+export const CreateUserSchema = UserSchema.omit({
+  id: true,
+})
+
+export type User = z.output<typeof UserSchema>
+export type CreateUserInput = z.input<typeof CreateUserSchema>
+```
+
+Use the same schema for objects and JSON strings:
+
+```ts
+// parse-user.ts
+import { safeJsonParse, safeParse } from './parsing.js'
+import { UserSchema } from './schemas.js'
+
+const input = {
+  id: '550e8400-e29b-41d4-a716-446655440000',
+  name: 'Alice',
+  age: 30,
+}
+
+const objectResult = safeParse(UserSchema, input)
+
+const jsonResult = safeJsonParse(
+  UserSchema,
+  JSON.stringify(input),
+)
+
+if (!jsonResult.ok) {
+  console.error('Invalid user:', jsonResult.error.message)
+} else {
+  console.log('Validated user:', jsonResult.value.name)
+}
+
+console.log(objectResult)
+console.log(safeJsonParse(UserSchema, 'not json'))
+console.log(safeParse(UserSchema, { name: '', age: -5 }))
+```
+
+JSON decoding establishes that the input is valid JSON. Schema validation establishes that the decoded value matches the application contract.
+
+---
+
+## 2. Shared HTTP Helpers
+
+Every JSON HTTP helper requires a Zod schema.
+
+Callers provide schemas, not unchecked response types. Fetching, HTTP status handling, body decoding, and response validation are separate reusable steps.
+
+```ts
+// http.ts
+import { err, from, ok, type Result } from 'super-result'
+import { z } from 'zod'
+import { safeParseAsync } from './parsing.js'
+
+export type HttpErrorCode =
+  | 'NETWORK_ERROR'
+  | 'HTTP_ERROR'
+  | 'INVALID_JSON'
+  | 'INVALID_RESPONSE'
+
+export class HttpError extends Error {
+  constructor(
+    message: string,
+    public readonly code: HttpErrorCode,
+    public readonly status: number | undefined = undefined,
+    cause?: unknown,
+  ) {
+    super(message, { cause })
+    this.name = 'HttpError'
+  }
+}
+
+export interface HttpResponse<T> {
+  status: number
+  data: T
+}
+
+export async function safeFetch(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+): Promise<Result<Response, HttpError>> {
+  const result = await from(() => fetch(input, init))
+
+  if (!result.ok) {
+    return err(
+      new HttpError(
+        'Request failed',
+        'NETWORK_ERROR',
+        undefined,
+        result.error,
+      ),
+    )
   }
 
-  return from(async () => {
+  const response = result.value
+
+  if (!response.ok) {
+    return err(
+      new HttpError(
+        `HTTP ${response.status}`,
+        'HTTP_ERROR',
+        response.status,
+      ),
+    )
+  }
+
+  return ok(response)
+}
+
+export async function safeResponseJson<S extends z.ZodType>(
+  response: Response,
+  schema: S,
+): Promise<Result<z.output<S>, HttpError>> {
+  const decoded = await from(async () => {
     const data: unknown = await response.json()
     return data
   })
+
+  if (!decoded.ok) {
+    return err(
+      new HttpError(
+        'Failed to read or parse response JSON',
+        'INVALID_JSON',
+        response.status,
+        decoded.error,
+      ),
+    )
+  }
+
+  const validated = await safeParseAsync(schema, decoded.value)
+
+  if (!validated.ok) {
+    return err(
+      new HttpError(
+        'Response schema validation failed',
+        'INVALID_RESPONSE',
+        response.status,
+        validated.error,
+      ),
+    )
+  }
+
+  return ok(validated.value)
 }
 
-const result = await fetchJson('[https://api.example.com/health](https://api.example.com/health)')
+export async function fetchJsonResponse<S extends z.ZodType>(
+  input: RequestInfo | URL,
+  schema: S,
+  init?: RequestInit,
+): Promise<Result<HttpResponse<z.output<S>>, HttpError>> {
+  const fetched = await safeFetch(input, init)
+  if (!fetched.ok) return fetched
 
-if (!result.ok) {
-  console.error('Request failed:', result.error.message)
-} else {
-  console.log('Parsed JSON:', result.value)
+  const parsed = await safeResponseJson(fetched.value, schema)
+  if (!parsed.ok) return parsed
+
+  return ok({
+    status: fetched.value.status,
+    data: parsed.value,
+  })
+}
+
+export async function fetchJson<S extends z.ZodType>(
+  input: RequestInfo | URL,
+  schema: S,
+  init?: RequestInit,
+): Promise<Result<z.output<S>, HttpError>> {
+  const result = await fetchJsonResponse(input, schema, init)
+  if (!result.ok) return result
+
+  return ok(result.value.data)
 }
 ```
 
-This captures network and body-parsing failures, and explicitly converts unsuccessful HTTP status into an `Err`.
+### Responsibilities
 
-#### Child processes with separate arguments
+| Helper | Responsibility |
+| --- | --- |
+| `safeFetch()` | Invoke fetch and reject unsuccessful HTTP status |
+| `safeResponseJson()` | Decode a response body and validate it with Zod |
+| `fetchJsonResponse()` | Fetch validated JSON and preserve HTTP status |
+| `fetchJson()` | Fetch validated JSON and return only the data |
+
+`NETWORK_ERROR` groups failures from invoking or awaiting fetch, including cancellation. Introduce more specific codes if callers need to distinguish these cases.
+
+### HTTP policies and limitations
+
+- `fetch()` does not reject solely because the server returns an HTTP error status. `safeFetch()` checks `response.ok`.
+- JSON helpers expect a JSON body. For successful responses without a body, such as HTTP 204, use `safeFetch()`.
+- `safeResponseJson()` validates the body only. HTTP status policy belongs to `safeFetch()`.
+- `safeResponseJson()` consumes the body. Clone a Response before reading its body more than once.
+- Error response bodies are not parsed by these helpers. Add a separate schema and policy if your API exposes structured error responses.
+- These examples do not implement retries, body-size limits, or a default timeout.
+
+### Schema-validated request
 
 ```ts
-// Run: npx tsx exec-sync.ts
-import { from, err, type Result } from 'super-result'
+// health.ts
+import { z } from 'zod'
+import { fetchJson } from './http.js'
+
+const HealthSchema = z.object({
+  status: z.enum(['healthy', 'degraded']),
+  version: z.string().min(1),
+})
+
+const result = await fetchJson(
+  '[https://api.example.com/health](https://api.example.com/health)',
+  HealthSchema,
+  {
+    signal: AbortSignal.timeout(10_000),
+  },
+)
+
+if (!result.ok) {
+  console.error('Code:', result.error.code)
+  console.error('Status:', result.error.status)
+  console.error('Message:', result.error.message)
+} else {
+  console.log('Service status:', result.value.status)
+  console.log('Version:', result.value.version)
+}
+```
+
+The success type is inferred from `HealthSchema`. No response type assertion is needed.
+
+---
+
+## 3. Endpoint Wrappers
+
+Endpoint wrappers supply URLs, request options, and schemas. They reuse the shared HTTP and parsing layers.
+
+```ts
+// users.ts
+import { err, from, type Result } from 'super-result'
+import { fetchJson, fetchJsonResponse } from './http.js'
+import { safeParse } from './parsing.js'
+import {
+  CreateUserSchema,
+  UserSchema,
+  UsersSchema,
+} from './schemas.js'
+
+export class InputError extends Error {
+  readonly code = 'INVALID_INPUT'
+
+  constructor(message: string, cause?: unknown) {
+    super(message, { cause })
+    this.name = 'InputError'
+  }
+}
+
+function encodeJsonBody(
+  input: unknown,
+): Result<string, InputError> {
+  const encoded = from(() => JSON.stringify(input))
+
+  if (!encoded.ok) {
+    return err(
+      new InputError(
+        'Failed to serialize request body',
+        encoded.error,
+      ),
+    )
+  }
+
+  if (encoded.value === undefined) {
+    return err(
+      new InputError('Request body is not JSON-serializable'),
+    )
+  }
+
+  return {
+    ok: true,
+    value: encoded.value,
+  }
+}
+
+export function getUser(id: string) {
+  return fetchJson(
+    `https://api.example.com/users/${encodeURIComponent(id)}`,
+    UserSchema,
+  )
+}
+
+export function listUsers() {
+  return fetchJson(
+    '[https://api.example.com/users](https://api.example.com/users)',
+    UsersSchema,
+  )
+}
+
+export async function createUser(input: unknown) {
+  const validated = safeParse(CreateUserSchema, input)
+
+  if (!validated.ok) {
+    return err(
+      new InputError(
+        'Request input validation failed',
+        validated.error,
+      ),
+    )
+  }
+
+  const body = encodeJsonBody(validated.value)
+  if (!body.ok) return body
+
+  return fetchJsonResponse(
+    '[https://api.example.com/users](https://api.example.com/users)',
+    UserSchema,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: body.value,
+    },
+  )
+}
+```
+
+The creation wrapper validates input, captures JSON serialization failure, and validates the HTTP response.
+
+Callers can distinguish input failures from request failures:
+
+```ts
+// create-user.ts
+import { HttpError } from './http.js'
+import { createUser } from './users.js'
+
+const result = await createUser({
+  name: 'Alice',
+  age: 30,
+})
+
+if (!result.ok) {
+  if (result.error instanceof HttpError) {
+    console.error(
+      'Request failed:',
+      result.error.code,
+      result.error.status,
+    )
+  } else {
+    console.error('Invalid input:', result.error.message)
+  }
+} else {
+  console.log('HTTP status:', result.value.status)
+  console.log('Created user:', result.value.data)
+}
+```
+
+### Test response validation without a network
+
+```ts
+// response-validation.ts
+import { z } from 'zod'
+import { safeResponseJson } from './http.js'
+
+const HealthSchema = z.object({
+  status: z.enum(['healthy', 'degraded']),
+})
+
+const validResponse = new Response(
+  JSON.stringify({ status: 'healthy' }),
+  {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  },
+)
+
+const invalidResponse = new Response(
+  JSON.stringify({ status: 123 }),
+  {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  },
+)
+
+const malformedResponse = new Response('not json', {
+  status: 200,
+})
+
+console.log(await safeResponseJson(validResponse, HealthSchema))
+// { ok: true, value: { status: 'healthy' } }
+
+const invalid = await safeResponseJson(
+  invalidResponse,
+  HealthSchema,
+)
+
+if (!invalid.ok) {
+  console.log(invalid.error.code)
+  // INVALID_RESPONSE
+}
+
+const malformed = await safeResponseJson(
+  malformedResponse,
+  HealthSchema,
+)
+
+if (!malformed.ok) {
+  console.log(malformed.error.code)
+  // INVALID_JSON
+}
+```
+
+---
+
+## 4. Other External Boundaries
+
+The same callback-wrapping pattern applies outside HTTP.
+
+### Filesystem helpers
+
+```ts
+// filesystem.ts
+import { from, type Result } from 'super-result'
+import { promises as fs } from 'node:fs'
+import { z } from 'zod'
+import { safeJsonParseAsync } from './parsing.js'
+
+export function safeReadText(
+  path: string,
+): Promise<Result<string, Error>> {
+  return from(() => fs.readFile(path, 'utf8'))
+}
+
+export function safeWriteText(
+  path: string,
+  data: string,
+): Promise<Result<void, Error>> {
+  return from(() => fs.writeFile(path, data, 'utf8'))
+}
+
+export async function readValidatedJson<S extends z.ZodType>(
+  path: string,
+  schema: S,
+): Promise<Result<z.output<S>, Error>> {
+  const content = await safeReadText(path)
+  if (!content.ok) return content
+
+  return safeJsonParseAsync(schema, content.value)
+}
+```
+
+### Configuration loading with direct error mapping
+
+Reuse the filesystem and parsing helpers. Map returned failures directly instead of throwing them into another wrapper.
+
+```ts
+// config.ts
+import { err, type Result } from 'super-result'
+import { z } from 'zod'
+import { readValidatedJson } from './filesystem.js'
+
+export class ConfigError extends Error {
+  readonly code = 'CONFIG_LOAD_FAILED'
+
+  constructor(message: string, cause?: unknown) {
+    super(message, { cause })
+    this.name = 'ConfigError'
+  }
+}
+
+const ConfigSchema = z.object({
+  port: z.number().int().min(1).max(65535),
+  logLevel: z.enum(['debug', 'info', 'warn', 'error']),
+})
+
+export type Config = z.output<typeof ConfigSchema>
+
+export async function loadConfig(
+  path: string,
+): Promise<Result<Config, ConfigError>> {
+  const result = await readValidatedJson(path, ConfigSchema)
+
+  if (!result.ok) {
+    return err(
+      new ConfigError(
+        'Failed to load configuration',
+        result.error,
+      ),
+    )
+  }
+
+  return result
+}
+```
+
+```ts
+// load-config.ts
+import { loadConfig } from './config.js'
+
+const result = await loadConfig('./config.json')
+
+if (!result.ok) {
+  console.error(result.error.code, result.error.message)
+  console.error('Cause:', result.error.cause)
+} else {
+  console.log('Port:', result.value.port)
+  console.log('Log level:', result.value.logLevel)
+}
+```
+
+### Child processes with separate arguments
+
+```ts
+// exec-sync.ts
+import { err, from, type Result } from 'super-result'
 import { execFileSync } from 'node:child_process'
 
 const ALLOWED_EXECUTABLES = new Set(['echo', 'ls'])
@@ -303,73 +796,35 @@ export function runAllowedSync(
     execFileSync(executable, [...args], {
       encoding: 'utf8',
       shell: false,
+      timeout: 5_000,
+      maxBuffer: 1024 * 1024,
     }),
   )
 }
 
 console.log(runAllowedSync('echo', ['hello']))
-// On a system with an echo executable:
-// { ok: true, value: 'hello\n' }
+// Success on a system with an echo executable.
 
 console.log(runAllowedSync('rm', ['-rf', '/']))
 // Failure: executable not allowed.
 ```
 
-The executable and arguments are separate, and the shell is disabled.
+The executable and arguments are separate, and shell interpretation is disabled.
 
-This allowlist is not a sandbox. Real applications may also need trusted absolute executable paths, command-specific argument validation, resource restrictions, and timeouts.
+This is not a sandbox. Real applications may need trusted absolute executable paths, argument validation, filesystem restrictions, and process isolation.
 
-`execFileSync()` blocks the event loop. Use an asynchronous subprocess API when blocking is unsuitable.
-
-#### Filesystem helpers
-
-```ts
-// Run: npx tsx safe-fs.ts
-import { from } from 'super-result'
-import * as fs from 'node:fs'
-
-export const safeReadFileSync = (
-  path: string,
-  encoding: BufferEncoding = 'utf8',
-) => from(() => fs.readFileSync(path, encoding))
-
-export const safeWriteFileSync = (
-  path: string,
-  data: string,
-) => from(() => fs.writeFileSync(path, data))
-
-export const safeReaddirSync = (
-  path: string,
-) => from(() => fs.readdirSync(path))
-
-export const safeStatSync = (
-  path: string,
-) => from(() => fs.statSync(path))
-
-console.log(safeWriteFileSync('./demo.txt', 'hello'))
-// { ok: true, value: undefined }
-
-console.log(safeReadFileSync('./demo.txt'))
-// { ok: true, value: 'hello' }
-
-console.log(safeReadFileSync('./missing.txt'))
-// Failure if the file does not exist.
-```
-
-These helpers are synchronous. For request-handling paths or substantial I/O, consider asynchronous filesystem APIs.
+`execFileSync()` blocks the event loop. Use an asynchronous subprocess API where blocking is unsuitable.
 
 ---
 
-### 2. Construct Results Directly with `ok()` / `err()`
+## 5. Construct Results Directly
 
 Use `ok()` and `err()` when the success value or failure is already known.
 
-This works well for domain failures, such as missing records, invalid input, or conflicting state.
-
-#### Domain failures with string discriminators
+### Domain errors
 
 ```ts
-// Run: npx tsx reservation.ts
+// reservation.ts
 import { err, ok, type Result } from 'super-result'
 
 interface Reservation {
@@ -409,60 +864,17 @@ console.log(reserveUsername(''))
 // { ok: false, error: 'INVALID_USERNAME' }
 ```
 
-#### Typed custom errors
+### Clients that already return Results
 
 ```ts
-// Run: npx tsx typed-errors.ts
-import { err, ok, type Result } from 'super-result'
-
-class AppError extends Error {
-  constructor(
-    message: string,
-    public readonly code: string,
-    cause?: unknown,
-  ) {
-    super(message, { cause })
-    this.name = 'AppError'
-  }
-}
-
-function riskyOperation(
-  shouldFail: boolean,
-): Result<string, AppError> {
-  if (shouldFail) {
-    return err(
-      new AppError(
-        'Operation failed',
-        'OPERATION_FAILED',
-        new Error('Root cause'),
-      ),
-    )
-  }
-
-  return ok('success')
-}
-
-const result = riskyOperation(true)
-
-if (!result.ok) {
-  console.log('Code:', result.error.code)
-  console.log('Cause:', result.error.cause)
-} else {
-  console.log('Value:', result.value)
-}
-```
-
-#### External clients that return Results
-
-```ts
-// Run: npx tsx external-api.ts
+// result-client.ts
 import { err, ok, type Result } from 'super-result'
 
 interface Message {
   message_id: number
 }
 
-// A deterministic mock, not a real messaging client.
+// Deterministic mock, not a real messaging client.
 const bot = {
   api: {
     async sendMessage(
@@ -503,240 +915,72 @@ await sendMessageSafe(bot, 123, 'x'.repeat(5000))
 // Failed to send: Message too long
 ```
 
-The mock already returns a Result, so the caller handles it directly.
+The caller handles the returned Result directly.
 
-This handles the returned failure. It does not catch unexpected exceptions or rejected Promises from a real client.
-
-#### Simulated repository with typed domain errors
-
-```ts
-// Run: npx tsx repository.ts
-import { randomUUID } from 'node:crypto'
-import { err, ok, type Result } from 'super-result'
-
-type DbErrorCode =
-  | 'NOT_FOUND'
-  | 'UNIQUE_VIOLATION'
-
-class DbError extends Error {
-  constructor(
-    message: string,
-    public readonly code: DbErrorCode,
-  ) {
-    super(message)
-    this.name = 'DbError'
-  }
-}
-
-interface User {
-  id: string
-  email: string
-}
-
-const users = new Map<string, User>()
-
-async function findUserByEmail(
-  email: string,
-): Promise<Result<User, DbError>> {
-  const user = users.get(email)
-
-  if (!user) {
-    return err(new DbError('User not found', 'NOT_FOUND'))
-  }
-
-  return ok(user)
-}
-
-async function createUser(
-  email: string,
-): Promise<Result<User, DbError>> {
-  if (users.has(email)) {
-    return err(
-      new DbError('Duplicate entry', 'UNIQUE_VIOLATION'),
-    )
-  }
-
-  const user: User = {
-    id: randomUUID(),
-    email,
-  }
-
-  users.set(email, user)
-  return ok(user)
-}
-
-console.log(await createUser('alice@example.com'))
-// Success containing the new user.
-
-console.log(await createUser('alice@example.com'))
-// Failure with code UNIQUE_VIOLATION.
-
-console.log(await findUserByEmail('bob@example.com'))
-// Failure with code NOT_FOUND.
-```
-
-This is an in-memory control-flow example, not a database driver adapter.
-
-#### Deterministic test mocks
-
-```ts
-// Run: npx tsx test-mocks.ts
-import { err, ok, type Result } from 'super-result'
-
-interface Task {
-  id: string
-  description: string
-}
-
-const task: Task = {
-  id: '1',
-  description: 'Fix bug',
-}
-
-const getTaskById = async (
-  _id: string,
-): Promise<Result<Task, string>> => ok(task)
-
-const getMissingTask = async (
-  _id: string,
-): Promise<Result<Task, string>> => err('NOT_FOUND')
-
-console.log(await getTaskById('1'))
-// { ok: true, value: { id: '1', description: 'Fix bug' } }
-
-console.log(await getMissingTask('999'))
-// { ok: false, error: 'NOT_FOUND' }
-```
+This does not catch unexpected exceptions or Promise rejection from a real implementation.
 
 ---
 
-### 3. Domain Error Factories with `createResult()`
+## 6. Domain Error Factories
 
-Use `createResult()` when a boundary needs a shared rule for converting thrown or rejected values into a domain error type.
+Use `createResult()` when dependencies that throw or reject need the same error-mapping rule.
 
-#### Fetch with custom error mapping and runtime validation
+Unlike direct mapping of an existing Result, a factory is useful at the exception-producing boundary itself.
 
 ```ts
-// Run: npx tsx api-fetch.ts
+// filesystem-factory.ts
 import {
   createResult,
   type Result,
   type ResultFactory,
 } from 'super-result'
-import { z } from 'zod'
+import { promises as fs } from 'node:fs'
 
-type ApiErrorCode =
-  | 'HTTP_ERROR'
-  | 'INVALID_RESPONSE'
-  | 'UNKNOWN'
+class FileError extends Error {
+  readonly code = 'FILE_OPERATION_FAILED'
 
-class ApiError extends Error {
-  constructor(
-    message: string,
-    public readonly code: ApiErrorCode,
-    public readonly status: number | undefined = undefined,
-    cause?: unknown,
-  ) {
+  constructor(message: string, cause?: unknown) {
     super(message, { cause })
-    this.name = 'ApiError'
+    this.name = 'FileError'
   }
 }
 
-const ApiResult: ResultFactory<ApiError> = createResult((error) => {
-  if (error instanceof ApiError) {
-    return error
-  }
-
-  if (error instanceof Error) {
-    return new ApiError(
-      error.message,
-      'UNKNOWN',
-      undefined,
-      error,
-    )
-  }
-
-  return new ApiError(
-    'Unexpected thrown value',
-    'UNKNOWN',
-    undefined,
-    error,
-  )
-})
-
-async function fetchValidatedJson<T>(
-  url: string,
-  parse: (input: unknown) => T,
-): Promise<Result<T, ApiError>> {
-  return ApiResult.from(async () => {
-    const response = await fetch(url)
-
-    if (!response.ok) {
-      throw new ApiError(
-        `HTTP ${response.status}`,
-        'HTTP_ERROR',
-        response.status,
-      )
+const FileResult: ResultFactory<FileError> = createResult(
+  (error) => {
+    if (error instanceof FileError) {
+      return error
     }
 
-    let data: unknown
-
-    try {
-      data = await response.json()
-    } catch (cause) {
-      throw new ApiError(
-        'Failed to parse response JSON',
-        'INVALID_RESPONSE',
-        response.status,
-        cause,
-      )
-    }
-
-    try {
-      return parse(data)
-    } catch (cause) {
-      throw new ApiError(
-        'Response validation failed',
-        'INVALID_RESPONSE',
-        response.status,
-        cause,
-      )
-    }
-  })
-}
-
-const HealthSchema = z.object({
-  status: z.string(),
-})
-
-const result = await fetchValidatedJson(
-  '[https://api.example.com/health](https://api.example.com/health)',
-  input => HealthSchema.parse(input),
+    return new FileError('File operation failed', error)
+  },
 )
 
-if (!result.ok) {
-  console.error('Code:', result.error.code)
-  console.error('Status:', result.error.status)
-  console.error('Message:', result.error.message)
-} else {
-  console.log('Status:', result.value.status)
+export function readText(
+  path: string,
+): Promise<Result<string, FileError>> {
+  return FileResult.from(() => fs.readFile(path, 'utf8'))
+}
+
+export function writeText(
+  path: string,
+  data: string,
+): Promise<Result<void, FileError>> {
+  return FileResult.from(() => fs.writeFile(path, data, 'utf8'))
 }
 ```
 
-The parser supplies the application type through runtime validation.
+Both boundary calls share the same mapping rule without handwritten `try/catch` blocks.
 
-The factory maps exceptions and rejections. It does not infer HTTP failure from a fulfilled `Response`, so the callback explicitly checks the status.
+Use direct `err(...)` mapping when the dependency already returns a Result.
 
 ---
 
-### 4. Caller-Handled Narrowing
+## 7. Caller-Handled Narrowing
 
-Narrow the Result, return early, then work with the successful value.
-
-#### Propagate compatible failures directly
+### Propagate compatible failures
 
 ```ts
-// Run: npx tsx propagate.ts
+// propagate.ts
 import { ok, type Result } from 'super-result'
 
 interface Config {
@@ -756,71 +1000,20 @@ function startServer(
 
 function main(): Result<void, Error> {
   const configResult = loadConfig()
-
-  if (!configResult.ok) {
-    return configResult
-  }
+  if (!configResult.ok) return configResult
 
   return startServer(configResult.value)
 }
 
 console.log(main())
-// { ok: true, value: undefined }
 ```
 
-Once narrowed to the failure branch, the failure Result can be returned directly when its error type is compatible with the caller's return type.
+After narrowing to the failure branch, return it directly when its error type is compatible with the caller's return type.
 
-#### HTTP status and body parsing
-
-```ts
-// Run: npx tsx http-narrowing.ts
-import { err, from, ok, type Result } from 'super-result'
-
-interface ApiResponse<T> {
-  status: number
-  data: T
-}
-
-async function callApi(
-  url: string,
-): Promise<Result<ApiResponse<unknown>, Error>> {
-  const responseResult = await from(() => fetch(url))
-  if (!responseResult.ok) return responseResult
-
-  const response = responseResult.value
-
-  if (!response.ok) {
-    return err(new Error(`HTTP ${response.status}`))
-  }
-
-  const dataResult = await from(async () => {
-    const data: unknown = await response.json()
-    return data
-  })
-  if (!dataResult.ok) return dataResult
-
-  return ok({
-    status: response.status,
-    data: dataResult.value,
-  })
-}
-
-const result = await callApi('[https://api.example.com/data](https://api.example.com/data)')
-
-if (!result.ok) {
-  console.error('Request failed:', result.error.message)
-} else {
-  console.log('HTTP status:', result.value.status)
-  console.log('Data:', result.value.data)
-}
-```
-
-Network, HTTP, and parsing failures use the outer Result. A second success/failure flag inside the successful value is unnecessary for this policy.
-
-#### Continue after item failures
+### Continue after item failures
 
 ```ts
-// Run: npx tsx batch-continue.ts
+// batch.ts
 import { err, ok, type Result } from 'super-result'
 
 async function processItem(
@@ -859,92 +1052,81 @@ async function main() {
 }
 
 await main()
-// Four successes and one handled failure.
 // { total: 5, succeeded: 4, failed: 1 }
 ```
 
 ---
 
-### 5. Preserve Error Information
+## 8. Preserve Error Information
 
-#### Add context when returning a failure
+### Add context without losing the original cause
 
 ```ts
-// Run: npx tsx error-context.ts
-import { err, ok, type Result } from 'super-result'
+// error-context.ts
+import { err, type Result } from 'super-result'
 
 function loadConfig(): Result<string, Error> {
   return err(new Error('Config file not found'))
 }
 
-function main(): Result<void, Error> {
-  const configResult = loadConfig()
+function initialize(): Result<string, Error> {
+  const result = loadConfig()
 
-  if (!configResult.ok) {
+  if (!result.ok) {
     return err(
-      new Error('Startup failed', {
-        cause: configResult.error,
+      new Error('Initialization failed', {
+        cause: result.error,
       }),
     )
   }
 
-  console.log('Loaded config:', configResult.value)
-  return ok(undefined)
+  return result
 }
 
-console.log(main())
-// Failure containing a contextual error with the original error as cause.
+console.log(initialize())
 ```
 
-Use `err(existingError)` when constructing a failure from an existing error. Return an existing failure Result directly when no additional context is needed.
+Use `err(existingError)` when constructing a failure from an existing error.
 
-#### Preserve unknown thrown values
+Return an existing failure Result directly when no extra context is needed.
+
+### Validate unknown failures with the shared parser
 
 ```ts
-// Run: npx tsx unknown-throw.ts
+// unknown-error.ts
 import { fromUnknown } from 'super-result'
+import { z } from 'zod'
+import { safeParse } from './parsing.js'
 
-interface RateLimitError {
-  code: 'RATE_LIMITED'
-  retryAfterMs: number
-}
-
-function isRateLimitError(
-  value: unknown,
-): value is RateLimitError {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'code' in value &&
-    value.code === 'RATE_LIMITED' &&
-    'retryAfterMs' in value &&
-    typeof value.retryAfterMs === 'number' &&
-    Number.isFinite(value.retryAfterMs) &&
-    value.retryAfterMs >= 0
-  )
-}
-
-const result = fromUnknown(() => {
-  throw {
-    code: 'RATE_LIMITED',
-    retryAfterMs: 1000,
-  }
+const RateLimitSchema = z.object({
+  code: z.literal('RATE_LIMITED'),
+  retryAfterMs: z.number().int().nonnegative(),
 })
 
+// Simulates a dependency rejecting with a non-Error value.
+const result = await fromUnknown(() =>
+  Promise.reject({
+    code: 'RATE_LIMITED',
+    retryAfterMs: 1000,
+  }),
+)
+
 if (!result.ok) {
-  if (isRateLimitError(result.error)) {
+  const rateLimit = safeParse(RateLimitSchema, result.error)
+
+  if (!rateLimit.ok) {
+    console.error('Unexpected rejected value:', result.error)
+  } else {
     console.log(
       'Rate limited, retry after:',
-      result.error.retryAfterMs,
+      rateLimit.value.retryAfterMs,
       'ms',
     )
-  } else {
-    console.error('Unexpected thrown value:', result.error)
   }
 }
 ```
 
-Keeping the error as `unknown` requires callers to inspect it before using its properties.
+This reuses the validation layer instead of asserting the shape of an unknown value.
 
 ---
 
@@ -964,13 +1146,15 @@ Use both when needed:
 Promise<Result<User, Error>>
 ```
 
-That return type describes the resolved value. It does not, by itself, prevent the Promise from rejecting.
+That signature describes the resolved value. It does not, by itself, prevent the Promise from rejecting.
 
 ### Should every function return a Result?
 
 No.
 
-Use Results where failures are expected and callers need to decide what happens next: network calls, filesystem work, subprocesses, parsing, database access, and third-party libraries.
+Use Results when failures are expected and callers need to decide what happens next.
+
+Typical boundaries include network calls, filesystem work, subprocesses, parsing, database access, and third-party libraries.
 
 Do not introduce Results mechanically into every function.
 
@@ -978,35 +1162,65 @@ Do not introduce Results mechanically into every function.
 
 No.
 
-TypeScript requires narrowing before accessing variant-specific properties. Callers can still discard a returned Result.
+It requires narrowing before accessing variant-specific properties. Callers can still discard a returned Result.
 
 ### Does a Result return type prevent exceptions?
 
 No.
 
-The implementation must capture exceptions and rejections that it intends to represent as Results.
+The implementation must capture the exceptions and rejections it intends to represent as Results.
 
-Operations outside a wrapper can still throw or reject.
+### Do I need handwritten try/catch blocks?
 
-### Does `from()` treat a returned `Err` as an exception?
+Not for the boundary patterns shown here.
+
+Use `from()` or a factory's `.from()` to capture exception-based dependencies. Handle existing Results with ordinary checks and early returns.
+
+Avoid throwing returned errors merely to convert them back into Results.
+
+### Does `from()` turn a returned Err into an outer failure?
 
 A returned failure Result is a normal value, not an exception.
 
-Handle Result-returning functions directly. Do not assume automatic flattening when wrapping one with `from()`.
+Handle Result-returning functions directly. Do not assume automatic flattening.
 
-### Does `from(() => fetch(url))` treat HTTP 404 as an error?
+### Why do the JSON HTTP helpers require Zod?
+
+A TypeScript type assertion does not validate an HTTP response.
+
+The helpers require a schema so the successful return type is backed by runtime validation.
+
+### Why use z.output<S>?
+
+Schemas can transform their inputs.
+
+`z.output<S>` describes the validated, transformed value returned by the schema.
+
+### What about async Zod refinements?
+
+Use `safeParseAsync()` or `safeJsonParseAsync()`.
+
+The HTTP response parser already uses asynchronous schema parsing.
+
+### Are the parsing and HTTP helpers part of the package?
 
 No.
 
-Check `response.ok` or `response.status` and apply your own HTTP failure policy.
+They demonstrate how to compose `super-result` with Zod and platform APIs in application code.
 
-### Does a generic type validate JSON?
+### Does safeFetch accept HTTP 404?
 
 No.
 
-A type assertion such as `as T` does not validate external data.
+The example helper converts unsuccessful HTTP status into `HttpError`.
 
-Use a runtime parser or schema when the payload must match an application type.
+The underlying `fetch()` API does not reject merely because the server returns HTTP 404.
+
+### What about HTTP 204?
+
+Use `safeFetch()` for endpoints that return no body.
+
+The JSON helpers expect a body that can be decoded as JSON and validated against a schema.
 
 ### Why no chaining?
 
@@ -1019,8 +1233,6 @@ If fluent composition is central to your codebase, choose a Result library desig
 ## Why Super-Result?
 
 ### Make expected failures visible
-
-A value-returning signature does not describe which exceptions may occur.
 
 A Result-returning signature makes modeled failure values part of the API:
 
@@ -1036,13 +1248,21 @@ Use the same `if` statements and early returns you already use elsewhere.
 
 No pipeline API is required.
 
-### Centralize boundary error mapping
+### Reuse boundary logic
 
-Use `createResult()` to give a subsystem a shared rule for converting exceptions and rejections into domain errors.
+Extract small helpers for parsing, fetching, and other dependencies.
 
-### Design useful failures
+Endpoint wrappers and application functions reuse those helpers instead of repeating exception handling and validation.
 
-Choose error representations that help callers decide what to do next:
+### Centralize error mapping
+
+Use `createResult()` when a subsystem needs a shared rule for converting exceptions and rejections into domain errors.
+
+Map existing failure Results directly when no exception boundary is involved.
+
+### Design actionable failures
+
+Choose error representations that help callers decide whether to:
 
 - Retry
 - Report invalid input
@@ -1051,7 +1271,7 @@ Choose error representations that help callers decide what to do next:
 - Add context
 - Stop the operation
 
-The library makes these decisions explicit. It does not make every runtime failure predictable or eliminate the need to test failure paths.
+Results make those decisions explicit. They do not eliminate the need to test failure paths.
 
 ---
 
