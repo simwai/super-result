@@ -3,7 +3,8 @@
 # super-result
 
 **Lightweight Result pattern for cleaner error handling in TypeScript.**
-Minimal syntax, maximum type safety.
+
+Minimal syntax, explicit failures.
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-260b28?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![Node](https://img.shields.io/badge/Node-20+-260b28?style=flat-square&logo=node.js)](https://nodejs.org/)
@@ -23,11 +24,39 @@ npm install super-result
 yarn add super-result
 ```
 
+### Running the examples
+
+Examples assume Node.js 20+, TypeScript with strict checking, and `super-result` installed.
+
+To run the standalone examples:
+
+```bash
+pnpm add -D typescript tsx @types/node
+```
+
+Examples that use Zod also require:
+
+```bash
+pnpm add zod
+```
+
+For examples using top-level `await`, use an ESM project with `"type": "module"` in `package.json`.
+
+Run an example with:
+
+```bash
+npx tsx example.ts
+```
+
+`tsx` executes TypeScript without type-checking it. Check your examples separately with your project's TypeScript configuration.
+
+HTTP examples use placeholder URLs. Replace them with a real endpoint before running them.
+
 ---
 
 ## Quick Start
 
-Wrap unsafe external calls once. The rest of your application receives a typed `Result`.
+Wrap an unsafe external call once. Callers receive a Result and decide what happens next.
 
 ```ts
 import { from, type Result } from 'super-result'
@@ -36,23 +65,33 @@ async function safeFetch(
   input: RequestInfo | URL,
   init?: RequestInit,
 ): Promise<Result<Response, Error>> {
-  const result = await from(async () => await fetch(input, init))
+  return from(() => fetch(input, init))
+}
+
+async function main() {
+  const result = await safeFetch('[https://api.example.com/health](https://api.example.com/health)')
 
   if (!result.ok) {
-    console.error('Failed to fetch: ', result.error.message)
-    return result
+    console.error('Request failed:', result.error.message)
+    return
   }
 
-  console.log('Fetched successfully: ', result.value)
-  return result
+  const response = result.value
+
+  if (!response.ok) {
+    console.error('HTTP error:', response.status)
+    return
+  }
+
+  console.log('Received successful HTTP response:', response.status)
 }
 
-const result = await safeFetch('https://api.example.com/health')
-
-if (!result.ok) {
-  // Optionally, do something if your result isn't ok.
-}
+await main()
 ```
+
+`fetch()` does not reject merely because the server returns an HTTP error status. Check `response.ok` when HTTP status matters.
+
+Wrapping a call captures failures from that call. It does not make unrelated operations exception-free.
 
 ---
 
@@ -61,10 +100,14 @@ if (!result.ok) {
 | Function | Use when |
 | --- | --- |
 | `ok(value)` | Construct a successful `Ok<T>` |
-| `err(error)` | Construct a new `Err<E>` |
-| `from(fn)` | Capture a throwing sync callback, async callback, or rejecting Promise as `Error` |
-| `fromUnknown(fn)` | Capture a thrown value without converting it; the error remains `unknown` |
-| `createResult(mapError)` | Create a scoped `from()` with one shared error-mapping rule |
+| `err(error)` | Construct a failure `Err<E>` |
+| `from(fn)` | Capture a throwing callback or a rejected Promise, normalizing the failure to `Error` |
+| `fromUnknown(fn)` | Capture a thrown or rejected value without converting it; the error remains `unknown` |
+| `createResult(mapError)` | Create a scoped factory with a shared error-mapping rule |
+
+`from()` supports synchronous callbacks, asynchronous callbacks, and Promise inputs.
+
+A Result has this shape:
 
 ```ts
 type Result<T, E> =
@@ -72,15 +115,48 @@ type Result<T, E> =
   | { readonly ok: false; readonly error: E }
 ```
 
-For async functions, use `Promise<Result<T, E>>`.
+For asynchronous functions, use:
 
 ```ts
+Promise<Result<T, E>>
+```
+
+For example:
+
+```ts
+import { ok, type Result } from 'super-result'
+
+interface Config {
+  port: number
+}
+
 async function readConfig(): Promise<Result<Config, Error>> {
-  // ...
+  return ok({ port: 3000 })
 }
 ```
 
 `ResultAsync<T, E>` is available as a deprecated alias for `Promise<Result<T, E>>`.
+
+### Prefer callbacks at unsafe boundaries
+
+Both forms can capture Promise rejection:
+
+```ts
+await from(fetch(url))
+await from(() => fetch(url))
+```
+
+The callback form also puts invocation inside the wrapper. Prefer it when invoking the dependency might throw synchronously.
+
+### Do not automatically wrap Result-returning functions
+
+If a function already returns a Result, handle that Result directly:
+
+```ts
+const result = await resultReturningFunction()
+```
+
+A returned `Err` is a normal returned value, not a thrown exception. Do not assume that `from()` automatically flattens a Result returned by its callback.
 
 ---
 
@@ -90,129 +166,186 @@ async function readConfig(): Promise<Result<Config, Error>> {
 
 `super-result` is for straightforward TypeScript:
 
-- Narrow with `if (result.ok)` or `if (!result.ok)`
-- Return early when a function cannot continue
-- Access `.value` in the success branch
-- Access `.error` in the failure branch
+- Narrow with `if (result.ok)` or `if (!result.ok)`.
+- Return early when a function cannot continue.
+- Access `.value` in the success branch.
+- Access `.error` in the failure branch.
+- Propagate compatible failure Results directly.
 
 There are no fluent combinators such as `.map()`, `.andThen()`, or `.orElse()`.
 
 If you prefer a chaining-heavy API, use a library built for that.
+
 If you prefer `if` statements and early returns with typed failures, this is the small option.
+
+### What the types guarantee
+
+The discriminated union makes success and failure explicit. TypeScript requires narrowing before accessing variant-specific properties.
+
+It does not require callers to consume every Result, and a Result return annotation does not prevent a function from throwing.
 
 ---
 
 ## Patterns
 
-> These patterns are drawn from a production codebase using super-result.
+### 1. Wrap External Boundaries with `from()`
 
-### 1. Wrap External Boundaries with `from()` — The Primary Pattern
+Use a boundary wrapper when a dependency can throw or reject and callers need a Result instead.
 
-The `from()` function is the main entry point. Use it at every unsafe boundary: external libraries, HTTP clients, filesystem calls, subprocesses, database drivers, and parsers. One wrapper owns the unsafe dependency; callers receive a typed `Result`.
+Typical boundaries include:
 
-#### Sync throwables (JSON.parse, Zod schema parsing)
+- HTTP clients
+- Filesystem operations
+- Subprocesses
+- Database drivers
+- Parsers
+- Third-party libraries
+
+Keep the operations that can fail inside the wrapper.
+
+#### Synchronous parsing
 
 ```ts
-// Copy-paste runnable: npx tsx safe-json.ts
-import { from } from 'super-result'
+// Run: npx tsx safe-json.ts
+import { from, type Result } from 'super-result'
 import { z } from 'zod'
 
-// JSON.parse
-export function safeJsonParse<T = unknown>(input: string) {
-  return from(() => JSON.parse(input))
+export function safeJsonParse(
+  input: string,
+): Result<unknown, Error> {
+  return from(() => {
+    const value: unknown = JSON.parse(input)
+    return value
+  })
 }
 
-// Zod schema
 const UserSchema = z.object({
   name: z.string().min(1),
   age: z.number().int().positive(),
 })
-function parseUser(input: unknown) {
+
+type User = z.infer<typeof UserSchema>
+
+function parseUser(input: unknown): Result<User, Error> {
   return from(() => UserSchema.parse(input))
 }
 
-// Usage
 console.log(safeJsonParse('{"name":"Alice"}'))
-// { ok: true, value: { name: 'Alice' } }
+// Success containing an unvalidated value.
+
 console.log(safeJsonParse('not json'))
-// { ok: false, error: Error: Unexpected token 'n', ... }
+// Failure containing a parsing error.
 
 console.log(parseUser({ name: 'Alice', age: 30 }))
 // { ok: true, value: { name: 'Alice', age: 30 } }
+
 console.log(parseUser({ name: '', age: -5 }))
-// { ok: false, error: ZodError: [...] }
+// Failure containing a validation error.
 ```
 
-#### Async / Promises (fetch, HTTP body parsing)
+Parsing JSON establishes that the input is valid JSON. It does not establish that the result matches an application-specific type.
+
+Use runtime validation before treating external data as a particular shape.
+
+#### Fetch and HTTP body parsing
 
 ```ts
-// Copy-paste runnable: npx tsx fetch-json.ts
+// Run: npx tsx fetch-json.ts
 import { from, err, type Result } from 'super-result'
 
-async function fetchJson<T>(url: string): Promise<Result<T, Error>> {
-  const responseResult = await from(fetch(url))
+async function fetchJson(
+  url: string,
+): Promise<Result<unknown, Error>> {
+  const responseResult = await from(() => fetch(url))
   if (!responseResult.ok) return responseResult
 
   const response = responseResult.value
+
   if (!response.ok) {
-    return err(new Error(`Request failed: ${response.status}`))
+    return err(new Error(`HTTP ${response.status}`))
   }
 
-  return from(response.json() as Promise<T>)
+  return from(async () => {
+    const data: unknown = await response.json()
+    return data
+  })
 }
 
-// Usage
-const result = await fetchJson<{ status: string }>('https://api.example.com/health')
+const result = await fetchJson('[https://api.example.com/health](https://api.example.com/health)')
+
 if (!result.ok) {
-  console.error('Failed:', result.error.message)
+  console.error('Request failed:', result.error.message)
 } else {
-  console.log('Success:', result.value)
+  console.log('Parsed JSON:', result.value)
 }
 ```
 
-#### Child processes (with pre-validation)
+This captures network and body-parsing failures, and explicitly converts unsuccessful HTTP status into an `Err`.
+
+#### Child processes with separate arguments
 
 ```ts
-// Copy-paste runnable: npx tsx exec-async.ts
-import { from } from 'super-result'
-import { execSync } from 'node:child_process'
+// Run: npx tsx exec-sync.ts
+import { from, err, type Result } from 'super-result'
+import { execFileSync } from 'node:child_process'
 
-// Simple allowlist validation
-const ALLOWED_COMMANDS = ['echo', 'ls', 'cat', 'node', 'pnpm']
+const ALLOWED_EXECUTABLES = new Set(['echo', 'ls'])
 
-function assertSafeCommand(command: string): void {
-  const parts = command.trim().split(/\s+/)
-  if (!ALLOWED_COMMANDS.includes(parts[0])) {
-    throw new Error(`Command not allowed: ${parts[0]}`)
+export function runAllowedSync(
+  executable: string,
+  args: readonly string[] = [],
+): Result<string, Error> {
+  if (!ALLOWED_EXECUTABLES.has(executable)) {
+    return err(new Error(`Executable not allowed: ${executable}`))
   }
+
+  return from(() =>
+    execFileSync(executable, [...args], {
+      encoding: 'utf8',
+      shell: false,
+    }),
+  )
 }
 
-export function execAsync(command: string): ReturnType<typeof from> {
-  assertSafeCommand(command)
-  return from(() => execSync(command, { encoding: 'utf8' }))
-}
+console.log(runAllowedSync('echo', ['hello']))
+// On a system with an echo executable:
+// { ok: true, value: 'hello\n' }
 
-// Usage
-console.log(execAsync('echo hello')) // { ok: true, value: 'hello\n' }
-console.log(execAsync('rm -rf /'))   // { ok: false, error: Error: Command not allowed: rm }
+console.log(runAllowedSync('rm', ['-rf', '/']))
+// Failure: executable not allowed.
 ```
 
-#### Filesystem sync helpers
+The executable and arguments are separate, and the shell is disabled.
+
+This allowlist is not a sandbox. Real applications may also need trusted absolute executable paths, command-specific argument validation, resource restrictions, and timeouts.
+
+`execFileSync()` blocks the event loop. Use an asynchronous subprocess API when blocking is unsuitable.
+
+#### Filesystem helpers
 
 ```ts
-// Copy-paste runnable: npx tsx safe-fs.ts
+// Run: npx tsx safe-fs.ts
 import { from } from 'super-result'
 import * as fs from 'node:fs'
 
-export const safeExistsSync = (p: string) => from(() => fs.existsSync(p))
-export const safeReadFileSync = (p: string, encoding: BufferEncoding = 'utf8') =>
-  from(() => fs.readFileSync(p, encoding))
-export const safeWriteFileSync = (p: string, data: string) =>
-  from(() => fs.writeFileSync(p, data))
-export const safeReaddirSync = (p: string) => from(() => fs.readdirSync(p))
-export const safeStatSync = (p: string) => from(() => fs.statSync(p))
+export const safeReadFileSync = (
+  path: string,
+  encoding: BufferEncoding = 'utf8',
+) => from(() => fs.readFileSync(path, encoding))
 
-// Usage
+export const safeWriteFileSync = (
+  path: string,
+  data: string,
+) => from(() => fs.writeFileSync(path, data))
+
+export const safeReaddirSync = (
+  path: string,
+) => from(() => fs.readdirSync(path))
+
+export const safeStatSync = (
+  path: string,
+) => from(() => fs.statSync(path))
+
 console.log(safeWriteFileSync('./demo.txt', 'hello'))
 // { ok: true, value: undefined }
 
@@ -220,405 +353,524 @@ console.log(safeReadFileSync('./demo.txt'))
 // { ok: true, value: 'hello' }
 
 console.log(safeReadFileSync('./missing.txt'))
-// { ok: false, error: Error: ENOENT: no such file or directory, ... }
+// Failure if the file does not exist.
 ```
 
-#### External API calls (null-safe receivers)
-
-```ts
-// Copy-paste runnable: npx tsx external-api.ts
-import { from } from 'super-result'
-
-// Simulated external client with optional methods
-interface BotClient {
-  api?: {
-    sendMessage: (chatId: number, text: string) => Promise<{ message_id: number }>
-  }
-}
-
-const bot: BotClient = {
-  api: {
-    async sendMessage(chatId: number, text: string) {
-      if (text.length > 4096) throw new Error('Message too long')
-      return { message_id: Math.random() }
-    },
-  },
-}
-
-async function sendMessageSafe(
-  bot: BotClient,
-  chatId: number,
-  text: string,
-) {
-  const result = await from(async () =>
-    await bot.api?.sendMessage(chatId, text),
-  )
-
-  if (!result.ok) {
-    console.error('Failed to send:', result.error.message)
-    return false
-  }
-  console.log('Sent:', result.value)
-  return true
-}
-
-// Usage
-await sendMessageSafe(bot, 123, 'Hello!')       // Sent: { message_id: 0.123 }
-await sendMessageSafe(bot, 123, 'x'.repeat(5000)) // Failed to send: Message too long
-```
+These helpers are synchronous. For request-handling paths or substantial I/O, consider asynchronous filesystem APIs.
 
 ---
 
-### 2. Construct Results Directly with `ok()` / `err()` — Domain Errors
+### 2. Construct Results Directly with `ok()` / `err()`
 
-Use `ok()` and `err()` when the success value or error is already known — no throwable to wrap. This is the pattern for domain-level error types (string discriminators, custom error classes).
+Use `ok()` and `err()` when the success value or failure is already known.
 
-#### Auth flows with string discriminators
+This works well for domain failures, such as missing records, invalid input, or conflicting state.
+
+#### Domain failures with string discriminators
 
 ```ts
-// Copy-paste runnable: npx tsx auth-flow.ts
+// Run: npx tsx reservation.ts
 import { err, ok, type Result } from 'super-result'
 
-interface User { id: string; username: string }
-interface TokenPair { access: string; refresh: string }
-
-const users = new Map<string, User>()
-
-async function register(username: string, password: string): Promise<Result<User, string>> {
-  if (users.has(username)) return err('USERNAME_TAKEN')
-  const user: User = { id: crypto.randomUUID(), username }
-  users.set(username, user)
-  return ok(user)
+interface Reservation {
+  username: string
 }
 
-async function login(username: string, password: string): Promise<Result<TokenPair, string>> {
-  const user = users.get(username)
-  if (!user) return err('INVALID_CREDENTIALS')
-  // In real code: verify password hash
-  const tokens: TokenPair = { access: 'access-' + user.id, refresh: 'refresh-' + user.id }
-  return ok(tokens)
+type ReservationError =
+  | 'INVALID_USERNAME'
+  | 'USERNAME_TAKEN'
+
+const reservedUsernames = new Set<string>()
+
+function reserveUsername(
+  input: string,
+): Result<Reservation, ReservationError> {
+  const username = input.trim()
+
+  if (username.length === 0) {
+    return err('INVALID_USERNAME')
+  }
+
+  if (reservedUsernames.has(username)) {
+    return err('USERNAME_TAKEN')
+  }
+
+  reservedUsernames.add(username)
+  return ok({ username })
 }
 
-// Usage
-console.log(await register('alice', 'secret')) // { ok: true, value: { id: '...', username: 'alice' } }
-console.log(await register('alice', 'secret')) // { ok: false, error: 'USERNAME_TAKEN' }
-console.log(await login('alice', 'wrong'))     // { ok: true, value: { access: '...', refresh: '...' } }
-console.log(await login('bob', 'secret'))      // { ok: false, error: 'INVALID_CREDENTIALS' }
+console.log(reserveUsername('alice'))
+// { ok: true, value: { username: 'alice' } }
+
+console.log(reserveUsername('alice'))
+// { ok: false, error: 'USERNAME_TAKEN' }
+
+console.log(reserveUsername(''))
+// { ok: false, error: 'INVALID_USERNAME' }
 ```
 
-#### Typed custom errors (no external dependencies)
+#### Typed custom errors
 
 ```ts
-// Copy-paste runnable: npx tsx typed-errors.ts
+// Run: npx tsx typed-errors.ts
 import { err, ok, type Result } from 'super-result'
 
 class AppError extends Error {
   constructor(
     message: string,
     public readonly code: string,
-    public readonly cause?: unknown,
+    cause?: unknown,
   ) {
-    super(message)
+    super(message, { cause })
     this.name = 'AppError'
   }
 }
 
-function riskyOperation(shouldFail: boolean): Result<string, AppError> {
+function riskyOperation(
+  shouldFail: boolean,
+): Result<string, AppError> {
   if (shouldFail) {
-    return err(new AppError('Operation failed', 'OPERATION_FAILED', new Error('root cause')))
+    return err(
+      new AppError(
+        'Operation failed',
+        'OPERATION_FAILED',
+        new Error('Root cause'),
+      ),
+    )
   }
+
   return ok('success')
 }
 
-// Usage
-const success = riskyOperation(false)
-console.log(success) // { ok: true, value: 'success' }
+const result = riskyOperation(true)
 
-const failure = riskyOperation(true)
-console.log(failure)
-// { ok: false, error: AppError: Operation failed { code: 'OPERATION_FAILED', cause: Error: root cause } }
-
-// Type-safe error handling
-if (!failure.ok) {
-  console.log('Code:', failure.error.code) // 'OPERATION_FAILED'
-  console.log('Cause:', failure.error.cause)
+if (!result.ok) {
+  console.log('Code:', result.error.code)
+  console.log('Cause:', result.error.cause)
+} else {
+  console.log('Value:', result.value)
 }
 ```
 
-#### Test mocks with deterministic Results
+#### External clients that return Results
 
 ```ts
-// Copy-paste runnable: npx tsx test-mocks.ts
+// Run: npx tsx external-api.ts
 import { err, ok, type Result } from 'super-result'
 
-interface Task { id: string; description: string }
+interface Message {
+  message_id: number
+}
 
-const task: Task = { id: '1', description: 'Fix bug' }
+// A deterministic mock, not a real messaging client.
+const bot = {
+  api: {
+    async sendMessage(
+      _chatId: number,
+      text: string,
+    ): Promise<Result<Message, Error>> {
+      if (text.length > 4096) {
+        return err(new Error('Message too long'))
+      }
 
-// Mock returning success
-const getTaskById = async (id: string): Promise<Result<Task, string>> => ok(task)
+      return ok({ message_id: 123 })
+    },
+  },
+}
 
-// Mock returning failure
-const getMissingTask = async (id: string): Promise<Result<Task, string>> => err('NOT_FOUND')
+type Bot = typeof bot
 
-// Mock returning array of steps
-const replan = async (): Promise<Result<Array<{ description: string; command: string; index: number }>, string>> =>
-  ok([{ description: 'retry', command: 'echo retry', index: 0 }])
+async function sendMessageSafe(
+  client: Bot,
+  chatId: number,
+  text: string,
+): Promise<boolean> {
+  const result = await client.api.sendMessage(chatId, text)
 
-// Usage in tests
-const found = await getTaskById('1')
-console.log(found) // { ok: true, value: { id: '1', description: 'Fix bug' } }
+  if (!result.ok) {
+    console.error('Failed to send:', result.error.message)
+    return false
+  }
 
-const missing = await getMissingTask('999')
-console.log(missing) // { ok: false, error: 'NOT_FOUND' }
+  console.log('Sent:', result.value)
+  return true
+}
 
-const plan = await replan()
-console.log(plan) // { ok: true, value: [{ description: 'retry', ... }] }
+await sendMessageSafe(bot, 123, 'Hello!')
+// Sent: { message_id: 123 }
+
+await sendMessageSafe(bot, 123, 'x'.repeat(5000))
+// Failed to send: Message too long
 ```
 
----
+The mock already returns a Result, so the caller handles it directly.
 
-### 3. Domain Error Factories with `createResult()` — Consistent Error Types
+This handles the returned failure. It does not catch unexpected exceptions or rejected Promises from a real client.
 
-Use `createResult()` when one part of your application needs a consistent error type across a boundary. It builds a `ResultFactory<E>` that maps any thrown value to your domain error type `E`.
-
-#### API fetch with custom error mapping
+#### Simulated repository with typed domain errors
 
 ```ts
-// Copy-paste runnable: npx tsx api-fetch.ts
-import { createResult, type ResultFactory } from 'super-result'
+// Run: npx tsx repository.ts
+import { randomUUID } from 'node:crypto'
+import { err, ok, type Result } from 'super-result'
 
-// Domain error type
-class ApiError extends Error {
-  constructor(
-    message: string,
-    public readonly code: string,
-    public readonly status?: number,
-    public readonly cause?: unknown,
-  ) {
-    super(message)
-    this.name = 'ApiError'
-  }
-}
+type DbErrorCode =
+  | 'NOT_FOUND'
+  | 'UNIQUE_VIOLATION'
 
-// Factory: all errors become ApiError
-const ApiResult: ResultFactory<ApiError> = createResult((error) => {
-  if (error instanceof ApiError) return error
-  if (error instanceof Response) {
-    return new ApiError(`HTTP ${error.status}`, 'HTTP_ERROR', error.status)
-  }
-  if (error instanceof Error) {
-    return new ApiError(error.message, 'UNKNOWN', undefined, error)
-  }
-  return new ApiError(String(error), 'UNKNOWN')
-})
-
-async function fetchJson<T>(url: string): Promise<ReturnType<typeof ApiResult.from<T>>> {
-  return ApiResult.from(async () => {
-    const response = await fetch(url)
-    if (!response.ok) throw response
-    return response.json() as Promise<T>
-  })
-}
-
-// Usage
-const result = await fetchJson<{ status: string }>('https://api.example.com/health')
-if (!result.ok) {
-  console.error('Code:', result.error.code)     // 'HTTP_ERROR' or 'UNKNOWN'
-  console.error('Status:', result.error.status) // 404, 500, etc.
-  console.error('Message:', result.error.message)
-} else {
-  console.log('Data:', result.value)
-}
-```
-
-#### ORM / Database result adapter (shared helper)
-
-```ts
-// Copy-paste runnable: npx tsx orm-adapter.ts
-import { createResult, type ResultFactory } from 'super-result'
-
-// Domain error type
 class DbError extends Error {
   constructor(
     message: string,
-    public readonly code: string,
-    public readonly query?: string,
-    public readonly cause?: unknown,
+    public readonly code: DbErrorCode,
   ) {
     super(message)
     this.name = 'DbError'
   }
 }
 
-// Shared factory across the package
-const DbResult: ResultFactory<DbError> = createResult((error) => {
-  if (error instanceof DbError) return error
-  if (error instanceof Error) {
-    // Map known DB errors
-    if (error.message.includes('UNIQUE constraint')) {
-      return new DbError('Duplicate entry', 'UNIQUE_VIOLATION', undefined, error)
-    }
-    if (error.message.includes('FOREIGN KEY constraint')) {
-      return new DbError('Referenced record not found', 'FK_VIOLATION', undefined, error)
-    }
-    return new DbError(error.message, 'QUERY_FAILED', undefined, error)
-  }
-  return new DbError(String(error), 'UNKNOWN')
-})
+interface User {
+  id: string
+  email: string
+}
 
-export const withResult = DbResult.from
-
-// Simulated repository
-interface User { id: string; email: string }
 const users = new Map<string, User>()
 
-async function findUserByEmail(email: string) {
-  return withResult(async () => {
-    const user = Array.from(users.values()).find(u => u.email === email)
-    if (!user) throw new Error('NOT_FOUND')
-    return user
-  })
+async function findUserByEmail(
+  email: string,
+): Promise<Result<User, DbError>> {
+  const user = users.get(email)
+
+  if (!user) {
+    return err(new DbError('User not found', 'NOT_FOUND'))
+  }
+
+  return ok(user)
 }
 
-async function createUser(email: string) {
-  return withResult(async () => {
-    if (users.has(email)) throw new Error('UNIQUE constraint failed')
-    const user: User = { id: crypto.randomUUID(), email }
-    users.set(email, user)
-    return user
-  })
+async function createUser(
+  email: string,
+): Promise<Result<User, DbError>> {
+  if (users.has(email)) {
+    return err(
+      new DbError('Duplicate entry', 'UNIQUE_VIOLATION'),
+    )
+  }
+
+  const user: User = {
+    id: randomUUID(),
+    email,
+  }
+
+  users.set(email, user)
+  return ok(user)
 }
 
-// Usage
 console.log(await createUser('alice@example.com'))
-// { ok: true, value: { id: '...', email: 'alice@example.com' } }
+// Success containing the new user.
 
 console.log(await createUser('alice@example.com'))
-// { ok: false, error: DbError: Duplicate entry { code: 'UNIQUE_VIOLATION', ... } }
+// Failure with code UNIQUE_VIOLATION.
 
 console.log(await findUserByEmail('bob@example.com'))
-// { ok: false, error: DbError: ... { code: 'QUERY_FAILED', ... } }
+// Failure with code NOT_FOUND.
+```
+
+This is an in-memory control-flow example, not a database driver adapter.
+
+#### Deterministic test mocks
+
+```ts
+// Run: npx tsx test-mocks.ts
+import { err, ok, type Result } from 'super-result'
+
+interface Task {
+  id: string
+  description: string
+}
+
+const task: Task = {
+  id: '1',
+  description: 'Fix bug',
+}
+
+const getTaskById = async (
+  _id: string,
+): Promise<Result<Task, string>> => ok(task)
+
+const getMissingTask = async (
+  _id: string,
+): Promise<Result<Task, string>> => err('NOT_FOUND')
+
+console.log(await getTaskById('1'))
+// { ok: true, value: { id: '1', description: 'Fix bug' } }
+
+console.log(await getMissingTask('999'))
+// { ok: false, error: 'NOT_FOUND' }
 ```
 
 ---
 
-### 4. Caller-Handled Narrowing — No Chaining, Just `if` Statements
+### 3. Domain Error Factories with `createResult()`
 
-This is the core philosophy: narrow with `if (result.ok)` or `if (!result.ok)`, return early, access `.value` or `.error`. No fluent combinators (`.map()`, `.andThen()`, `.match()`, `.unwrapOr()`). Explicit control flow beats implicit pipelines.
+Use `createResult()` when a boundary needs a shared rule for converting thrown or rejected values into a domain error type.
 
-#### Early return on failure
-
-```ts
-// Copy-paste runnable: npx tsx early-return.ts
-import { err, ok, type Result } from 'super-result'
-
-interface Session { id: string; userId: string }
-const sessions = new Map<string, Session>()
-
-async function getSessionById(id: string): Promise<Result<Session, { kind: 'NOT_FOUND' }>> {
-  const session = sessions.get(id)
-  if (!session) return err({ kind: 'NOT_FOUND' })
-  return ok(session)
-}
-
-async function ensureSession(sessionId: string): Promise<string> {
-  const result = await getSessionById(sessionId)
-  if (result.ok) return result.value.id
-
-  // Handle specific error kind
-  if (result.error.kind === 'NOT_FOUND') {
-    const newSession: Session = { id: crypto.randomUUID(), userId: 'anonymous' }
-    sessions.set(newSession.id, newSession)
-    console.log('Auto-created session:', newSession.id)
-    return newSession.id
-  }
-
-  // Unreachable with current error type, but TypeScript knows
-  throw new Error('Unhandled error kind')
-}
-
-// Usage
-console.log(await ensureSession('existing'))  // Auto-created session: ...
-console.log(await ensureSession('new-one'))   // Auto-created session: ...
-```
-
-#### Multi-step narrowing with HTTP status
+#### Fetch with custom error mapping and runtime validation
 
 ```ts
-// Copy-paste runnable: npx tsx http-narrowing.ts
-import { err, from, ok, type Result } from 'super-result'
+// Run: npx tsx api-fetch.ts
+import {
+  createResult,
+  type Result,
+  type ResultFactory,
+} from 'super-result'
+import { z } from 'zod'
 
-interface ApiResponse<T> {
-  ok: boolean
-  status: number
-  data?: T
-  error?: string
+type ApiErrorCode =
+  | 'HTTP_ERROR'
+  | 'INVALID_RESPONSE'
+  | 'UNKNOWN'
+
+class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly code: ApiErrorCode,
+    public readonly status: number | undefined = undefined,
+    cause?: unknown,
+  ) {
+    super(message, { cause })
+    this.name = 'ApiError'
+  }
 }
 
-async function callApi<T>(url: string): Promise<Result<ApiResponse<T>, Error>> {
-  const responseResult = await from(fetch(url))
-  if (!responseResult.ok) return responseResult
-
-  const response = responseResult.value
-  if (!response.ok) {
-    return err(new Error(`HTTP ${response.status}`))
+const ApiResult: ResultFactory<ApiError> = createResult((error) => {
+  if (error instanceof ApiError) {
+    return error
   }
 
-  const data = await response.json() as T
-  return ok({ ok: true, status: response.status, data })
+  if (error instanceof Error) {
+    return new ApiError(
+      error.message,
+      'UNKNOWN',
+      undefined,
+      error,
+    )
+  }
+
+  return new ApiError(
+    'Unexpected thrown value',
+    'UNKNOWN',
+    undefined,
+    error,
+  )
+})
+
+async function fetchValidatedJson<T>(
+  url: string,
+  parse: (input: unknown) => T,
+): Promise<Result<T, ApiError>> {
+  return ApiResult.from(async () => {
+    const response = await fetch(url)
+
+    if (!response.ok) {
+      throw new ApiError(
+        `HTTP ${response.status}`,
+        'HTTP_ERROR',
+        response.status,
+      )
+    }
+
+    let data: unknown
+
+    try {
+      data = await response.json()
+    } catch (cause) {
+      throw new ApiError(
+        'Failed to parse response JSON',
+        'INVALID_RESPONSE',
+        response.status,
+        cause,
+      )
+    }
+
+    try {
+      return parse(data)
+    } catch (cause) {
+      throw new ApiError(
+        'Response validation failed',
+        'INVALID_RESPONSE',
+        response.status,
+        cause,
+      )
+    }
+  })
 }
 
-// Usage
-const result = await callApi<{ message: string }>('https://api.example.com/data')
+const HealthSchema = z.object({
+  status: z.string(),
+})
+
+const result = await fetchValidatedJson(
+  '[https://api.example.com/health](https://api.example.com/health)',
+  input => HealthSchema.parse(input),
+)
 
 if (!result.ok) {
-  console.error('Network error:', result.error.message)
-} else if (!result.value.ok) {
-  console.error(`API error ${result.value.status}:`, result.value.error)
+  console.error('Code:', result.error.code)
+  console.error('Status:', result.error.status)
+  console.error('Message:', result.error.message)
 } else {
-  console.log('Success:', result.value.data)
+  console.log('Status:', result.value.status)
 }
 ```
 
-#### Why no chaining
+The parser supplies the application type through runtime validation.
 
-`super-result` has no `.map()`, `.andThen()`, `.match()`, or `.unwrapOr()`. The explicit `if (result.ok)` style above is the intended API — every branch visible, types precise.
+The factory maps exceptions and rejections. It does not infer HTTP failure from a fulfilled `Response`, so the callback explicitly checks the status.
 
 ---
 
-### 5. Foundational Patterns (Reference)
+### 4. Caller-Handled Narrowing
 
-Condensed reference — these patterns are demonstrated in the sections above. Each is copy-paste runnable.
+Narrow the Result, return early, then work with the successful value.
 
-#### Propagate compatible Results directly
+#### Propagate compatible failures directly
 
 ```ts
-// Copy-paste runnable: npx tsx propagate.ts
-import { err, ok, type Result } from 'super-result'
+// Run: npx tsx propagate.ts
+import { ok, type Result } from 'super-result'
 
-function loadConfig(): Result<{ port: number }, Error> {
+interface Config {
+  port: number
+}
+
+function loadConfig(): Result<Config, Error> {
   return ok({ port: 3000 })
 }
 
-function startServer(config: { port: number }): Result<void, Error> {
-  console.log(`Server on ${config.port}`)
+function startServer(
+  config: Config,
+): Result<void, Error> {
+  console.log(`Starting server on port ${config.port}`)
   return ok(undefined)
 }
 
 function main(): Result<void, Error> {
   const configResult = loadConfig()
-  if (!configResult.ok) return configResult
+
+  if (!configResult.ok) {
+    return configResult
+  }
+
   return startServer(configResult.value)
 }
 
-console.log(main()) // { ok: true, value: undefined }
+console.log(main())
+// { ok: true, value: undefined }
 ```
 
-#### `err()` is for a new error
+Once narrowed to the failure branch, the failure Result can be returned directly when its error type is compatible with the caller's return type.
+
+#### HTTP status and body parsing
 
 ```ts
-// Copy-paste runnable: npx tsx err-pattern.ts
+// Run: npx tsx http-narrowing.ts
+import { err, from, ok, type Result } from 'super-result'
+
+interface ApiResponse<T> {
+  status: number
+  data: T
+}
+
+async function callApi(
+  url: string,
+): Promise<Result<ApiResponse<unknown>, Error>> {
+  const responseResult = await from(() => fetch(url))
+  if (!responseResult.ok) return responseResult
+
+  const response = responseResult.value
+
+  if (!response.ok) {
+    return err(new Error(`HTTP ${response.status}`))
+  }
+
+  const dataResult = await from(async () => {
+    const data: unknown = await response.json()
+    return data
+  })
+  if (!dataResult.ok) return dataResult
+
+  return ok({
+    status: response.status,
+    data: dataResult.value,
+  })
+}
+
+const result = await callApi('[https://api.example.com/data](https://api.example.com/data)')
+
+if (!result.ok) {
+  console.error('Request failed:', result.error.message)
+} else {
+  console.log('HTTP status:', result.value.status)
+  console.log('Data:', result.value.data)
+}
+```
+
+Network, HTTP, and parsing failures use the outer Result. A second success/failure flag inside the successful value is unnecessary for this policy.
+
+#### Continue after item failures
+
+```ts
+// Run: npx tsx batch-continue.ts
+import { err, ok, type Result } from 'super-result'
+
+async function processItem(
+  id: number,
+): Promise<Result<string, Error>> {
+  if (id === 2) {
+    return err(new Error('Item 2 failed'))
+  }
+
+  return ok(`Processed ${id}`)
+}
+
+async function main() {
+  const items =[1][2][3][4][5]
+  let succeeded = 0
+  let failed = 0
+
+  for (const id of items) {
+    const result = await processItem(id)
+
+    if (!result.ok) {
+      console.warn(`Skipping ${id}: ${result.error.message}`)
+      failed++
+      continue
+    }
+
+    console.log(result.value)
+    succeeded++
+  }
+
+  console.log({
+    total: items.length,
+    succeeded,
+    failed,
+  })
+}
+
+await main()
+// Four successes and one handled failure.
+// { total: 5, succeeded: 4, failed: 1 }
+```
+
+---
+
+### 5. Preserve Error Information
+
+#### Add context when returning a failure
+
+```ts
+// Run: npx tsx error-context.ts
 import { err, ok, type Result } from 'super-result'
 
 function loadConfig(): Result<string, Error> {
@@ -627,79 +879,72 @@ function loadConfig(): Result<string, Error> {
 
 function main(): Result<void, Error> {
   const configResult = loadConfig()
+
   if (!configResult.ok) {
-    return err(new Error(`Startup failed: ${configResult.error.message}`))
+    return err(
+      new Error('Startup failed', {
+        cause: configResult.error,
+      }),
+    )
   }
+
+  console.log('Loaded config:', configResult.value)
   return ok(undefined)
 }
 
 console.log(main())
-// { ok: false, error: Error: Startup failed: Config file not found }
+// Failure containing a contextual error with the original error as cause.
 ```
 
-#### Handle HTTP status explicitly
-
-See **Pattern 1 → Async/Promises** and **Pattern 4 → Multi-step narrowing** for full examples.
+Use `err(existingError)` when constructing a failure from an existing error. Return an existing failure Result directly when no additional context is needed.
 
 #### Preserve unknown thrown values
 
 ```ts
-// Copy-paste runnable: npx tsx unknown-throw.ts
+// Run: npx tsx unknown-throw.ts
 import { fromUnknown } from 'super-result'
 
+interface RateLimitError {
+  code: 'RATE_LIMITED'
+  retryAfterMs: number
+}
+
+function isRateLimitError(
+  value: unknown,
+): value is RateLimitError {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'code' in value &&
+    value.code === 'RATE_LIMITED' &&
+    'retryAfterMs' in value &&
+    typeof value.retryAfterMs === 'number' &&
+    Number.isFinite(value.retryAfterMs) &&
+    value.retryAfterMs >= 0
+  )
+}
+
 const result = fromUnknown(() => {
-  throw { code: 'RATE_LIMITED', retryAfterMs: 1000 }
+  throw {
+    code: 'RATE_LIMITED',
+    retryAfterMs: 1000,
+  }
 })
 
 if (!result.ok) {
-  const err = result.error as { code: string; retryAfterMs: number }
-  console.log('Rate limited, retry after:', err.retryAfterMs, 'ms')
-}
-```
-
-#### Validate external data with Zod
-
-See **Pattern 1 → Sync throwables (Zod schema parsing)** for full example.
-
-#### Continue after item failures
-
-```ts
-// Copy-paste runnable: npx tsx batch-continue.ts
-import { err, ok, type Result } from 'super-result'
-
-async function processItem(id: number): Promise<Result<string, Error>> {
-  if (id === 2) return err(new Error('Item 2 failed'))
-  await new Promise(r => setTimeout(r, 10))
-  return ok(`Processed ${id}`)
-}
-
-async function main() {
-  const items = [1, 2, 3, 4, 5]
-  let succeeded = 0
-  let failed = 0
-
-  for (const id of items) {
-    const result = await processItem(id)
-    if (!result.ok) {
-      console.warn(`Skipping ${id}: ${result.error.message}`)
-      failed++
-      continue
-    }
-    console.log(result.value)
-    succeeded++
+  if (isRateLimitError(result.error)) {
+    console.log(
+      'Rate limited, retry after:',
+      result.error.retryAfterMs,
+      'ms',
+    )
+  } else {
+    console.error('Unexpected thrown value:', result.error)
   }
-
-  console.log({ total: items.length, succeeded, failed })
 }
-
-await main()
-// Processed 1
-// Skipping 2: Item 2 failed
-// Processed 3
-// Processed 4
-// Processed 5
-// { total: 5, succeeded: 4, failed: 1 }
 ```
+
+Keeping the error as `unknown` requires callers to inspect it before using its properties.
 
 ---
 
@@ -707,7 +952,11 @@ await main()
 
 ### Is this just Promises?
 
-No. A `Promise<T>` represents a value that arrives asynchronously. A `Result<T, E>` represents a value that either succeeds or fails.
+No.
+
+A `Promise<T>` models asynchronous completion and may reject.
+
+A `Result<T, E>` models a successful value or an explicit failure value.
 
 Use both when needed:
 
@@ -715,45 +964,94 @@ Use both when needed:
 Promise<Result<User, Error>>
 ```
 
+That return type describes the resolved value. It does not, by itself, prevent the Promise from rejecting.
+
 ### Should every function return a Result?
 
-No. Use Results at boundaries where failures are expected and callers need to decide what happens next: network calls, filesystem work, subprocesses, parsing, database access, and third-party libraries.
+No.
 
-Do not introduce Results where nothing can recover, handle, or add context to the failure.
+Use Results where failures are expected and callers need to decide what happens next: network calls, filesystem work, subprocesses, parsing, database access, and third-party libraries.
+
+Do not introduce Results mechanically into every function.
+
+### Does TypeScript force every Result to be handled?
+
+No.
+
+TypeScript requires narrowing before accessing variant-specific properties. Callers can still discard a returned Result.
+
+### Does a Result return type prevent exceptions?
+
+No.
+
+The implementation must capture exceptions and rejections that it intends to represent as Results.
+
+Operations outside a wrapper can still throw or reject.
+
+### Does `from()` treat a returned `Err` as an exception?
+
+A returned failure Result is a normal value, not an exception.
+
+Handle Result-returning functions directly. Do not assume automatic flattening when wrapping one with `from()`.
+
+### Does `from(() => fetch(url))` treat HTTP 404 as an error?
+
+No.
+
+Check `response.ok` or `response.status` and apply your own HTTP failure policy.
+
+### Does a generic type validate JSON?
+
+No.
+
+A type assertion such as `as T` does not validate external data.
+
+Use a runtime parser or schema when the payload must match an application type.
+
+### Why no chaining?
+
+The intended API is ordinary TypeScript control flow: checks, early returns, and direct access after narrowing.
+
+If fluent composition is central to your codebase, choose a Result library designed for it.
 
 ---
 
 ## Why Super-Result?
 
-### 1. Stop Lying with Your Types 🤥
+### Make expected failures visible
 
-A typical TypeScript signature:
+A value-returning signature does not describe which exceptions may occur.
 
-```ts
-function getUser(id: string): User
-```
-
-This is a **lie** – if the database is down, the function explodes instead of returning a `User`.
-**The `super-result` truth:**
+A Result-returning signature makes modeled failure values part of the API:
 
 ```ts
 function getUser(id: string): Result<User, DbError>
 ```
 
-Now the compiler **forces** you to handle failure. You can’t accidentally ignore it.
+Callers can see the success and failure types and handle them explicitly.
 
-### 2. Shift the Cognitive Load 🧠
+### Keep control flow familiar
 
-Traditional error handling makes you mentally track every possible exception bubbling through nested calls – an impossible burden.
-With `super-result`, the load moves to the **TypeScript type system**:
+Use the same `if` statements and early returns you already use elsewhere.
 
-- No need to remember what might throw.
-- No defensive `try/catch` “just in case.”
-- The return type is your single source of truth.
+No pipeline API is required.
 
-### 3. Design Your Errors, Don’t Just Catch Them ✨
+### Centralize boundary error mapping
 
-When every failure path is typed and every check is enforced, you stop fearing your own code. You start **knowing exactly how things can fail** – and you design accordingly.
+Use `createResult()` to give a subsystem a shared rule for converting exceptions and rejections into domain errors.
+
+### Design useful failures
+
+Choose error representations that help callers decide what to do next:
+
+- Retry
+- Report invalid input
+- Skip an item
+- Return an HTTP response
+- Add context
+- Stop the operation
+
+The library makes these decisions explicit. It does not make every runtime failure predictable or eliminate the need to test failure paths.
 
 ---
 
