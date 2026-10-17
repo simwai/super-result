@@ -1,582 +1,566 @@
 <#
 .SYNOPSIS
-    Session file lock implementation for the Baba prompt system.
+    Session file locks for two editing sessions sharing one checkout.
 .DESCRIPTION
-    Implements per-file and dependency locks per 07-protocols.md ## Session file locks.
-    Provides atomic acquisition, TTL-based stale detection, wait/override-steal prompts,
-    and commit/push gate integration.
+    One file, one writer. A session holds a lock on a path from its first write
+    until the commit lands, so two sessions cannot silently bundle each other's
+    uncommitted hunks into a single commit.
+
+    Enforcement lives at the commit gate, not mid-edit. A mid-edit block can
+    wedge the very session that legitimately holds the lock, and the commit is
+    where the hunk-bundling hazard actually occurs. Contention is surfaced as
+    data here and acted on by the caller.
+
+    A lock is never auto-stolen. A contended path always returns the user-owned
+    decision set; this module never picks for them.
+
+    Session identity resolves from SESSION_ID, else a per-process generated id
+    cached for the process lifetime so acquire/verify/release agree on one owner.
+
+    Inert on a READ_ONLY host: every entry point returns Skipped instead of
+    touching the filesystem.
+
+    Every entry point accepts an explicit -RepoRoot so it can be exercised
+    against a fixture. Only the default path consults git.
+.EXAMPLE
+    . session-locks.ps1
+    $lock = Enter-FileLock -RepoRelativePath 'src/app.ts'
 .NOTES
-    Loaded for PATCH and DIRECT phases only. Inert on READ_ONLY hosts.
+    Dot-source this file. Loading defines functions and performs no work; it is
+    not meant to be executed directly.
 #>
 
 $ErrorActionPreference = 'Stop'
 
-# ═══════════════════════════════════════════════════════════════════════════
-# Named constants (single source of truth per protocol)
-# ═══════════════════════════════════════════════════════════════════════════
+# A lock older than this is treated as abandoned. Liveness is read from the
+# acquired_at file only; directory mtime is never consulted because ordinary
+# tooling touches it.
+$script:LockTtlMinutes = 30
 
-$script:SESSION_LOCK_TTL_MINUTES = 30
-$script:SESSION_LOCK_WAIT_ATTEMPTS = 3
-$script:SESSION_LOCK_WAIT_INTERVAL_SECONDS = 60
-# NOTE: the active multi-minute blocking wait was removed in favor of
-# attempt-once-then-surface. The WAIT_* values are retained for protocol
-# compatibility and hosted runners that implement their own wait.
+# Import specifier extensions tried when a relative import carries none. Ordered
+# so a real file beats a directory index.
+$script:ImportExtensions = @('', '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.py', '.ps1', '/index.ts', '/index.tsx', '/index.js')
 
-# Resolved-once session identity cache. Get-SessionId populates this on first
-# call so Acquire, Verify, and Release agree on the owner for the session.
+# Cached so every entry point in one process reports the same owner. A per-call
+# fallback would make acquire/verify/release disagree and misattribute a lock.
 $script:CachedSessionId = $null
 
-# ═══════════════════════════════════════════════════════════════════════════
-# Internal helpers
-# ═══════════════════════════════════════════════════════════════════════════
-
-function Get-RepoRoot {
-    $root = & git rev-parse --show-toplevel 2>$null
-    if (-not $root) { throw "Not in a git repository" }
+function Resolve-RepoRoot {
+    param([string]$RepoRoot)
+    if ($RepoRoot) { return $RepoRoot }
+    $root = (& git rev-parse --show-toplevel 2>$null)
+    if (-not $root) { throw 'Not in a git repository' }
     return $root
 }
 
 function Get-SessionId {
-    # Session ID from SESSION_ID env, else latest SESSION_STATE-*.md filename.
-    # Resolved once and cached: a per-call generated fallback would disagree
-    # across Acquire/Verify/Release and misattribute lock ownership.
     if ($script:CachedSessionId) { return $script:CachedSessionId }
     if ($env:SESSION_ID) { $script:CachedSessionId = $env:SESSION_ID; return $script:CachedSessionId }
-    $stateFiles = Get-ChildItem -Path (Get-RepoRoot) -Filter 'SESSION_STATE-*.md' -ErrorAction SilentlyContinue
-    if ($stateFiles) {
-        $latest = $stateFiles | Sort-Object LastWriteTime -Descending | Select-Object -First 1
-        if ($latest.BaseName -match 'SESSION_STATE-(.+)') { $script:CachedSessionId = $Matches[1]; return $script:CachedSessionId }
-    }
-    # Fallback: generate once per process and reuse for the rest of the session.
-    $script:CachedSessionId = "session-$(Get-Date -Format 'yyyyMMddTHHmmss')-$(Get-Random -Maximum 1000000)"
+    $script:CachedSessionId = "session-$(Get-Date -Format 'yyyyMMddTHHmmss')-$PID-$((Get-Random -Minimum 1000 -Maximum 9999))"
     return $script:CachedSessionId
 }
 
-function Get-LockDir {
-    param([string]$RepoRoot)
-    return Join-Path $RepoRoot '.session-locks'
-}
-
-function Get-FlatName {
-    param([string]$RepoRelativePath)
-    # Replace path separators with --
-    return $RepoRelativePath -replace '[\\/]', '--'
-}
-
-function Get-LockPath {
-    param([string]$RepoRoot, [string]$FlatName)
-    return Join-Path (Get-LockDir $RepoRoot) "$FlatName.lock"
-}
-
-function Is-ReadOnlyHost {
-    # Host capability comes from the BABA_READ_ONLY flag, set by the agent from
-    # its session carrier. The lock protocol is inert on READ_ONLY hosts: every
-    # entry point below returns Skipped instead of touching the filesystem.
+function Test-ReadOnlyHost {
+    # Set by the agent from its session carrier when the host cannot write.
     if ($env:BABA_READ_ONLY -in @('1', 'true', 'yes')) { return $true }
     return $false
 }
 
-function Ensure-LockDir {
+function Get-LockRoot {
     param([string]$RepoRoot)
-    $lockDir = Get-LockDir $RepoRoot
-    if (-not (Test-Path $lockDir)) {
-        New-Item -ItemType Directory -Path $lockDir -Force | Out-Null
-    }
+    return Join-Path $RepoRoot '.session-locks'
 }
 
+# Path separators become -- so one lock directory can hold a full relative path.
+function ConvertTo-FlatName {
+    param([string]$RepoRelativePath)
+    $normalized = $RepoRelativePath -replace '\\', '/'
+    return ($normalized -replace '^[./]+', '') -replace '[/\\]', '--'
+}
+
+function Get-LockPath {
+    param([string]$RepoRoot, [string]$FlatName)
+    return Join-Path (Get-LockRoot $RepoRoot) "$FlatName.lock"
+}
+
+function Get-RepoRelativePath {
+    param([string]$RepoRoot, [string]$AbsolutePath)
+    $root = $RepoRoot.TrimEnd('\', '/')
+    $full = [System.IO.Path]::GetFullPath($AbsolutePath)
+    if ($full.Length -le $root.Length) { return $full }
+    return ($full.Substring($root.Length + 1)) -replace '\\', '/'
+}
+
+# Stage the lock in a private directory and move it into place. Directory.Move
+# fails when the destination exists, which makes it the atomic exclusive
+# primitive here. [System.IO.Directory]::CreateDirectory is NOT exclusive -- it
+# succeeds silently on an existing directory and would hand the same lock to two
+# sessions.
 function New-LockDirectoryAtomic {
-    param([string]$LockPath)
-    # Atomic create-or-fail: success means this session won the race, and an
-    # IOException means the lock already exists (already locked). Never -Force:
-    # overwriting here would silently steal a peer's lock.
-    New-Item -ItemType Directory -Path $LockPath -ErrorAction Stop | Out-Null
-}
+    param([string]$LockPath, [string]$Owner, [string[]]$Dependencies)
 
-function Test-CoveringDependencyLock {
-    param(
-        [string]$RepoRoot,
-        [string]$FlatName,
-        [string]$SessionId
-    )
-    # Return a live peer dependency lock covering FlatName, else $null.
-    # Self-owned covering locks are excluded: they never block this session.
-    $lockDir = Get-LockDir $RepoRoot
-    if (-not (Test-Path -LiteralPath $lockDir)) { return $null }
-    foreach ($dir in Get-ChildItem -Path $lockDir -Directory -Filter '*.lock' -ErrorAction SilentlyContinue) {
-        $depsPath = Join-Path $dir.FullName 'dependencies.txt'
-        if (-not (Test-Path -LiteralPath $depsPath)) { continue }
-        $covers = @(Get-Content $depsPath -ErrorAction SilentlyContinue) | Where-Object { $_ -and $_.Trim() -eq $FlatName }
-        if (-not $covers) { continue }
-        $info = Read-LockInfo $dir.FullName
-        if ($info.Owner -and ($info.Owner.Trim() -ne $SessionId) -and (Is-LockLive $info.AcquiredAt)) {
-            return @{ Path = $dir.FullName; Owner = $info.Owner; AcquiredAt = $info.AcquiredAt; FlatName = ($dir.BaseName -replace '\.lock$', '') }
-        }
+    $parent = Split-Path -Parent $LockPath
+    if (-not (Test-Path -LiteralPath $parent)) {
+        New-Item -ItemType Directory -Path $parent -Force | Out-Null
     }
-    return $null
-}
 
-function Write-LockFiles {
-    param(
-        [string]$LockPath,
-        [string]$Owner,
-        [string[]]$Dependencies = @()
-    )
-    # The lock directory must already exist via New-LockDirectoryAtomic. This
-    # guard only heals a missing directory; it never overwrites an existing one.
-    if (-not (Test-Path -LiteralPath $LockPath)) {
-        New-LockDirectoryAtomic -LockPath $LockPath
+    $staging = "$LockPath.$PID.tmp"
+    if (Test-Path -LiteralPath $staging) { Remove-Item -LiteralPath $staging -Recurse -Force }
+
+    New-Item -ItemType Directory -Path $staging | Out-Null
+    [System.IO.File]::WriteAllText((Join-Path $staging 'owner'), $Owner)
+    [System.IO.File]::WriteAllText((Join-Path $staging 'acquired_at'), (Get-Date).ToUniversalTime().ToString('o'))
+    if ($Dependencies -and $Dependencies.Count -gt 0) {
+        [System.IO.File]::WriteAllLines((Join-Path $staging 'dependencies.txt'), $Dependencies)
     }
-    $Owner | Set-Content -Path (Join-Path $LockPath 'owner') -Encoding UTF8 -NoNewline
-    (Get-Date -Format 'o') | Set-Content -Path (Join-Path $LockPath 'acquired_at') -Encoding UTF8 -NoNewline
-    if ($Dependencies.Count -gt 0) {
-        $Dependencies | Set-Content -Path (Join-Path $LockPath 'dependencies.txt') -Encoding UTF8
+
+    try {
+        [System.IO.Directory]::Move($staging, $LockPath)
+    } catch {
+        Remove-Item -LiteralPath $staging -Recurse -Force -ErrorAction SilentlyContinue
+        throw
     }
 }
 
 function Read-LockInfo {
     param([string]$LockPath)
+    $info = @{ Owner = $null; AcquiredAt = $null; Dependencies = @() }
+    if (-not (Test-Path -LiteralPath $LockPath)) { return $info }
+
     $ownerPath = Join-Path $LockPath 'owner'
+    if (Test-Path -LiteralPath $ownerPath) { $info.Owner = ([System.IO.File]::ReadAllText($ownerPath)).Trim() }
+
     $acquiredPath = Join-Path $LockPath 'acquired_at'
+    if (Test-Path -LiteralPath $acquiredPath) { $info.AcquiredAt = [System.IO.File]::ReadAllText($acquiredPath) }
+
     $depsPath = Join-Path $LockPath 'dependencies.txt'
-    $result = @{}
-    if (Test-Path $ownerPath) { $result.Owner = Get-Content $ownerPath -Raw }
-    if (Test-Path $acquiredPath) { $result.AcquiredAt = Get-Content $acquiredPath -Raw }
-    if (Test-Path $depsPath) { $result.Dependencies = (Get-Content $depsPath -Raw).Split("`n") | Where-Object { $_ } }
-    return $result
+    if (Test-Path -LiteralPath $depsPath) {
+        $info.Dependencies = @([System.IO.File]::ReadAllLines($depsPath) | Where-Object { $_.Trim() })
+    }
+    return $info
 }
 
-function Remove-LockDir {
+function Test-LockLive {
+    param([string]$AcquiredAt, [int]$TtlMinutes = $script:LockTtlMinutes)
+    if (-not $AcquiredAt) { return $false }
+    try {
+        $acquired = [DateTime]::Parse($AcquiredAt).ToUniversalTime()
+    } catch {
+        # An unparseable timestamp is treated as dead, not live: a corrupt clock
+        # must not grant an abandoned lock an indefinite reprieve.
+        return $false
+    }
+    return ((Get-Date).ToUniversalTime() - $acquired).TotalMinutes -lt $TtlMinutes
+}
+
+function Remove-LockDirectory {
     param([string]$LockPath)
-    if (Test-Path $LockPath) {
+    if (Test-Path -LiteralPath $LockPath) {
         Remove-Item -LiteralPath $LockPath -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
 
-function Is-LockLive {
-    param([string]$AcquiredAt)
-    try {
-        $acquired = [DateTime]::Parse($AcquiredAt)
-        $age = (Get-Date).ToUniversalTime() - $acquired
-        return $age.TotalMinutes -lt $script:SESSION_LOCK_TTL_MINUTES
-    } catch {
-        return $false
-    }
-}
-
 # ═══════════════════════════════════════════════════════════════════════════
-# Dependency discovery (depth 1, both directions)
+# Dependency discovery
 # ═══════════════════════════════════════════════════════════════════════════
 
-function Get-DependencySet {
+# Resolves a relative import specifier to a concrete repo-relative path.
+# Returns $null for bare specifiers (external packages) and for anything that
+# does not land on a real file.
+function Resolve-ImportSpecifier {
     param(
         [string]$RepoRoot,
-        [string]$TargetFile
+        [string]$FromFileRelative,
+        [string]$Specifier
     )
-    # Returns @{ Root = flatName; Importers = @(); Imports = @() }
-    # Depth 1 both directions: direct importers + direct imports
-    # Excludes artifact directories per 07-protocols.md ## Artifact handling
 
-    $excludeDirs = @('node_modules', '.venv', 'venv', 'env', '__pycache__', 'dist', 'build', 'out', '.cache', '.next', '.nuxt', '.svelte-kit', '.turbo', '.mypy_cache', '.ruff_cache', '.pyrefly_cache', '.pytest_cache', 'coverage', '.coverage', 'test-results', '.pre-commit-cache')
-    $excludePattern = $excludeDirs -join '|'
-    $rgArgs = @(
-        '--files',
-        '--glob', '*.{ts,tsx,js,jsx,py,ps1,cs,java,go,rs,vue,svelte}',
-        '--no-ignore',
-        '--max-depth', '10'
-    )
-    foreach ($d in $excludeDirs) {
-        $rgArgs += '--glob', "!$d/**"
-    }
+    if ([string]::IsNullOrWhiteSpace($Specifier)) { return $null }
+    # Bare or scoped specifier -- a package, not a repo path.
+    if ($Specifier -notmatch '^[./]') { return $null }
 
-    $allFiles = & rg @rgArgs $RepoRoot 2>$null
+    $fromDir = Split-Path -Parent (Join-Path $RepoRoot $FromFileRelative)
+    if (-not $fromDir) { $fromDir = $RepoRoot }
 
-    $targetFlat = Get-FlatName $TargetFile
-    $result = @{
-        Root = $targetFlat
-        Importers = @()
-        Imports = @()
-    }
-
-    if (-not $allFiles) { return $result }
-
-    # Find direct importers: files whose import strings reference this file.
-    # Full repo-relative paths rarely appear in import strings (imports are
-    # relative like ./sibling), so match the leaf filename as well. Same-leaf
-    # collisions across directories are accepted noise for a depth-1 heuristic;
-    # the lock decision itself stays user-owned.
-    $targetLeaf = Split-Path -Leaf $TargetFile
-    $escapedLeaf = [regex]::Escape($targetLeaf)
-    $escapedTarget = [regex]::Escape($TargetFile)
-    # NOTE: patterns use \x22 instead of a literal double-quote character. A
-    # raw " in the argument breaks Windows PowerShell 5.1 native argument
-    # passing to rg, and the call dies with a regex parse error.
-    $q = "'"
-    $importPatterns = @(
-        "from\s+[$q\x22][^$q\x22]*$escapedTarget[$q\x22]",
-        "import\s+[$q\x22][^$q\x22]*$escapedTarget[$q\x22]",
-        "require\s*\(\s*[$q\x22][^$q\x22]*$escapedTarget[$q\x22]",
-        "from\s+[$q\x22][^$q\x22]*$escapedLeaf[$q\x22]",
-        "import\s+[$q\x22][^$q\x22]*$escapedLeaf[$q\x22]",
-        "require\s*\(\s*[$q\x22][^$q\x22]*$escapedLeaf[$q\x22]"
-    )
-    foreach ($pattern in $importPatterns) {
-        $hits = & rg -l $pattern $allFiles 2>$null
-        foreach ($hit in $hits) {
-            $rel = $hit.Substring($RepoRoot.Length + 1)
-            $flat = Get-FlatName $rel
-            if ($flat -ne $targetFlat -and $result.Importers -notcontains $flat) {
-                $result.Importers += $flat
-            }
+    foreach ($ext in $script:ImportExtensions) {
+        $candidate = Join-Path $fromDir ($Specifier + $ext)
+        try {
+            $full = [System.IO.Path]::GetFullPath($candidate)
+        } catch {
+            continue
         }
-    }
-
-    # Find direct imports: files this file imports
-    if (Test-Path (Join-Path $RepoRoot $TargetFile)) {
-        $content = Get-Content (Join-Path $RepoRoot $TargetFile) -Raw -ErrorAction SilentlyContinue
-        if ($content) {
-            $q = "'"
-            $pattern = "(?:from|import|require)\s+[$q\x22]([^$q\x22]+)[$q\x22]"
-            $importMatches = $content | Select-String -Pattern $pattern -AllMatches
-            foreach ($match in $importMatches.Matches) {
-                $importPath = $match.Groups[1].Value
-                # Resolve relative to target file's directory
-                $targetDir = Split-Path $TargetFile
-                $resolved = Resolve-RelativeImport $RepoRoot $targetDir $importPath
-                if ($resolved -and $resolved -ne $targetFlat -and $result.Imports -notcontains $resolved) {
-                    $result.Imports += $resolved
-                }
-            }
-        }
-    }
-
-    return $result
-}
-
-function Resolve-RelativeImport {
-    param([string]$RepoRoot, [string]$FromDir, [string]$ImportPath)
-    # Skip external packages (no . or / prefix, or starts with @)
-    if ($ImportPath -notmatch '^\.') { return $null }
-    # Repo-root-level files have no directory part; resolve from '.'.
-    if (-not $FromDir) { $FromDir = '.' }
-    # Resolve relative path and normalize (Join-Path alone leaves './' and
-    # '../' segments in place, which would corrupt the flat name).
-    $rootFull = $RepoRoot.TrimEnd('\', '/')
-    # Try with common extensions
-    $extensions = @('', '.ts', '.tsx', '.js', '.jsx', '.py', '.ps1', '/index.ts', '/index.tsx', '/index.js', '/index.jsx')
-    foreach ($ext in $extensions) {
-        $fullPath = [IO.Path]::GetFullPath((Join-Path (Join-Path $rootFull $FromDir) ($ImportPath + $ext)))
-        if (Test-Path -LiteralPath $fullPath) {
-            return Get-FlatName $fullPath.Substring($rootFull.Length + 1)
+        if (Test-Path -LiteralPath $full -PathType Leaf) {
+            return Get-RepoRelativePath -RepoRoot $RepoRoot -AbsolutePath $full
         }
     }
     return $null
 }
 
-# ═══════════════════════════════════════════════════════════════════════════
-# Lock acquisition
-# ═══════════════════════════════════════════════════════════════════════════
-
-function Acquire-FileLock {
+# Depth-1 dependency set for a path: files that import it (Importers) and files
+# it imports (Imports).
+#
+# Specifiers are resolved to real paths rather than matched by leaf filename.
+# The earlier revision fell back to a leaf-name regex, so src/a/index.ts and
+# src/b/index.ts were reported as dependents of one another; resolving the
+# specifier removes that false positive by construction.
+function Get-DependencySet {
     param(
-        [string]$RepoRelativePath,
-        [string]$SessionId = (Get-SessionId),
-        # Retained for signature stability. Steal decisions are user-driven at
-        # the agent layer; this function never auto-steals, flag or not.
-        [switch]$Force = $false
+        [string]$RepoRoot,
+        [string]$TargetFileRelative
     )
 
-    if (Is-ReadOnlyHost) { return @{ Success = $true; Skipped = $true; Reason = 'READ_ONLY host' } }
+    $result = @{ Root = $null; Importers = @(); Imports = @() }
+    if (-not (Get-Command rg -ErrorAction SilentlyContinue)) { return $result }
 
-    $repoRoot = Get-RepoRoot
-    Ensure-LockDir $repoRoot
+    $target = ($TargetFileRelative -replace '\\', '/')
+    $result.Root = $target
 
-    $flatName = Get-FlatName $RepoRelativePath
-    $lockPath = Get-LockPath $repoRoot $flatName
+    $rootFull = [System.IO.Path]::GetFullPath($RepoRoot)
+    $quote = [char]39
+    # \x22 stands in for a literal double quote: a raw " inside a native argument
+    # breaks PowerShell 5.1 argument passing and kills the call with a regex
+    # parse error.
+    $pattern = "(?:from|import|require)\s*\(?\s*[$quote\x22]([^$quote\x22]+)[$quote\x22]"
 
-    # A live peer dependency lock covering this file blocks per-file acquisition.
-    $covering = Test-CoveringDependencyLock -RepoRoot $repoRoot -FlatName $flatName -SessionId $SessionId
-    if ($covering) {
-        return @{
-            Success = $false
-            LockPath = $lockPath
-            FlatName = $flatName
-            Blocked = $true
-            CoveringDependency = $covering
-            Owner = $covering.Owner
-            AcquiredAt = $covering.AcquiredAt
-            Live = $true
-            Decision = @('Wait longer', 'Skip this file', 'Override-steal the lock')
+    $rgArgs = @(
+        '--no-heading', '-n', '-o',
+        '--replace', '$1',
+        '--glob', '*.ts',
+        '--glob', '*.tsx',
+        '--glob', '*.js',
+        '--glob', '*.jsx',
+        '--glob', '*.mjs',
+        '--glob', '*.cjs',
+        '--glob', '*.py',
+        '--glob', '*.ps1',
+        '--glob', '!node_modules/**',
+        '--glob', '!.git/**',
+        '--glob', '!dist/**',
+        '--glob', '!build/**',
+        '--glob', '!prompt-system/**',
+        $pattern,
+        $rootFull
+    )
+
+    $hits = & rg @rgArgs 2>$null
+    if (-not $hits) { return $result }
+
+    $importers = New-Object 'System.Collections.Generic.HashSet[string]'
+    $imports = New-Object 'System.Collections.Generic.HashSet[string]'
+
+    foreach ($hit in $hits) {
+        # Format is path:line:specifier. Split from the RIGHT: on Windows the path
+        # itself contains a colon (the drive letter), so a left-to-right split
+        # truncates the path to "C" and every hit is discarded.
+        $lastColon = $hit.LastIndexOf(':')
+        if ($lastColon -lt 1) { continue }
+        $prevColon = $hit.LastIndexOf(':', $lastColon - 1)
+        if ($prevColon -lt 1) { continue }
+
+        $fromAbsolute = $hit.Substring(0, $prevColon)
+        $specifier = $hit.Substring($lastColon + 1).Trim()
+        if (-not $specifier) { continue }
+        if (-not (Test-Path -LiteralPath $fromAbsolute -PathType Leaf)) { continue }
+
+        $fromRelative = Get-RepoRelativePath -RepoRoot $RepoRoot -AbsolutePath $fromAbsolute
+        $resolved = Resolve-ImportSpecifier -RepoRoot $RepoRoot -FromFileRelative $fromRelative -Specifier $specifier
+
+        if (-not $resolved) { continue }
+
+        if ($resolved -eq $target) {
+            [void]$importers.Add($fromRelative)
+        } elseif ($fromRelative -eq $target) {
+            [void]$imports.Add($resolved)
         }
     }
 
-    # Single attempt, then surface. A blocking multi-minute wait outlasts a
-    # model turn, so a contended lock returns immediately with the user-owned
-    # decision set instead of sleeping inside the turn.
-    try {
-        New-LockDirectoryAtomic -LockPath $lockPath
-        Write-LockFiles -LockPath $lockPath -Owner $SessionId
-        return @{ Success = $true; LockPath = $lockPath; FlatName = $flatName }
-    } catch {
-        if (-not (Test-Path $lockPath)) { throw }
-        # Lock exists - check if live
-        $info = Read-LockInfo $lockPath
-        if ($info.Owner -and ($info.Owner.Trim() -eq $SessionId)) {
-            # Self-owned: re-confirmed above, safe to refresh the timestamp.
-            Write-LockFiles -LockPath $lockPath -Owner $SessionId
-            return @{ Success = $true; LockPath = $lockPath; FlatName = $flatName; Refreshed = $true }
-        }
-        $stale = -not (Is-LockLive $info.AcquiredAt)
-        $decision = @('Wait longer', 'Skip this file', 'Override-steal the lock')
-        if ($stale) { $decision += 'Contact the peer' }
+    $result.Importers = @($importers)
+    $result.Imports = @($imports)
+    return $result
+}
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Acquisition
+# ═══════════════════════════════════════════════════════════════════════════
+
+# The user-owned choice set returned on contention. This module never selects.
+$script:ContentionDecision = @('Wait for the peer to release', 'Skip this path', 'Ask the peer to release')
+
+function Enter-FileLock {
+    param(
+        [string]$RepoRelativePath,
+        [string]$SessionId = (Get-SessionId),
+        [int]$TtlMinutes = $script:LockTtlMinutes,
+        [string]$RepoRoot
+    )
+
+    if (Test-ReadOnlyHost) { return @{ Success = $true; Skipped = $true; Reason = 'READ_ONLY host' } }
+
+    $repoRoot = Resolve-RepoRoot $RepoRoot
+    $flat = ConvertTo-FlatName $RepoRelativePath
+    $lockPath = Get-LockPath -RepoRoot $repoRoot -FlatName $flat
+
+    $covering = @(Get-BlockingPeers -RepoRoot $repoRoot -RepoRelativePath $RepoRelativePath -SessionId $SessionId -TtlMinutes $TtlMinutes)
+    if ($covering.Count -gt 0) {
         return @{
             Success = $false
-            LockPath = $lockPath
-            FlatName = $flatName
             Blocked = $true
+            Path = $RepoRelativePath
+            LockPath = $lockPath
+            Peers = $covering
+            Decision = $script:ContentionDecision
+        }
+    }
+
+    try {
+        New-LockDirectoryAtomic -LockPath $lockPath -Owner $SessionId
+        return @{ Success = $true; Path = $RepoRelativePath; LockPath = $lockPath; Refreshed = $false }
+    } catch {
+        $info = Read-LockInfo $lockPath
+        if ($info.Owner -eq $SessionId) {
+            # Self-owned. Re-entering refreshes the timestamp so an actively used
+            # lock cannot expire underneath a long PATCH.
+            Remove-LockDirectory $lockPath
+            New-LockDirectoryAtomic -LockPath $lockPath -Owner $SessionId
+            return @{ Success = $true; Path = $RepoRelativePath; LockPath = $lockPath; Refreshed = $true }
+        }
+
+        # An expired lock is abandoned, and an abandoned lock must be reclaimable
+        # or the TTL is decorative: detection would call it dead while
+        # acquisition still refused. Removing one is not auto-stealing, because no
+        # live session can be holding it.
+        if (-not (Test-LockLive $info.AcquiredAt $TtlMinutes)) {
+            Remove-LockDirectory $lockPath
+            New-LockDirectoryAtomic -LockPath $lockPath -Owner $SessionId
+            return @{ Success = $true; Path = $RepoRelativePath; LockPath = $lockPath; Reclaimed = $true; ReclaimedFrom = $info.Owner }
+        }
+
+        return @{
+            Success = $false
+            Blocked = $true
+            Path = $RepoRelativePath
+            LockPath = $lockPath
+            Peers = @(@{
+                Path = $RepoRelativePath
+                Owner = $info.Owner
+                AcquiredAt = $info.AcquiredAt
+                Live = $true
+                Type = 'PerFile'
+            })
+            Decision = $script:ContentionDecision
+        }
+    }
+}
+
+function Enter-DependencyLock {
+    param(
+        [string]$RepoRelativePath,
+        [string]$SessionId = (Get-SessionId),
+        [int]$TtlMinutes = $script:LockTtlMinutes,
+        [string]$RepoRoot
+    )
+
+    if (Test-ReadOnlyHost) { return @{ Success = $true; Skipped = $true; Reason = 'READ_ONLY host' } }
+
+    $repoRoot = Resolve-RepoRoot $RepoRoot
+    $depSet = Get-DependencySet -RepoRoot $repoRoot -TargetFileRelative $RepoRelativePath
+    $members = @(@($depSet.Root) + @($depSet.Importers) + @($depSet.Imports)) | Where-Object { $_ }
+
+    $flat = ConvertTo-FlatName $RepoRelativePath
+    $lockPath = Get-LockPath -RepoRoot $repoRoot -FlatName $flat
+
+    # Plain array, not a generic List: the counts are single digits and @()
+    # around a List[object] misbehaves inside a hashtable literal.
+    $conflicts = @()
+    foreach ($member in $members) {
+        $memberLock = Get-LockPath -RepoRoot $repoRoot -FlatName (ConvertTo-FlatName $member)
+        if (-not (Test-Path -LiteralPath $memberLock)) { continue }
+        $info = Read-LockInfo $memberLock
+        if ($info.Owner -eq $SessionId) { continue }
+        if (Test-LockLive $info.AcquiredAt $TtlMinutes) {
+            $conflicts += @{ Path = $member; Owner = $info.Owner; AcquiredAt = $info.AcquiredAt; Type = 'PerFile' }
+        }
+    }
+
+    if (@($conflicts).Count -gt 0) {
+        return @{
+            Success = $false
+            Blocked = $true
+            Path = $RepoRelativePath
+            LockPath = $lockPath
+            Members = @($members)
+            Peers = @($conflicts)
+            Decision = $script:ContentionDecision
+        }
+    }
+
+    try {
+        New-LockDirectoryAtomic -LockPath $lockPath -Owner $SessionId -Dependencies $members
+        return @{ Success = $true; Path = $RepoRelativePath; LockPath = $lockPath; Members = @($members) }
+    } catch {
+        $info = Read-LockInfo $lockPath
+        return @{
+            Success = $false
+            Blocked = $true
+            Path = $RepoRelativePath
+            LockPath = $lockPath
+            Members = @($members)
+            Peers = @(@{ Path = $RepoRelativePath; Owner = $info.Owner; Type = 'PerFile' })
+            Decision = $script:ContentionDecision
+        }
+    }
+}
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Release
+# ═══════════════════════════════════════════════════════════════════════════
+
+function Exit-FileLock {
+    param(
+        [string]$RepoRelativePath,
+        [string]$SessionId = (Get-SessionId),
+        [string]$RepoRoot
+    )
+
+    if (Test-ReadOnlyHost) { return @{ Success = $true; Skipped = $true; Reason = 'READ_ONLY host' } }
+
+    $repoRoot = Resolve-RepoRoot $RepoRoot
+    $lockPath = Get-LockPath -RepoRoot $repoRoot -FlatName (ConvertTo-FlatName $RepoRelativePath)
+
+    if (-not (Test-Path -LiteralPath $lockPath)) {
+        return @{ Success = $true; AlreadyReleased = $true; Path = $RepoRelativePath }
+    }
+
+    $info = Read-LockInfo $lockPath
+    if ($info.Owner -ne $SessionId) {
+        # Releasing a peer's lock would erase its ownership record while it is
+        # still writing. Refused rather than repaired.
+        return @{
+            Success = $false
+            Refused = $true
+            Path = $RepoRelativePath
             Owner = $info.Owner
-            AcquiredAt = $info.AcquiredAt
-            Live = (-not $stale)
-            Stale = $stale
-            Decision = $decision
+            Reason = 'lock is owned by another session'
         }
     }
+
+    Remove-LockDirectory $lockPath
+    return @{ Success = $true; Path = $RepoRelativePath }
 }
 
-function Acquire-DependencyLock {
+function Exit-DependencyLock {
     param(
         [string]$RepoRelativePath,
         [string]$SessionId = (Get-SessionId),
-        # Retained for signature stability. Steal decisions are user-driven at
-        # the agent layer; this function never auto-steals, flag or not.
-        [switch]$Force = $false
+        [string]$RepoRoot
+    )
+    return Exit-FileLock -RepoRelativePath $RepoRelativePath -SessionId $SessionId -RepoRoot $RepoRoot
+}
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Query -- the commit gate reads this
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Every live peer lock touching a path: a per-file lock on it, or any live
+# dependency lock whose member set covers it. Self-owned locks are excluded,
+# which is what keeps the gate from blocking the session doing the committing.
+function Get-BlockingPeers {
+    param(
+        [string]$RepoRoot,
+        [string]$RepoRelativePath,
+        [string]$SessionId = (Get-SessionId),
+        [int]$TtlMinutes = $script:LockTtlMinutes
     )
 
-    if (Is-ReadOnlyHost) { return @{ Success = $true; Skipped = $true; Reason = 'READ_ONLY host' } }
+    $peers = @()
+    $lockRoot = Get-LockRoot $RepoRoot
+    if (-not (Test-Path -LiteralPath $lockRoot)) { return $peers }
 
-    $repoRoot = Get-RepoRoot
-    Ensure-LockDir $repoRoot
+    $targetFlat = ConvertTo-FlatName $RepoRelativePath
 
-    $flatName = Get-FlatName $RepoRelativePath
-    $lockPath = Get-LockPath $repoRoot $flatName
+    foreach ($dir in Get-ChildItem -LiteralPath $lockRoot -Directory -Filter '*.lock' -ErrorAction SilentlyContinue) {
+        $info = Read-LockInfo $dir.FullName
+        if ($info.Owner -eq $SessionId) { continue }
+        if (-not (Test-LockLive $info.AcquiredAt $TtlMinutes)) { continue }
 
-    # Discover dependency set
-    $depSet = Get-DependencySet -RepoRoot $RepoRoot -TargetFile $RepoRelativePath
-    $allDeps = @($depSet.Root) + $depSet.Importers + $depSet.Imports
+        # A lock sitting on the target path reports Dependency when it also carries a
+        # member set, because the peer reserved related paths too and the caller
+        # needs that scope to warn about a wider conflict.
+        if ($dir.Name -eq "$targetFlat.lock") {
+            $isDependencyScope = @($info.Dependencies).Count -gt 0
+            $peers += @{
+                Path = $RepoRelativePath
+                Owner = $info.Owner
+                AcquiredAt = $info.AcquiredAt
+                Type = $(if ($isDependencyScope) { 'Dependency' } else { 'PerFile' })
+                LockPath = $dir.FullName
+                HeldFor = $RepoRelativePath
+                Members = @($info.Dependencies)
+            }
+            continue
+        }
 
-    # Single attempt, then surface (no blocking wait; see Acquire-FileLock).
-    $blockingLock = $null
-    foreach ($dep in $allDeps) {
-        $depLockPath = Get-LockPath $repoRoot $dep
-        if (Test-Path $depLockPath) {
-            $info = Read-LockInfo $depLockPath
-            if ($info.Owner -and ($info.Owner.Trim() -ne $SessionId) -and (Is-LockLive $info.AcquiredAt)) {
-                $blockingLock = @{ Path = $depLockPath; Owner = $info.Owner; AcquiredAt = $info.AcquiredAt; FlatName = $dep }
+        foreach ($member in $info.Dependencies) {
+            if ((ConvertTo-FlatName $member) -eq $targetFlat) {
+                $peers += @{
+                    Path = $RepoRelativePath
+                    Owner = $info.Owner
+                    AcquiredAt = $info.AcquiredAt
+                    Type = 'Dependency'
+                    LockPath = $dir.FullName
+                    HeldFor = $member
+                }
                 break
             }
-            if (-not (Is-LockLive $info.AcquiredAt)) {
-                $blockingLock = @{ Path = $depLockPath; Owner = $info.Owner; AcquiredAt = $info.AcquiredAt; FlatName = $dep; Stale = $true }
-                break
+        }
+    }
+
+    return @($peers)
+}
+
+# Batch form used by the commit gate. One entry per conflicting path, so the
+# whole change set is reported in a single refusal rather than one path per
+# round trip.
+function Get-BlockingPeersForPaths {
+    param(
+        [string[]]$RepoRelativePaths,
+        [string]$SessionId = (Get-SessionId),
+        [int]$TtlMinutes = $script:LockTtlMinutes,
+        [string]$RepoRoot
+    )
+
+    $repoRoot = Resolve-RepoRoot $RepoRoot
+    $conflicts = @()
+    foreach ($path in ($RepoRelativePaths | Where-Object { $_ })) {
+        $peers = @(Get-BlockingPeers -RepoRoot $repoRoot -RepoRelativePath $path -SessionId $SessionId -TtlMinutes $TtlMinutes)
+        if ($peers.Count -gt 0) {
+            $conflicts += @{ Path = $path; Peers = $peers }
+        }
+    }
+    return @($conflicts)
+}
+
+function Get-LockStatus {
+    param(
+        [string]$SessionId = (Get-SessionId),
+        [int]$TtlMinutes = $script:LockTtlMinutes,
+        [string]$RepoRoot
+    )
+
+    $repoRoot = Resolve-RepoRoot $RepoRoot
+    $lockRoot = Get-LockRoot $repoRoot
+
+    $locks = @()
+    if (Test-Path -LiteralPath $lockRoot) {
+        foreach ($dir in Get-ChildItem -LiteralPath $lockRoot -Directory -Filter '*.lock' -ErrorAction SilentlyContinue) {
+            $info = Read-LockInfo $dir.FullName
+            $locks += @{
+                LockPath = $dir.FullName
+                Owner = $info.Owner
+                AcquiredAt = $info.AcquiredAt
+                Live = (Test-LockLive $info.AcquiredAt $TtlMinutes)
+                Members = @($info.Dependencies)
             }
         }
-        # A live peer dependency lock covering this member blocks as well.
-        $cover = Test-CoveringDependencyLock -RepoRoot $repoRoot -FlatName $dep -SessionId $SessionId
-        if ($cover) {
-            $blockingLock = @{ Path = $cover.Path; Owner = $cover.Owner; AcquiredAt = $cover.AcquiredAt; FlatName = $cover.FlatName; CoveringDependency = $true }
-            break
-        }
     }
-
-    if ($blockingLock) {
-        $decision = @('Wait longer', 'Skip this file', 'Override-steal the lock')
-        if ($blockingLock.Stale) { $decision += 'Contact the peer' }
-        return @{
-            Success = $false
-            LockPath = $lockPath
-            FlatName = $flatName
-            Dependencies = $allDeps
-            Blocked = $true
-            BlockingLock = $blockingLock
-            Decision = $decision
-        }
-    }
-
-    try {
-        New-LockDirectoryAtomic -LockPath $lockPath
-        Write-LockFiles -LockPath $lockPath -Owner $SessionId -Dependencies $allDeps
-        return @{ Success = $true; LockPath = $lockPath; FlatName = $flatName; Dependencies = $allDeps }
-    } catch {
-        if (-not (Test-Path $lockPath)) { throw }
-        # Race condition - another session created it
-        $info = Read-LockInfo $lockPath
-        if ($info.Owner -and ($info.Owner.Trim() -eq $SessionId)) {
-            # Self-owned: re-confirmed above, safe to refresh with the new set.
-            Write-LockFiles -LockPath $lockPath -Owner $SessionId -Dependencies $allDeps
-            return @{ Success = $true; LockPath = $lockPath; FlatName = $flatName; Dependencies = $allDeps; Refreshed = $true }
-        }
-        $stale = -not (Is-LockLive $info.AcquiredAt)
-        $decision = @('Wait longer', 'Skip this file', 'Override-steal the lock')
-        if ($stale) { $decision += 'Contact the peer' }
-        return @{
-            Success = $false
-            LockPath = $lockPath
-            FlatName = $flatName
-            Dependencies = $allDeps
-            Blocked = $true
-            BlockingLock = @{ Path = $lockPath; Owner = $info.Owner; AcquiredAt = $info.AcquiredAt; FlatName = $flatName; Stale = $stale }
-            Decision = $decision
-        }
-    }
-}
-
-# ═══════════════════════════════════════════════════════════════════════════
-# Lock release
-# ═══════════════════════════════════════════════════════════════════════════
-
-function Release-FileLock {
-    param(
-        [string]$RepoRelativePath,
-        [string]$SessionId = (Get-SessionId)
-    )
-
-    if (Is-ReadOnlyHost) { return @{ Success = $true; Skipped = $true } }
-
-    $repoRoot = Get-RepoRoot
-    $flatName = Get-FlatName $RepoRelativePath
-    $lockPath = Get-LockPath $repoRoot $flatName
-
-    if (-not (Test-Path $lockPath)) {
-        return @{ Success = $true; AlreadyReleased = $true }
-    }
-
-    $info = Read-LockInfo $lockPath
-    if ($info.Owner -ne $SessionId) {
-        throw "Cannot release lock owned by $($info.Owner) (current session: $SessionId)"
-    }
-
-    Remove-LockDir $lockPath
-    return @{ Success = $true; Released = $true }
-}
-
-function Release-DependencyLock {
-    param(
-        [string]$RepoRelativePath,
-        [string]$SessionId = (Get-SessionId)
-    )
-
-    if (Is-ReadOnlyHost) { return @{ Success = $true; Skipped = $true } }
-
-    $repoRoot = Get-RepoRoot
-    $flatName = Get-FlatName $RepoRelativePath
-    $lockPath = Get-LockPath $repoRoot $flatName
-
-    if (-not (Test-Path $lockPath)) {
-        return @{ Success = $true; AlreadyReleased = $true }
-    }
-
-    $info = Read-LockInfo $lockPath
-    if ($info.Owner -ne $SessionId) {
-        throw "Cannot release dependency lock owned by $($info.Owner) (current session: $SessionId)"
-    }
-
-    Remove-LockDir $lockPath
-    return @{ Success = $true; Released = $true }
-}
-
-# ═══════════════════════════════════════════════════════════════════════════
-# Commit/push gate integration
-# ═══════════════════════════════════════════════════════════════════════════
-
-function Verify-LocksForStagedFiles {
-    param(
-        [string[]]$StagedFiles,
-        [string]$SessionId = (Get-SessionId)
-    )
-
-    if (Is-ReadOnlyHost) { return @{ Success = $true; Skipped = $true } }
-
-    $repoRoot = Get-RepoRoot
-    $results = @()
-
-    foreach ($file in $StagedFiles) {
-        $relPath = $file
-        if ($file -like "$repoRoot*") { $relPath = $file.Substring($repoRoot.Length + 1) }
-        $flatName = Get-FlatName $relPath
-        $lockPath = Get-LockPath $repoRoot $flatName
-
-        if (Test-Path $lockPath) {
-            $info = Read-LockInfo $lockPath
-            if ($info.Owner -and ($info.Owner.Trim() -eq $SessionId)) {
-                # Also check for dependency lock covering this file
-                if ($info.Dependencies -and $info.Dependencies.Count -gt 0) {
-                    $results += @{ File = $relPath; LockHeld = $true; Type = 'Dependency'; Owner = $SessionId }
-                } else {
-                    $results += @{ File = $relPath; LockHeld = $true; Type = 'PerFile'; Owner = $SessionId }
-                }
-                continue
-            }
-            $results += @{ File = $relPath; LockHeld = $false; Owner = $info.Owner; Reason = 'Owned by another session' }
-            continue
-        }
-
-        # No exact lock: scan every lock for a live dependency lock covering
-        # this file. Self-owned coverage counts as held; live peer coverage
-        # refuses staging.
-        $covered = $false
-        $lockDir = Get-LockDir $repoRoot
-        if (Test-Path -LiteralPath $lockDir) {
-            foreach ($dir in Get-ChildItem -Path $lockDir -Directory -Filter '*.lock' -ErrorAction SilentlyContinue) {
-                $depsPath = Join-Path $dir.FullName 'dependencies.txt'
-                if (-not (Test-Path -LiteralPath $depsPath)) { continue }
-                $covers = @(Get-Content $depsPath -ErrorAction SilentlyContinue) | Where-Object { $_ -and $_.Trim() -eq $flatName }
-                if (-not $covers) { continue }
-                $coverInfo = Read-LockInfo $dir.FullName
-                if ($coverInfo.Owner -and (Is-LockLive $coverInfo.AcquiredAt)) {
-                    if ($coverInfo.Owner.Trim() -eq $SessionId) {
-                        $results += @{ File = $relPath; LockHeld = $true; Type = 'Dependency'; Owner = $SessionId }
-                    } else {
-                        $results += @{ File = $relPath; LockHeld = $false; Owner = $coverInfo.Owner; Reason = 'Covered by a live peer dependency lock' }
-                    }
-                    $covered = $true
-                    break
-                }
-            }
-        }
-        if ($covered) { continue }
-
-        $results += @{ File = $relPath; LockHeld = $false; Reason = 'No lock exists' }
-    }
-
-    $allHeld = $results | Where-Object { -not $_.LockHeld }
-    return @{ Success = ($allHeld.Count -eq 0); Results = $results }
-}
-
-function ReReadAndDiffStagedFiles {
-    param(
-        [string[]]$StagedFiles,
-        [string]$ExpectedContentMap  # Hashtable: file -> expected content
-    )
-
-    $repoRoot = Get-RepoRoot
-    $results = @()
-
-    foreach ($file in $StagedFiles) {
-        $fullPath = Join-Path $repoRoot $file
-        if (-not (Test-Path $fullPath)) {
-            $results += @{ File = $file; Match = $false; Reason = 'File not found' }
-            continue
-        }
-
-        $current = Get-Content $fullPath -Raw -Encoding UTF8
-        $expected = $ExpectedContentMap[$file]
-        if ($expected -eq $null) {
-            $results += @{ File = $file; Match = $false; Reason = 'No expected content recorded' }
-            continue
-        }
-
-        $match = ($current -eq $expected)
-        $results += @{ File = $file; Match = $match; Reason = if ($match) { 'OK' } else { 'Content differs from expected' } }
-    }
-
-    $mismatches = $results | Where-Object { -not $_.Match }
-    return @{ Success = ($mismatches.Count -eq 0); Results = $results }
+    return @{ SessionId = $SessionId; LockRoot = $lockRoot; Locks = @($locks) }
 }

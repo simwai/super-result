@@ -4,13 +4,13 @@ Plan-Versus-Actual Gate verification protocol. Extracted from `06-misc.md` for c
 
 ## Plan-Versus-Actual Gate
 
-A user-approved plan lists `Will change` items; this gate runs after lock verification and staging and before the commit/push ask, and confirms that each item actually landed in the staged working tree. The gate is the answer to "the plan said X, Y, Z - did all three really make it in?" A miss is not a soft warning; it is a hard gate. The commit is refused until the gap is fixed or the user re-plans.
+A user-approved plan lists `Will change` items; this gate runs after staging and before the commit/push ask, and confirms that each item actually landed in the staged working tree. The gate is the answer to "the plan said X, Y, Z - did all three really make it in?" A miss is not a soft warning; it is a hard gate. The commit is refused until the gap is fixed or the user re-plans.
 
 The runner MUST execute each verify command automatically after staging and before the commit/push ask; emitting the command text without running it is a gate FAIL.
 
 ### Source of truth
 
-The approved plan's `Will change` list, persisted in the session's own state file as `## Plan Approval -- approved_will_change` records. Each record has the shape `{id, change, verify, expect}`. The gate never re-parses the PLAN response at commit time; it uses the persisted, user-approved form. A record with no `verify` field is a coverage gap and is recorded as `SKIPPED: <id> -- no verify command` and counts as a miss.
+The approved plan's `Will change` list, persisted in the session context as `## Plan Approval -- approved_will_change` records. Each record has the shape `{id, change, verify, expect}`. The gate never re-parses the PLAN response at commit time; it uses the persisted, user-approved form. A record with no `verify` field is a coverage gap and is recorded as `SKIPPED: <id> -- no verify command` and counts as a miss.
 
 ### `expect` vocabulary
 
@@ -26,6 +26,22 @@ The `expect` field on each `Will change` item is one of:
 | `silent`       | exit 0 AND stdout is empty AND stderr is empty |
 
 Any `expect` field that does not match one of the six shapes is recorded as `FAIL -- malformed expect: <field>` and the gate is RED. The plan author cannot pass garbage.
+
+One `Will change` record carries exactly one `verify` and one `expect` pair. A change that needs both an absence check and a presence check is expressed as two records that share the finding id with distinct suffixes (for example `[finding_id]-absent` and `[finding_id]-present`), not as two pairs inside one record.
+
+### Absence checks use `expect: fail`
+
+`silent` is the narrowest value in the vocabulary: it demands exit 0 **and** empty stdout **and** empty stderr. It describes a command that ran successfully and produced nothing, which is not what a search does when it finds nothing.
+
+`rg` exits 0 when it finds a match and exits 1 when it finds none. So `verify: rg "pattern" [file]` with `expect: silent` fails in both states: a match gives exit 0 with non-empty stdout, and no match gives exit 1. An absence check is therefore `expect: fail`:
+
+| Intent                                | verify           | expect        |
+| ------------------------------------- | ---------------- | ------------- |
+| The bad pattern is gone               | `rg "pattern" f` | `fail`        |
+| The good pattern is present            | `rg "good" f`    | `pass`        |
+| The command emits nothing but succeeds | any zero-exit    | `silent`      |
+
+Verify commands must also stay portable across the project's shells. `||` is not a valid operator in Windows PowerShell 5.1, which is the shell this repository's tooling runs under; express alternation inside a single `rg` pattern (`rg "a|b" [file]`) rather than chaining commands.
 
 ### Run semantics
 
@@ -50,7 +66,7 @@ This is not a security boundary; it is a guard against accidental plan-author mi
 
 ### Verdict aggregation
 
-- All items PASS -> `GREEN`. Gate proceeds to lock verification and the ask.
+- All items PASS -> `GREEN`. Gate proceeds to the ask.
 - Any item FAIL or SKIPPED -> `RED`. Trigger the auto-retry loop.
 
 ### Auto-retry loop
@@ -64,7 +80,7 @@ This is not a security boundary; it is a guard against accidental plan-author mi
 
 ### Staging interaction
 
-The gate runs AFTER `git add` of the session's edited files and BEFORE the commit. The verify commands must observe the staged state. Lock verification gates what gets staged; the gate verifies what was staged. The ordering inside the commit/push gate is therefore: trigger -> Playwright smoke -> lock verification -> stage -> Plan-Versus-Actual Gate -> the ask.
+The gate runs AFTER `git add` of the session's edited files and BEFORE the commit. The verify commands must observe the staged state. The ordering inside the commit/push gate is therefore: trigger -> Playwright smoke -> stage -> Plan-Versus-Actual Gate -> the ask.
 
 ### Skip conditions (Plan-Versus-Actual)
 
@@ -77,7 +93,7 @@ Record `SKIPPED: plan-actual -- <reason>`, never silently pass:
 
 ### Recording (Plan-Versus-Actual)
 
-- Append a per-run entry to `## Plan-Actual History` in the session's state file: `{retry_index, ran_at, fail_list, fix_summary, plan_actual_verdict, scope_violations}`. Append-only.
+- Append a per-run entry to `## Plan-Actual History` in the session context: `{retry_index, ran_at, fail_list, fix_summary, plan_actual_verdict, scope_violations}`. Append-only.
 - Record one `plan_actual: GREEN|RED|SKIPPED -- <reason>` line in `## Commit/Push Gate`.
 - The PATCH template's `## Plan-Actual` block carries the per-item evidence and a `History: <N> retries logged` footer.
 
@@ -95,7 +111,7 @@ Record `SKIPPED: plan-actual -- <reason>`, never silently pass:
 
 A `Will change` item is structurally a tautology when its `verify` command exits 0 only when the change has NOT landed, or the `expect` field is the inverse of what the command actually probes. Examples:
 
-- `verify: rg "TODO" newfile -- expect: silent` for a change that adds a TODO literal (exits 1 when landed, 0 when absent; `silent` is a lie).
-- `verify: rg "fix-me" file -- expect: pass` for a change that removes a `fix-me` marker (exits 1 when correctly removed).
+- `verify: rg "TODO" newfile -- expect: silent` for a change that adds a TODO literal. `rg` exits 0 with output once the TODO landed and exits 1 with no output while it is absent; `silent` demands exit 0 *and* no output, so it fails in both states and proves nothing. Use `expect: pass`.
+- `verify: rg "fix-me" file -- expect: pass` for a change that removes a `fix-me` marker (exits 1 when correctly removed, so `pass` can never be reached). Use `expect: fail`.
 
 The gate cannot statically prove a tautology. The PATCH `## Plan-Actual` block makes the digest visible; the retry loop exposes the inversion within 2 cycles; the audit log (`## Plan-Actual History`) gives the user a paper trail.

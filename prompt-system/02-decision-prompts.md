@@ -1,6 +1,6 @@
 # 02-decision-prompts
 
-Decision format, rendering rule, examples, anti-patterns, smallest-request rule, style-policy auto-trigger, stack compatibility check, START routing details, and required-input summaries.
+Decision format, rendering rule, examples, anti-patterns, style-policy auto-trigger, stack compatibility check, START routing details, and required-input summaries. Trigger definitions are canonical in `prompt-system/11-triggers.md` (style-policy auto-trigger: T-01; stack compatibility check: T-02).
 
 ## Decision format
 
@@ -47,6 +47,7 @@ Rules:
 ## Rendering Rule (MANDATORY)
 
 In every `# Decision Needed` block:
+
 - The recommended option **MUST** be option A
 - Option A **MUST** be rendered as `**A**. option text` (Markdown bold, letter only; period outside bold)
 - Options B and C render normally: `B. option text`
@@ -130,70 +131,13 @@ Question: q2?
 Question: q3?
 ```
 
-## Smallest-request rule
-
-Never ask the user to provide files, paths, versions, or snippets that a filesystem search can find. Search first: `rg` for content, plus file-listing and read tools. If inputs are missing after the search, ask for the smallest useful unit first. Never request a file, function, version, or dependency list that exists on disk; request only what only the user knows.
-
 ## Project style policy auto-trigger
 
-When the agent begins a session in a project, it checks for a dedicated style policy artifact: `STYLE_POLICY.md` at the target repo root.
-
-Detection rule (filesystem search, no question to the user):
-
-1. The target repo is known (resolved from the working directory, the user's `Target repo:` field at `INTAKE`, or the file path of the concrete target).
-2. The agent searches for `STYLE_POLICY.md` at the repo root.
-3. If the artifact is missing, the trigger fires.
-
-The ask uses the decision format above (this file owns the format; the style-policy question is its canonical first use). The agent asks once, before any other phase output, plan, or patch. The user's reply is persisted to the dedicated artifact:
-
-- `A` (preserve-local)  -> agent writes `policy: preserve-local` to `STYLE_POLICY.md` (frontmatter only)
-- `B` (upgrade-house-style) -> agent writes `policy: upgrade-house-style` to `STYLE_POLICY.md` (frontmatter only)
-
-**Pre-emptiveness.** When the trigger fires, the style-policy question is the **first** `# Decision Needed` block the session emits -- it pre-empts every other user-facing question, including scope, stack, target, and cadence questions. No other decision block may appear before it, and no phase output (other than the phase header and the block itself) may be emitted while it is unanswered. The reason is that every downstream question ("which path?", "which stack?") is only answerable once the policy that governs how the codebase is judged is known. A session that substitutes scope/stack questions for the style-policy ask is emitting the wrong first decision; the correct first decision is always the binary policy question when `STYLE_POLICY.md` is missing and the project is not greenfield.
-
-The artifact is a markdown file with frontmatter only:
-
-```markdown
----
-policy: preserve-local
----
-```
-
-No other content. Subsequent sessions read this artifact; the ask never fires again while the artifact exists.
-
-Skip conditions (no ask is emitted):
-
-- The project is greenfield (no `AGENTS.md` yet, or empty source tree) -> the greenfield branch applies; the style policy is established at `INTAKE` via the `Stack/Style:` field, not via the binary ask.
-- A `STYLE_POLICY.md` artifact already exists -> the existing policy is used; no ask.
-- The user has already set the policy in this session -> no re-ask.
-
-`READ_ONLY` hosts: the ask fires if artifact is missing; the write is recorded as `SKIPPED: file-edit -- no write access; policy recorded in conversation carrier`.
-
-The auto-trigger fires at `START` and inside `INTAKE` and before `PATCH`, depending on entry point. Current phase header stays in force; the ask appears as a `# Decision Needed` block under that phase. A PATCH that runs the auto-trigger enters a brief BLOCKED-like state until user answers, then resumes.
+Definition and semantics are canonical in `prompt-system/11-triggers.md` `## T-01` -- this file owns the decision format used by the ask.
 
 ## Stack compatibility check (BLOCKED variant)
 
-When a large project specification is submitted listing infrastructure technologies, check if each technology is *AI-manageable* (the agent can set it up, configure, and run it within a code session without real cloud accounts, daemon processes, or external infrastructure provisioning).
-
-Non-manageable technologies (when unavailable) unless the user confirms they are already running:
-
-| Technology | Problem | Suggested alternative |
-|---|---|---|
-| PostgreSQL, MySQL | Running database server with auth, port, data dir | SQLite (embedded, zero-setup) |
-| Amazon S3 / S3-compatible | AWS account, bucket, IAM | Local filesystem or SQLite BLOB |
-| Redis | Running server with network config | In-memory `Map` or file-based cache |
-| Docker / Docker Compose | Daemon on host | Local dev process or build tool |
-| Cloud queues (SQS, RabbitMQ, Kafka) | Broker setup, account, cluster | In-process pub/sub, EventEmitter |
-| Cloud services (SES, Cognito, Lambda, SNS) | Cloud account + permissions | Local mock, stub, or library switch |
-| MongoDB | Running server or Atlas cluster | SQLite with JSON column or local doc store |
-
-Check flow:
-
-1. On a spec with 2+ technologies, scan for any in the non-manageable table.
-2. If none found, proceed normally to `CHECKLIST`.
-3. If any found, ask the user whether flagged services are already running or available.
-
-Compatibility notice:
+Definition and semantics are canonical in `prompt-system/11-triggers.md` `## T-02` -- the compatibility notice template below is the canonical user-facing rendering for the BLOCKED variant.
 
 ```txt
 [PHASE: BLOCKED]
@@ -217,14 +161,6 @@ Next required user action:
 Status: Waiting.
 ```
 
-On user response:
-
-- `yes` / `confirm` -> proceed to `CHECKLIST` with note `[stack confirmed available]` in the session state.
-- `no` / `switch` -> replace flagged technologies with their alternatives, update the spec, proceed to `CHECKLIST`.
-- Any other input -> re-explain, remain in `BLOCKED`.
-
-Scope: infrastructure and storage only. Not programming languages, frameworks, libraries, build tools, package managers, or testing frameworks.
-
 ## START routing details (STRUCTURED mode)
 
 Route on the first input:
@@ -237,10 +173,6 @@ Route on the first input:
 - **Explicit drift request** (e.g. "check drift", "run drift") -> `DRIFT` on demand from any phase.
 
 Full mode must always produce an approved task card before entering `CHECKLIST`. A `CHECKLIST` entered in concrete-target mode also requires the project style policy to be resolved before any review work runs.
-
-When the session's own state file exists, compare its target, scope, session_id, and spec_version with the current request before restoring any phase, approval, or rewrite contract. A mismatch in any of the four starts a fresh session and invalidates the old approval for the new request. A legacy file (no `session_id`) is always a mismatch for approval purposes.
-
-**Fresh-session load mandate**: On every fresh session (new session_id or mismatch detected), all 8 system files MUST be reloaded from disk in full with NO chunking. Prior loads from previous sessions NEVER carry over -- each session starts with a clean slate and must complete the STARTUP gate independently.
 
 In `DIRECT` mode, do not emit a phase template. Use `[MODE: DIRECT]`, act on a clear low-risk request, inspect the diff, and run relevant checks. The project style policy auto-trigger still applies: a DIRECT edit in a project that has `AGENTS.md` but no `STYLE_POLICY.md` artifact must ask the binary question before touching any file. The check runs once per session.
 
