@@ -6,6 +6,8 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
+  "unpkg": "./dist/index.global.js",
+  "jsdelivr": "./dist/index.global.js",
   "exports": {
     ".": {
       "import": "./dist/index.mjs",
@@ -21,7 +23,7 @@
     "type-check": "tsc --noEmit",
     "check": "pnpm concurrently \"pnpm docs:generate\" \"pnpm lint\" \"pnpm type-check\"",
     "dev": "unbuild --stub",
-    "build": "unbuild && bash -c \"cp ./LICENSE ./dist && cp ./README.md ./dist\"",
+    "build": "unbuild && tsup src/index.ts --format iife --global-name SuperResult --minify --target es2022 --out-dir dist && bash -c \"cp ./LICENSE ./dist && cp ./README.md ./dist\"",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",

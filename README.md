@@ -24,6 +24,33 @@ npm install super-result
 yarn add super-result
 ```
 
+### CDN
+
+A minified browser build that exposes the `SuperResult` global ships at `dist/index.global.js`.
+
+jsDelivr:
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/super-result@1/dist/index.global.js"></script>
+<script>
+  const { from, ok, err } = SuperResult
+</script>
+```
+
+unpkg:
+
+```html
+<script src="https://unpkg.com/super-result@1/dist/index.global.js"></script>
+```
+
+Native ESM from a CDN:
+
+```ts
+import { from } from 'https://cdn.jsdelivr.net/npm/super-result@1/dist/index.mjs/+esm'
+```
+
+cdnjs is submission-based: request the library once on cdnjs.com; after approval, new npm versions sync automatically.
+
 ### Example prerequisites
 
 The examples use Node.js 20+, strict TypeScript, and Zod 4.
